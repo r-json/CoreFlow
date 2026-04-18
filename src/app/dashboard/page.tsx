@@ -109,10 +109,10 @@ export default function DashboardPage() {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       // Simulate transaction delay
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
+
       // Update local state
       setEscrows((prev) =>
         prev.map((e) =>
@@ -147,10 +147,10 @@ export default function DashboardPage() {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       // Simulate transaction delay
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
+
       // Update local state
       setEscrows((prev) =>
         prev.map((e) =>
@@ -185,10 +185,10 @@ export default function DashboardPage() {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       // Simulate transaction delay
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
+
       // Update local state
       setEscrows((prev) =>
         prev.map((e) =>
@@ -232,7 +232,7 @@ export default function DashboardPage() {
       <header className="sticky top-0 z-50 border-b border-violet-500/20 bg-gradient-to-r from-slate-950/80 via-slate-900/60 to-orange-950/50 backdrop-blur-xl shadow-lg shadow-black/20">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Image src="/logo.svg" alt="CoreFlow Logo" width={40} height={40} className="w-10 h-10 object-contain" />
+            <Image src="/logo.png" alt="CoreFlow Logo" width={40} height={40} className="w-10 h-10 object-contain" />
             <div>
               <h1 className="text-xl font-bold tracking-tight text-slate-100">CoreFlow</h1>
               <p className="text-xs text-slate-500">On-Chain Accounts Payable</p>
