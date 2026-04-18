@@ -1,4 +1,4 @@
-# CoreFlow - On-Chain Accounts Payable for Stellar Philippines Bootcamp 2026
+# CoreFlow - On-Chain Accounts Payable
 
 ## Overview
 
