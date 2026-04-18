@@ -49,7 +49,7 @@ export class CoreFlowClient {
 
   private async loadSDK() {
     try {
-      return await import('js-stellar-sdk');
+      return await import('@stellar/stellar-sdk');
     } catch {
       throw new Error(
         'js-stellar-sdk not installed. Install with: npm install js-stellar-sdk@10'
@@ -69,7 +69,7 @@ export class CoreFlowClient {
         throw new Error('NEXT_PUBLIC_STELLAR_READ_ADDRESS not configured');
       }
 
-      const rpcClient = new sdk.SorobanRpc.Server(STELLAR_CONFIG.getRpcUrl());
+      const rpcClient = new sdk.rpc.Server(STELLAR_CONFIG.getRpcUrl());
       const contract = new sdk.Contract(this.contractAddress);
       const sourceAccount = await rpcClient.getAccount(readAddress);
 
@@ -77,16 +77,12 @@ export class CoreFlowClient {
         fee: sdk.BASE_FEE,
         networkPassphrase: this.networkPassphrase,
       })
-        .addOperation(
-          sdk.Operation.invokeHostFunction({
-            func: contract.call('manager_approve', sdk.nativeToScVal(escrowId, { type: 'u32' })),
-          })
-        )
+        .addOperation(contract.call('manager_approve', sdk.nativeToScVal(escrowId, { type: 'u32' })))
         .setTimeout(300)
         .build();
 
       const simulated = await rpcClient.simulateTransaction(transaction);
-      if (sdk.SorobanRpc.Api.isSimulationError(simulated)) {
+      if (sdk.rpc.Api.isSimulationError(simulated)) {
         return { result: null, error: simulated.error };
       }
 
@@ -108,7 +104,7 @@ export class CoreFlowClient {
         throw new Error('NEXT_PUBLIC_STELLAR_READ_ADDRESS not configured');
       }
 
-      const rpcClient = new sdk.SorobanRpc.Server(STELLAR_CONFIG.getRpcUrl());
+      const rpcClient = new sdk.rpc.Server(STELLAR_CONFIG.getRpcUrl());
       const contract = new sdk.Contract(this.contractAddress);
       const sourceAccount = await rpcClient.getAccount(readAddress);
 
@@ -116,16 +112,12 @@ export class CoreFlowClient {
         fee: sdk.BASE_FEE,
         networkPassphrase: this.networkPassphrase,
       })
-        .addOperation(
-          sdk.Operation.invokeHostFunction({
-            func: contract.call('finance_approve', sdk.nativeToScVal(escrowId, { type: 'u32' })),
-          })
-        )
+        .addOperation(contract.call('finance_approve', sdk.nativeToScVal(escrowId, { type: 'u32' })))
         .setTimeout(300)
         .build();
 
       const simulated = await rpcClient.simulateTransaction(transaction);
-      if (sdk.SorobanRpc.Api.isSimulationError(simulated)) {
+      if (sdk.rpc.Api.isSimulationError(simulated)) {
         return { result: null, error: simulated.error };
       }
 
@@ -142,7 +134,7 @@ export class CoreFlowClient {
     try {
       const sdk = await this.loadSDK();
       const signingAddress = await this.getSigningAddress();
-      const rpcClient = new sdk.SorobanRpc.Server(STELLAR_CONFIG.getRpcUrl());
+      const rpcClient = new sdk.rpc.Server(STELLAR_CONFIG.getRpcUrl());
       const contract = new sdk.Contract(this.contractAddress);
       const sourceAccount = await rpcClient.getAccount(signingAddress);
 
@@ -150,20 +142,16 @@ export class CoreFlowClient {
         fee: sdk.BASE_FEE,
         networkPassphrase: this.networkPassphrase,
       })
-        .addOperation(
-          sdk.Operation.invokeHostFunction({
-            func: contract.call('manager_approve', sdk.nativeToScVal(escrowId, { type: 'u32' })),
-          })
-        )
+        .addOperation(contract.call('manager_approve', sdk.nativeToScVal(escrowId, { type: 'u32' })))
         .setTimeout(300)
         .build();
 
       const simulated = await rpcClient.simulateTransaction(transaction);
-      if (sdk.SorobanRpc.Api.isSimulationError(simulated)) {
+      if (sdk.rpc.Api.isSimulationError(simulated)) {
         throw new Error(`Simulation failed: ${simulated.error}`);
       }
 
-      const prepared = sdk.SorobanRpc.assembleTransaction(transaction, simulated).build();
+      const prepared = sdk.rpc.assembleTransaction(transaction, simulated).build();
       const signedXDR = await STELLAR_CONFIG.freighter.signTransaction(prepared.toXDR());
       const response = await rpcClient.sendTransaction(
         sdk.TransactionBuilder.fromXDR(signedXDR, this.networkPassphrase)
@@ -187,7 +175,7 @@ export class CoreFlowClient {
     try {
       const sdk = await this.loadSDK();
       const signingAddress = await this.getSigningAddress();
-      const rpcClient = new sdk.SorobanRpc.Server(STELLAR_CONFIG.getRpcUrl());
+      const rpcClient = new sdk.rpc.Server(STELLAR_CONFIG.getRpcUrl());
       const contract = new sdk.Contract(this.contractAddress);
       const sourceAccount = await rpcClient.getAccount(signingAddress);
 
@@ -195,20 +183,16 @@ export class CoreFlowClient {
         fee: sdk.BASE_FEE,
         networkPassphrase: this.networkPassphrase,
       })
-        .addOperation(
-          sdk.Operation.invokeHostFunction({
-            func: contract.call('finance_approve', sdk.nativeToScVal(escrowId, { type: 'u32' })),
-          })
-        )
+        .addOperation(contract.call('finance_approve', sdk.nativeToScVal(escrowId, { type: 'u32' })))
         .setTimeout(300)
         .build();
 
       const simulated = await rpcClient.simulateTransaction(transaction);
-      if (sdk.SorobanRpc.Api.isSimulationError(simulated)) {
+      if (sdk.rpc.Api.isSimulationError(simulated)) {
         throw new Error(`Simulation failed: ${simulated.error}`);
       }
 
-      const prepared = sdk.SorobanRpc.assembleTransaction(transaction, simulated).build();
+      const prepared = sdk.rpc.assembleTransaction(transaction, simulated).build();
       const signedXDR = await STELLAR_CONFIG.freighter.signTransaction(prepared.toXDR());
       const response = await rpcClient.sendTransaction(
         sdk.TransactionBuilder.fromXDR(signedXDR, this.networkPassphrase)
@@ -271,7 +255,7 @@ export class CoreFlowClient {
         throw new Error('NEXT_PUBLIC_STELLAR_READ_ADDRESS not configured');
       }
 
-      const rpcClient = new sdk.SorobanRpc.Server(STELLAR_CONFIG.getRpcUrl());
+      const rpcClient = new sdk.rpc.Server(STELLAR_CONFIG.getRpcUrl());
       const contract = new sdk.Contract(this.contractAddress);
       const sourceAccount = await rpcClient.getAccount(readAddress);
 
@@ -279,16 +263,12 @@ export class CoreFlowClient {
         fee: sdk.BASE_FEE,
         networkPassphrase: this.networkPassphrase,
       })
-        .addOperation(
-          sdk.Operation.invokeHostFunction({
-            func: contract.call('get_escrow', sdk.nativeToScVal(escrowId, { type: 'u32' })),
-          })
-        )
+        .addOperation(contract.call('get_escrow', sdk.nativeToScVal(escrowId, { type: 'u32' })))
         .setTimeout(300)
         .build();
 
       const simulated = await rpcClient.simulateTransaction(transaction);
-      if (sdk.SorobanRpc.Api.isSimulationError(simulated)) {
+      if (sdk.rpc.Api.isSimulationError(simulated)) {
         throw new Error(`Failed to get escrow: ${simulated.error}`);
       }
 
