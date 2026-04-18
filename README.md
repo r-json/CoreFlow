@@ -1,6 +1,8 @@
 <div align="center">
 
-# 🌊 CoreFlow
+<img src="public/logo.png" alt="CoreFlow Logo" width="120" />
+
+# CoreFlow
 
 ### On-Chain Accounts Payable for Remote Teams
 
