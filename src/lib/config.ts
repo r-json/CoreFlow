@@ -66,14 +66,15 @@ export const STELLAR_CONFIG = {
   freighter: {
     isConnected: async (): Promise<boolean> => {
       try {
-        return await isConnected();
+        const result = await isConnected();
+        return !!result.isConnected;
       } catch (e) {
         return false;
       }
     },
 
     connect: async (): Promise<string> => {
-      const connected = await isConnected();
+      const { isConnected: connected } = await isConnected();
       if (!connected) throw new Error('Freighter wallet not found');
       
       const result = await requestAccess();
@@ -85,7 +86,6 @@ export const STELLAR_CONFIG = {
 
     signTransaction: async (transactionXDR: string): Promise<string> => {
       const result = await signTransaction(transactionXDR, {
-        network: STELLAR_CONFIG.contract.network.toUpperCase() as any,
         networkPassphrase: STELLAR_CONFIG.getNetworkPassphrase(),
       });
 
@@ -97,7 +97,6 @@ export const STELLAR_CONFIG = {
 
     signMessage: async (message: string): Promise<string> => {
       const result = await signMessage(message, {
-        network: STELLAR_CONFIG.contract.network.toUpperCase() as any,
         networkPassphrase: STELLAR_CONFIG.getNetworkPassphrase(),
       });
 

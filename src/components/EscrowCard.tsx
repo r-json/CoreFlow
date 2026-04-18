@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from './Button';
 import { Alert } from './Alert';
-import { CheckCircle2, Clock, FileCheck, ShieldCheck, DollarSign } from 'lucide-react';
+import { CheckCircle2, FileCheck, ShieldCheck, DollarSign } from 'lucide-react';
 
 export interface EscrowData {
   id: number;

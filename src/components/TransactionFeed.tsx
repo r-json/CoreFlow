@@ -1,7 +1,7 @@
 'use client';
 
 import { ArrowUpRight, Check, Clock, FileText } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './Card';
+
 
 export interface Transaction {
   id: string;
