@@ -35,13 +35,12 @@ export const TransactionFeed = ({ transactions }: TransactionFeedProps) => {
         ) : (
           transactions.map((tx) => (
             <div key={tx.id} className="group flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all duration-200">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                tx.status === 'success' 
-                  ? 'bg-violet-500/20 text-violet-400 border border-violet-500/30' 
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${tx.status === 'success'
+                  ? 'bg-violet-500/20 text-violet-400 border border-violet-500/30'
                   : tx.status === 'pending'
-                  ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                  : 'bg-red-500/20 text-red-400 border border-red-500/30'
-              }`}>
+                    ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                    : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                }`}>
                 {getIcon(tx.type)}
               </div>
               <div className="flex-1 min-w-0">
@@ -52,7 +51,7 @@ export const TransactionFeed = ({ transactions }: TransactionFeedProps) => {
                   <span>{tx.timestamp}</span>
                 </div>
               </div>
-              <a 
+              <a
                 href={`https://stellar.expert/explorer/testnet/tx/${tx.hash}`}
                 target="_blank"
                 rel="noopener noreferrer"

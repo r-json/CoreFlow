@@ -28,7 +28,7 @@ export const STELLAR_CONFIG = {
   contract: {
     // Replace with deployed contract ID
     id: process.env.NEXT_PUBLIC_STELLAR_CONTRACT_ID || 'CAU3FQTWCAFJF4XFVRXSEPWRPBCVHDSRBSCPTM75HJFDZD5XQQQY47A4',
-    
+
     // Network selection
     network: (process.env.NEXT_PUBLIC_STELLAR_NETWORK as 'testnet' | 'public') || 'testnet',
   },
@@ -46,7 +46,7 @@ export const STELLAR_CONFIG = {
   addresses: {
     // Read-only address for simulations (Section 3)
     readAddress: process.env.NEXT_PUBLIC_STELLAR_READ_ADDRESS || '',
-    
+
     // Signing address (obtained from Freighter requestAccess)
     signingAddress: null as string | null,
   },
@@ -76,11 +76,11 @@ export const STELLAR_CONFIG = {
     connect: async (): Promise<string> => {
       const { isConnected: connected } = await isConnected();
       if (!connected) throw new Error('Freighter wallet not found');
-      
+
       const result = await requestAccess();
       if (!result) throw new Error('User declined access');
       if (typeof result === 'object' && result.error) throw new Error(result.error);
-      
+
       return typeof result === 'string' ? result : (result as any).address || (result as any).publicKey || String(result);
     },
 
@@ -91,7 +91,7 @@ export const STELLAR_CONFIG = {
 
       if (!result) throw new Error('User declined to sign');
       if (typeof result === 'object' && result.error) throw new Error(result.error);
-      
+
       return typeof result === 'string' ? result : (result as any).signedXDR || result;
     },
 
@@ -102,7 +102,7 @@ export const STELLAR_CONFIG = {
 
       if (!result) throw new Error('User declined to sign');
       if (typeof result === 'object' && result.error) throw new Error(result.error);
-      
+
       return typeof result === 'string' ? result : (result as any).signedMessage || result;
     },
   },

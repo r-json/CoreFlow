@@ -40,15 +40,15 @@ export const EscrowCard = ({
 
   const getStatusConfig = () => {
     switch (escrow.status) {
-      case 'pending_manager': 
+      case 'pending_manager':
         return { label: 'Awaiting Manager', color: 'bg-purple-500/10 text-purple-400 border-purple-500/20' };
-      case 'pending_finance': 
+      case 'pending_finance':
         return { label: 'Awaiting Finance', color: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' };
-      case 'ready': 
+      case 'ready':
         return { label: 'Ready for Release', color: 'bg-violet-500/10 text-violet-400 border-violet-500/20' };
-      case 'paid': 
+      case 'paid':
         return { label: 'Settled', color: 'bg-slate-500/10 text-slate-400 border-slate-500/20' };
-      default: 
+      default:
         return { label: 'Pending Hours', color: 'bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/20' };
     }
   };
@@ -110,7 +110,7 @@ export const EscrowCard = ({
               </span>
             </div>
             <p className="text-sm text-slate-400 flex items-center gap-2">
-              <span className="font-mono text-slate-500">Worker:</span> 
+              <span className="font-mono text-slate-500">Worker:</span>
               <span className="font-mono text-slate-300">{escrow.worker}</span>
               <span className="w-1 h-1 rounded-full bg-slate-600" />
               <span className="text-slate-500">{escrow.created_at}</span>
@@ -132,20 +132,18 @@ export const EscrowCard = ({
               return (
                 <div key={idx} className="flex items-center flex-1">
                   <div className="flex flex-col items-center">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-colors duration-500 ${
-                      step.completed 
-                        ? 'bg-violet-500/20 border-violet-500 text-violet-400' 
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-colors duration-500 ${step.completed
+                        ? 'bg-violet-500/20 border-violet-500 text-violet-400'
                         : 'bg-slate-800 border-slate-700 text-slate-500'
-                    }`}>
+                      }`}>
                       <Icon className="w-4 h-4" />
                     </div>
                     <span className="text-xs mt-1 font-medium text-slate-400">{step.label}</span>
                   </div>
                   {idx < steps.length - 1 && (
-                    <div className={`h-0.5 flex-1 mx-2 transition-colors duration-500 ${
-                      step.completed && steps[idx + 1].completed ? 'bg-violet-500/50' : 
-                      step.completed ? 'bg-violet-500/30' : 'bg-slate-700'
-                    }`} />
+                    <div className={`h-0.5 flex-1 mx-2 transition-colors duration-500 ${step.completed && steps[idx + 1].completed ? 'bg-violet-500/50' :
+                        step.completed ? 'bg-violet-500/30' : 'bg-slate-700'
+                      }`} />
                   )}
                 </div>
               );
@@ -161,7 +159,7 @@ export const EscrowCard = ({
         <div className="flex items-center justify-between border-t border-white/5 pt-4">
           <div className="flex gap-2">
             {escrow.status === 'pending_manager' && (
-              <Button 
+              <Button
                 onClick={() => handleAction('manager')}
                 disabled={!isConnected || isLoading}
                 className="bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white shadow-lg shadow-purple-500/20"
@@ -171,7 +169,7 @@ export const EscrowCard = ({
               </Button>
             )}
             {escrow.status === 'pending_finance' && (
-              <Button 
+              <Button
                 onClick={() => handleAction('finance')}
                 disabled={!isConnected || isLoading}
                 className="bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white shadow-lg shadow-indigo-500/20"
@@ -181,7 +179,7 @@ export const EscrowCard = ({
               </Button>
             )}
             {escrow.status === 'ready' && (
-              <Button 
+              <Button
                 onClick={() => handleAction('finalize')}
                 disabled={!isConnected || isLoading}
                 className="bg-gradient-to-r from-violet-500 to-violet-600 hover:from-violet-400 hover:to-violet-500 text-white shadow-lg shadow-violet-500/20"
@@ -197,7 +195,7 @@ export const EscrowCard = ({
             )}
           </div>
           {escrow.transaction_hash && (
-            <a 
+            <a
               href={`https://stellar.expert/explorer/testnet/tx/${escrow.transaction_hash}`}
               target="_blank"
               rel="noopener noreferrer"
