@@ -80,7 +80,7 @@ export const STELLAR_CONFIG = {
       if (!result) throw new Error('User declined access');
       if (typeof result === 'object' && result.error) throw new Error(result.error);
       
-      return typeof result === 'string' ? result : (result as any).publicKey || result;
+      return typeof result === 'string' ? result : (result as any).address || (result as any).publicKey || String(result);
     },
 
     signTransaction: async (transactionXDR: string): Promise<string> => {
