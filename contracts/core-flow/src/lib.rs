@@ -1,9 +1,10 @@
 #![no_std]
-use soroban_sdk::{contract, contractimpl, Address, Bytes, Env, Vec, Symbol, symbol_short};
+use soroban_sdk::{contract, contractimpl, contracttype, contracterror, Address, Bytes, Env, Vec, symbol_short};
 
 // ========== ENUMS & ERRORS ==========
 
-#[derive(Debug, Clone, Copy)]
+#[contracterror]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]
 pub enum ContractError {
     AlreadyApproved = 1,
@@ -15,7 +16,8 @@ pub enum ContractError {
     InvalidAmount = 7,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[contracttype]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]
 pub enum PaymentStatus {
     Pending = 0,
@@ -26,12 +28,12 @@ pub enum PaymentStatus {
 
 // ========== STRUCTS ==========
 
-#[derive(Clone, Debug)]
+#[contracttype]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PaymentSchedule {
     pub id: u32,
     pub worker: Address,
     pub amount: i128,
-    pub currency: Symbol,
     pub start_date: u64,
     pub end_date: u64,
     pub hours_logged: i128,
@@ -39,13 +41,23 @@ pub struct PaymentSchedule {
     pub status: PaymentStatus,
 }
 
-#[derive(Clone, Debug)]
+#[contracttype]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CoreFlowEscrow {
     pub manager: Address,
     pub finance_approver: Address,
     pub payments: Vec<PaymentSchedule>,
     pub manager_approved: bool,
     pub finance_approved: bool,
+}
+
+// ========== STORAGE KEYS ==========
+
+#[contracttype]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum DataKey {
+    EscrowCount,
+    Escrow(u32),
 }
 
 // ========== CONTRACT ==========
@@ -61,14 +73,14 @@ impl CoreFlowContract {
         manager: Address,
         finance_approver: Address,
         payments: Vec<PaymentSchedule>,
-    ) -> Result<u32, u32> {
+    ) -> Result<u32, ContractError> {
         manager.require_auth();
 
         if payments.len() == 0 {
-            return Err(ContractError::InvalidAmount as u32);
+            return Err(ContractError::InvalidAmount);
         }
 
-        let escrow_id: u32 = env.storage().instance().get(&symbol_short!("escrow_cnt"))
+        let escrow_id: u32 = env.storage().instance().get(&DataKey::EscrowCount)
             .unwrap_or(0u32) + 1;
 
         let escrow = CoreFlowEscrow {
@@ -79,9 +91,8 @@ impl CoreFlowContract {
             finance_approved: false,
         };
 
-        let key = Symbol::new(&env, &format!("escrow_{}", escrow_id));
-        env.storage().instance().set(&key, &escrow);
-        env.storage().instance().set(&symbol_short!("escrow_cnt"), &escrow_id);
+        env.storage().instance().set(&DataKey::Escrow(escrow_id), &escrow);
+        env.storage().instance().set(&DataKey::EscrowCount, &escrow_id);
 
         Ok(escrow_id)
     }
@@ -93,37 +104,36 @@ impl CoreFlowContract {
         payment_id: u32,
         hours_logged: i128,
         signature: Bytes,
-    ) -> Result<(), u32> {
-        // Validate payment_id bounds
-        let key = Symbol::new(&env, &format!("escrow_{}", escrow_id));
-        let mut escrow: CoreFlowEscrow = env.storage().instance().get(&key)
-            .ok_or(ContractError::InvalidPaymentId as u32)?;
+    ) -> Result<(), ContractError> {
+        // Validate escrow exists
+        let mut escrow: CoreFlowEscrow = env.storage().instance().get(&DataKey::Escrow(escrow_id))
+            .ok_or(ContractError::InvalidPaymentId)?;
 
-        if (payment_id as usize) >= escrow.payments.len() {
-            return Err(ContractError::InvalidPaymentId as u32);
+        if (payment_id as u32) >= escrow.payments.len() {
+            return Err(ContractError::InvalidPaymentId);
         }
 
         // Simple oracle signature validation (in production, use Ed25519 verify)
         // For this demo, we verify signature length
         if signature.len() < 64 {
-            return Err(ContractError::InvalidOracleSignature as u32);
+            return Err(ContractError::InvalidOracleSignature);
         }
 
         // Update the payment schedule with hours logged
-        let mut payment = escrow.payments.get(payment_id as usize).unwrap();
+        let mut payment = escrow.payments.get(payment_id).unwrap();
         payment.hours_logged = hours_logged;
 
         let mut updated_payments = Vec::new(&env);
-        for (i, p) in escrow.payments.iter().enumerate() {
-            if i == payment_id as usize {
+        for i in 0..escrow.payments.len() {
+            if i == payment_id {
                 updated_payments.push_back(payment.clone());
             } else {
-                updated_payments.push_back(p);
+                updated_payments.push_back(escrow.payments.get(i).unwrap());
             }
         }
 
         escrow.payments = updated_payments;
-        env.storage().instance().set(&key, &escrow);
+        env.storage().instance().set(&DataKey::Escrow(escrow_id), &escrow);
 
         Ok(())
     }
@@ -132,19 +142,18 @@ impl CoreFlowContract {
     pub fn manager_approve(
         env: Env,
         escrow_id: u32,
-    ) -> Result<(), u32> {
-        let key = Symbol::new(&env, &format!("escrow_{}", escrow_id));
-        let mut escrow: CoreFlowEscrow = env.storage().instance().get(&key)
-            .ok_or(ContractError::InvalidPaymentId as u32)?;
+    ) -> Result<(), ContractError> {
+        let mut escrow: CoreFlowEscrow = env.storage().instance().get(&DataKey::Escrow(escrow_id))
+            .ok_or(ContractError::InvalidPaymentId)?;
 
         escrow.manager.require_auth();
 
         if escrow.manager_approved {
-            return Err(ContractError::AlreadyApproved as u32);
+            return Err(ContractError::AlreadyApproved);
         }
 
         escrow.manager_approved = true;
-        env.storage().instance().set(&key, &escrow);
+        env.storage().instance().set(&DataKey::Escrow(escrow_id), &escrow);
 
         Ok(())
     }
@@ -153,19 +162,18 @@ impl CoreFlowContract {
     pub fn finance_approve(
         env: Env,
         escrow_id: u32,
-    ) -> Result<(), u32> {
-        let key = Symbol::new(&env, &format!("escrow_{}", escrow_id));
-        let mut escrow: CoreFlowEscrow = env.storage().instance().get(&key)
-            .ok_or(ContractError::InvalidPaymentId as u32)?;
+    ) -> Result<(), ContractError> {
+        let mut escrow: CoreFlowEscrow = env.storage().instance().get(&DataKey::Escrow(escrow_id))
+            .ok_or(ContractError::InvalidPaymentId)?;
 
         escrow.finance_approver.require_auth();
 
         if escrow.finance_approved {
-            return Err(ContractError::AlreadyApproved as u32);
+            return Err(ContractError::AlreadyApproved);
         }
 
         escrow.finance_approved = true;
-        env.storage().instance().set(&key, &escrow);
+        env.storage().instance().set(&DataKey::Escrow(escrow_id), &escrow);
 
         Ok(())
     }
@@ -174,27 +182,26 @@ impl CoreFlowContract {
     pub fn finalize_payment(
         env: Env,
         escrow_id: u32,
-    ) -> Result<Vec<PaymentSchedule>, u32> {
-        let key = Symbol::new(&env, &format!("escrow_{}", escrow_id));
-        let mut escrow: CoreFlowEscrow = env.storage().instance().get(&key)
-            .ok_or(ContractError::InvalidPaymentId as u32)?;
+    ) -> Result<Vec<PaymentSchedule>, ContractError> {
+        let mut escrow: CoreFlowEscrow = env.storage().instance().get(&DataKey::Escrow(escrow_id))
+            .ok_or(ContractError::InvalidPaymentId)?;
 
         escrow.manager.require_auth();
 
         if !escrow.manager_approved || !escrow.finance_approved {
-            return Err(ContractError::InsufficientApprovals as u32);
+            return Err(ContractError::InsufficientApprovals);
         }
 
         // Mark all payments as finalized
         let mut finalized_payments = Vec::new(&env);
-        for payment in escrow.payments.iter() {
-            let mut p = payment.clone();
+        for i in 0..escrow.payments.len() {
+            let mut p = escrow.payments.get(i).unwrap();
             p.status = PaymentStatus::Finalized;
             finalized_payments.push_back(p);
         }
 
         escrow.payments = finalized_payments.clone();
-        env.storage().instance().set(&key, &escrow);
+        env.storage().instance().set(&DataKey::Escrow(escrow_id), &escrow);
 
         Ok(finalized_payments)
     }
@@ -203,9 +210,11 @@ impl CoreFlowContract {
     pub fn get_escrow(
         env: Env,
         escrow_id: u32,
-    ) -> Result<CoreFlowEscrow, u32> {
-        let key = Symbol::new(&env, &format!("escrow_{}", escrow_id));
-        env.storage().instance().get(&key)
-            .ok_or(ContractError::InvalidPaymentId as u32)
+    ) -> Result<CoreFlowEscrow, ContractError> {
+        env.storage().instance().get(&DataKey::Escrow(escrow_id))
+            .ok_or(ContractError::InvalidPaymentId)
     }
 }
+
+#[cfg(test)]
+mod test;
