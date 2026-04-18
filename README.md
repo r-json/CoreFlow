@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="public/logo.png" alt="CoreFlow Logo" width="120" />
+<img src="public/logo-readme.png" alt="CoreFlow Logo" width="250" />
 
 # CoreFlow
 
