@@ -28,7 +28,7 @@ export const TransactionFeed = ({ transactions }: TransactionFeedProps) => {
   };
 
   return (
-    <div className="rounded-2xl border border-white/5 bg-gradient-to-br from-slate-900/80 via-slate-900/60 to-violet-900/30 backdrop-blur-xl p-4 shadow-2xl shadow-black/20">
+    <div className="rounded-2xl border border-violet-500/30 bg-gradient-to-br from-violet-950/40 via-slate-900/50 to-purple-900/30 backdrop-blur-xl p-4 shadow-2xl shadow-violet-500/15">
       <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1 custom-scrollbar">
         {transactions.length === 0 ? (
           <p className="text-sm text-slate-500 text-center py-8">No transactions yet</p>

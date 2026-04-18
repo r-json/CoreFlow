@@ -226,9 +226,9 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-emerald-950 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-orange-950/30">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-violet-500/20 bg-gradient-to-r from-slate-950/80 via-slate-900/60 to-violet-950/60 backdrop-blur-xl shadow-lg shadow-black/20">
+      <header className="sticky top-0 z-50 border-b border-violet-500/20 bg-gradient-to-r from-slate-950/80 via-slate-900/60 to-orange-950/50 backdrop-blur-xl shadow-lg shadow-black/20">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
@@ -303,7 +303,7 @@ export default function DashboardPage() {
 
           {/* Activity Sidebar */}
           <div>
-            <h2 className="text-lg font-semibold tracking-tight text-slate-100 mb-4">Activity</h2>
+            <h2 className="text-lg font-semibold tracking-tight bg-gradient-to-r from-violet-400 to-purple-400 bg-clip-text text-transparent mb-4">Activity</h2>
             <TransactionFeed transactions={transactions} />
           </div>
         </div>
