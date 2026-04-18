@@ -21,10 +21,10 @@ html {
 
 body {
   @apply text-slate-100;
-  background: #030712;
+  background: #0f0a1a;
   background-image: 
-    radial-gradient(circle at 20% 30%, rgba(16, 185, 129, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 80% 70%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 20% 30%, rgba(167, 139, 250, 0.2) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
     repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 8px);
   background-attachment: fixed;
   color: rgb(241 245 250);
@@ -82,10 +82,10 @@ a {
 
 @keyframes pulse-glow {
   0%, 100% {
-    opacity: 0.4;
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
   }
   50% {
-    opacity: 0.7;
+    box-shadow: 0 0 30px rgba(167, 139, 250, 0.5);
   }
 }
 
@@ -147,7 +147,7 @@ a {
 }
 
 .card-hover:hover {
-  @apply transform hover:scale-[1.02] shadow-2xl shadow-emerald-500/10;
+  @apply transform hover:scale-[1.02] shadow-2xl shadow-violet-500/20;
 }
 
 /* Glassmorphism */

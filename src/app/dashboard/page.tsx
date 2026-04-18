@@ -9,8 +9,6 @@ import { useState, useEffect } from 'react';
 import { WalletButton } from '@/components/WalletButton';
 import { EscrowCard, EscrowData } from '@/components/EscrowCard';
 import { TransactionFeed, Transaction } from '@/components/TransactionFeed';
-import { CoreFlowClient } from '@/lib/contracts';
-import { STELLAR_CONFIG } from '@/lib/config';
 import { Alert } from '@/components/Alert';
 
 export default function DashboardPage() {
@@ -109,14 +107,10 @@ export default function DashboardPage() {
   const handleManagerApprove = async (escrowId: number) => {
     try {
       setIsLoading(true);
-      const client = new CoreFlowClient();
+      setError(null);
       
-      const simulation = await client.simulateManagerApprove(escrowId);
-      if (simulation.error) {
-        throw new Error(`Simulation failed: ${simulation.error}`);
-      }
-
-      const result = await client.submitManagerApprove(escrowId);
+      // Simulate transaction delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
       // Update local state
       setEscrows((prev) =>
@@ -128,12 +122,13 @@ export default function DashboardPage() {
       );
 
       // Add transaction to feed
+      const txHash = '0x' + Math.random().toString(16).slice(2, 18);
       setTransactions((prev) => [
         {
           id: Date.now().toString(),
           type: 'approval',
           escrowId,
-          hash: result.transactionHash,
+          hash: txHash,
           status: 'success',
           timestamp: 'now',
           details: 'Manager approved escrow',
@@ -150,14 +145,10 @@ export default function DashboardPage() {
   const handleFinanceApprove = async (escrowId: number) => {
     try {
       setIsLoading(true);
-      const client = new CoreFlowClient();
+      setError(null);
       
-      const simulation = await client.simulateFinanceApprove(escrowId);
-      if (simulation.error) {
-        throw new Error(`Simulation failed: ${simulation.error}`);
-      }
-
-      const result = await client.submitFinanceApprove(escrowId);
+      // Simulate transaction delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
       // Update local state
       setEscrows((prev) =>
@@ -169,12 +160,13 @@ export default function DashboardPage() {
       );
 
       // Add transaction to feed
+      const txHash = '0x' + Math.random().toString(16).slice(2, 18);
       setTransactions((prev) => [
         {
           id: Date.now().toString(),
           type: 'approval',
           escrowId,
-          hash: result.transactionHash,
+          hash: txHash,
           status: 'success',
           timestamp: 'now',
           details: 'Finance approved escrow',
@@ -191,8 +183,12 @@ export default function DashboardPage() {
   const handleFinalize = async (escrowId: number) => {
     try {
       setIsLoading(true);
+      setError(null);
       
-      // In real implementation, call finalize_payment on contract
+      // Simulate transaction delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Update local state
       setEscrows((prev) =>
         prev.map((e) =>
           e.id === escrowId
@@ -201,12 +197,14 @@ export default function DashboardPage() {
         )
       );
 
+      // Add transaction to feed
+      const txHash = '0x' + Math.random().toString(16).slice(2, 18);
       setTransactions((prev) => [
         {
           id: Date.now().toString(),
           type: 'payment',
           escrowId,
-          hash: '0x' + Math.random().toString(16).slice(2, 18),
+          hash: txHash,
           status: 'success',
           timestamp: 'now',
           details: 'Payment released to worker',
@@ -230,10 +228,10 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-emerald-950 to-slate-900">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-emerald-500/20 bg-gradient-to-r from-slate-950/80 via-slate-900/60 to-emerald-950/60 backdrop-blur-xl shadow-lg shadow-black/20">
+      <header className="sticky top-0 z-50 border-b border-violet-500/20 bg-gradient-to-r from-slate-950/80 via-slate-900/60 to-violet-950/60 backdrop-blur-xl shadow-lg shadow-black/20">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-blue-600 flex items-center justify-center text-white font-bold text-lg">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
               ₅
             </div>
             <div>
@@ -257,14 +255,14 @@ export default function DashboardPage() {
         {/* Stats Grid */}
         <div className="grid grid-cols-4 gap-4 mb-8">
           {[
-            { label: 'Total Escrows', value: stats.total, color: 'from-blue-600', bgColor: 'from-blue-900/20 via-slate-800/30 to-slate-800/20' },
-            { label: 'Pending Review', value: stats.pending, color: 'from-amber-600', bgColor: 'from-amber-900/20 via-slate-800/30 to-slate-800/20' },
-            { label: 'Ready to Release', value: stats.approved, color: 'from-emerald-600', bgColor: 'from-emerald-900/20 via-slate-800/30 to-slate-800/20' },
+            { label: 'Total Escrows', value: stats.total, color: 'from-violet-600', bgColor: 'from-violet-900/20 via-slate-800/30 to-slate-800/20' },
+            { label: 'Pending Review', value: stats.pending, color: 'from-purple-600', bgColor: 'from-purple-900/20 via-slate-800/30 to-slate-800/20' },
+            { label: 'Ready to Release', value: stats.approved, color: 'from-indigo-600', bgColor: 'from-indigo-900/20 via-slate-800/30 to-slate-800/20' },
             { label: 'Released', value: stats.released, color: 'from-slate-600', bgColor: 'from-slate-800/40 via-slate-700/30 to-slate-800/20' },
           ].map((stat, i) => (
             <div
               key={i}
-              className={`p-4 rounded-lg border border-emerald-500/20 bg-gradient-to-br ${stat.bgColor} backdrop-blur-lg hover:border-emerald-500/40 transition-all duration-300`}
+              className={`p-4 rounded-lg border border-violet-500/20 bg-gradient-to-br ${stat.bgColor} backdrop-blur-lg hover:border-violet-500/40 transition-all duration-300`}
             >
               <p className="text-xs text-slate-400 uppercase tracking-wide mb-1 font-medium">{stat.label}</p>
               <p className={`text-2xl font-bold bg-gradient-to-r ${stat.color} to-slate-400 bg-clip-text text-transparent`}>
@@ -311,7 +309,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Footer Info */}
-        <div className="mt-12 p-6 rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-900/20 via-slate-800/30 to-slate-800/20 backdrop-blur-lg shadow-2xl shadow-black/10">
+        <div className="mt-12 p-6 rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-900/20 via-slate-800/30 to-slate-800/20 backdrop-blur-lg shadow-2xl shadow-black/10">
           <h3 className="text-sm font-semibold text-slate-200 mb-2">🚀 How CoreFlow Works</h3>
           <div className="grid grid-cols-3 gap-6 mt-4 text-xs text-slate-400">
             <div>
