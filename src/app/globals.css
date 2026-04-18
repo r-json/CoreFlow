@@ -1,0 +1,281 @@
+/**
+ * Global Styles - CoreFlow Dashboard
+ * Tailwind CSS + Custom Utilities
+ * Dark Mode Enabled
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* Root Configuration */
+html {
+  scroll-behavior: smooth;
+  --background: 15 23 42;
+  --foreground: 241 245 250;
+}
+
+body {
+  @apply text-slate-100;
+  background: #030712;
+  background-image: 
+    radial-gradient(circle at 20% 30%, rgba(16, 185, 129, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+    repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 8px);
+  background-attachment: fixed;
+  color: rgb(241 245 250);
+  min-height: 100vh;
+}
+
+* {
+  @apply border-slate-700/30;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  @apply text-slate-100;
+}
+
+p {
+  @apply text-slate-300;
+}
+
+a {
+  @apply text-emerald-400 hover:text-emerald-300 transition-colors;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slide-in {
+  animation: slideInFromLeft 0.4s ease-out;
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.2) 20%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Card Hover & Elevation */
+.card-hover {
+  @apply transition-all duration-300 ease-out;
+}
+
+.card-hover:hover {
+  @apply transform hover:scale-[1.02] shadow-2xl shadow-emerald-500/10;
+}
+
+/* Glassmorphism */
+.glass {
+  @apply backdrop-blur-xl bg-slate-900/50 border border-slate-700/30;
+}
+
+.glass-alt {
+  @apply backdrop-blur-md bg-slate-800/40 border border-slate-700/20;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  @apply w-2;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-slate-900;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-700 rounded-full hover:bg-slate-600;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  @apply w-1.5;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-slate-700/50 rounded-full hover:bg-slate-600/70;
+}
+
+/* Utility Classes */
+.text-gradient {
+  @apply bg-gradient-to-r from-emerald-400 to-blue-400 bg-clip-text text-transparent;
+}
+
+.border-gradient {
+  position: relative;
+}
+
+.border-gradient::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.3), rgba(59, 130, 246, 0.3));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Form Elements */
+input,
+textarea,
+select {
+  @apply bg-slate-900/50 border border-slate-700/50 text-slate-100 rounded-lg px-4 py-2 focus:outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 transition-all;
+}
+
+input::placeholder {
+  @apply text-slate-500;
+}
+
+/* Buttons */
+button {
+  @apply transition-all duration-200;
+}
+
+button:active {
+  @apply scale-95;
+}
+
+button:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+/* Cards */
+.card {
+  @apply rounded-lg border border-slate-700/50 bg-slate-900/50 backdrop-blur-sm p-6;
+}
+
+.card-hover {
+  @apply hover:border-slate-600/50 hover:bg-slate-900/70 transition-all duration-300;
+}
+
+/* Status Badges */
+.badge-pending {
+  @apply px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20;
+}
+
+.badge-success {
+  @apply px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20;
+}
+
+.badge-error {
+  @apply px-3 py-1 rounded-full text-xs font-semibold bg-red-500/10 text-red-400 border border-red-500/20;
+}
+
+.badge-info {
+  @apply px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20;
+}
+
+/* Loading State */
+.loading {
+  @apply pointer-events-none opacity-50;
+}
+
+/* Focus States */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-slate-900;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  body {
+    @apply text-sm;
+  }
+
+  h1 {
+    @apply text-2xl;
+  }
+
+  h2 {
+    @apply text-xl;
+  }
+}
