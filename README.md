@@ -44,15 +44,17 @@
 
 ---
 
-## 🔴 The Problem
+## The Problem
 
-Paying remote workers across borders is **slow, expensive, and opaque**:
+The shift towards global remote work has exposed critical inefficiencies in traditional B2B cross-border payment infrastructure. While the global cross-border payment market is projected to reach $320 trillion by 2032 (The Payments Association, 2024), the systems supporting these transactions remain slow, costly, and opaque. 
 
-- 💸 Traditional wire transfers take 3–5 business days and charge high fees
-- 🔒 Finance teams lack transparent audit trails for contractor payments
-- ⏳ Manual approval chains create bottlenecks and delays
-- 🤷 Workers have zero visibility into when (or if) they'll get paid
-- 📝 Time-tracking verification relies on trust, not proof
+Organizations paying international contractors face three primary challenges:
+
+- **High Costs and Processing Delays:** Traditional international transfers rely on complex correspondent banking chains. This results in processing times of 3 to 5 business days and transaction costs frequently exceeding 3-6% of the principal amount (ACI Worldwide, 2024).
+- **Operational Friction and Manual Errors:** Manual invoice processing and approval chains lead to high rates of non-straight-through processing (STP). Resolving these administrative delays and repair errors costs organizations between $15 and $40 per transaction (SRM, 2024).
+- **Lack of Transparency and Trust:** Traditional workflows lack immutable audit trails, leaving finance teams vulnerable to invoice fraud and remote workers with zero visibility into payment statuses. Alarmingly, 79% of surveyed organizations report experiencing B2B payment fraud (Convera, 2024).
+
+These structural inefficiencies necessitate a shift toward decentralized, automated escrow systems that guarantee cryptographic proof of work and near-instant settlement.
 
 ---
 
@@ -569,8 +571,15 @@ npm run dev
 
 ---
 
-## 📚 References
+## References
 
+### Research Studies
+- ACI Worldwide. (2024). *Cross-border payments: The journey to speed, transparency, and lower costs*.
+- Convera. (2024). *B2B cross-border payments report: Navigating fraud and compliance*.
+- SRM (Strategic Resource Management). (2024). *The hidden costs of cross-border payments and repair fees*.
+- The Payments Association. (2024). *The future of cross-border payments: Projected market growth to 2032*.
+
+### Technical Documentation
 | Resource | Link |
 |---|---|
 | Stellar Freighter Integration Guide | [GitHub](https://github.com/armlynobinguar/Stellar-Bootcamp-2026/blob/main/STELLAR_FREIGHTER_INTEGRATION_GUIDE.md) |
