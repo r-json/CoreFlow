@@ -5,6 +5,8 @@
  * Section 4: Configuration Module
  */
 
+import { isConnected, requestAccess, signTransaction, signMessage } from '@stellar/freighter-api';
+
 export const STELLAR_CONFIG = {
   // Network configuration
   network: {
@@ -63,50 +65,46 @@ export const STELLAR_CONFIG = {
   // Freighter interaction helpers
   freighter: {
     isConnected: async (): Promise<boolean> => {
-      if (typeof window === 'undefined') return false;
-      return (window as any).freighter?.isConnected?.() || false;
+      try {
+        return await isConnected();
+      } catch (e) {
+        return false;
+      }
     },
 
     connect: async (): Promise<string> => {
-      if (typeof window === 'undefined') throw new Error('Window not available');
+      const connected = await isConnected();
+      if (!connected) throw new Error('Freighter wallet not found');
       
-      const freighter = (window as any).freighter;
-      if (!freighter) throw new Error('Freighter wallet not found');
+      const result = await requestAccess();
+      if (!result) throw new Error('User declined access');
+      if (typeof result === 'object' && result.error) throw new Error(result.error);
       
-      const result = await freighter.requestAccess({
-        network: STELLAR_CONFIG.getNetworkPassphrase(),
-      });
-
-      if (result.error) throw new Error(result.error);
-      return result.publicKey;
+      return typeof result === 'string' ? result : (result as any).publicKey || result;
     },
 
     signTransaction: async (transactionXDR: string): Promise<string> => {
-      if (typeof window === 'undefined') throw new Error('Window not available');
-      
-      const freighter = (window as any).freighter;
-      if (!freighter) throw new Error('Freighter wallet not found');
-
-      const result = await freighter.signTransaction(transactionXDR, {
-        network: STELLAR_CONFIG.getNetworkPassphrase(),
+      const result = await signTransaction(transactionXDR, {
+        network: STELLAR_CONFIG.contract.network.toUpperCase() as any,
+        networkPassphrase: STELLAR_CONFIG.getNetworkPassphrase(),
       });
 
-      if (result.error) throw new Error(result.error);
-      return result.signedXDR;
+      if (!result) throw new Error('User declined to sign');
+      if (typeof result === 'object' && result.error) throw new Error(result.error);
+      
+      return typeof result === 'string' ? result : (result as any).signedXDR || result;
     },
 
     signMessage: async (message: string): Promise<string> => {
-      if (typeof window === 'undefined') throw new Error('Window not available');
-      
-      const freighter = (window as any).freighter;
-      if (!freighter) throw new Error('Freighter wallet not found');
-
-      const result = await freighter.signMessage(message, {
-        network: STELLAR_CONFIG.getNetworkPassphrase(),
+      const result = await signMessage(message, {
+        network: STELLAR_CONFIG.contract.network.toUpperCase() as any,
+        networkPassphrase: STELLAR_CONFIG.getNetworkPassphrase(),
       });
 
-      if (result.error) throw new Error(result.error);
-      return result.signedMessage;
+      if (!result) throw new Error('User declined to sign');
+      if (typeof result === 'object' && result.error) throw new Error(result.error);
+      
+      return typeof result === 'string' ? result : (result as any).signedMessage || result;
     },
   },
 };
