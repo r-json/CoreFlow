@@ -16,7 +16,7 @@ export default function DashboardPage() {
   const [escrows, setEscrows] = useState<EscrowData[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isConnected, setIsConnected] = useState(false);
-  const [signingAddress, setSigningAddress] = useState<string | null>(null);
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -95,13 +95,11 @@ export default function DashboardPage() {
   }, []);
 
   const handleWalletConnect = (address: string) => {
-    setSigningAddress(address);
     setIsConnected(true);
     setError(null);
   };
 
   const handleWalletDisconnect = () => {
-    setSigningAddress(null);
     setIsConnected(false);
   };
 
