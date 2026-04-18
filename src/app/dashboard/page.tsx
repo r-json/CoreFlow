@@ -10,6 +10,7 @@ import { WalletButton } from '@/components/WalletButton';
 import { EscrowCard, EscrowData } from '@/components/EscrowCard';
 import { TransactionFeed, Transaction } from '@/components/TransactionFeed';
 import { Alert } from '@/components/Alert';
+import Image from 'next/image';
 
 export default function DashboardPage() {
   const [escrows, setEscrows] = useState<EscrowData[]>([]);
@@ -231,9 +232,7 @@ export default function DashboardPage() {
       <header className="sticky top-0 z-50 border-b border-violet-500/20 bg-gradient-to-r from-slate-950/80 via-slate-900/60 to-orange-950/50 backdrop-blur-xl shadow-lg shadow-black/20">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
-              ₅
-            </div>
+            <Image src="/logo.svg" alt="CoreFlow Logo" width={40} height={40} className="w-10 h-10 object-contain" />
             <div>
               <h1 className="text-xl font-bold tracking-tight text-slate-100">CoreFlow</h1>
               <p className="text-xs text-slate-500">On-Chain Accounts Payable</p>
