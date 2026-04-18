@@ -41,15 +41,15 @@ export const EscrowCard = ({
   const getStatusConfig = () => {
     switch (escrow.status) {
       case 'pending_manager': 
-        return { label: 'Awaiting Manager', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20' };
+        return { label: 'Awaiting Manager', color: 'bg-purple-500/10 text-purple-400 border-purple-500/20' };
       case 'pending_finance': 
-        return { label: 'Awaiting Finance', color: 'bg-blue-500/10 text-blue-400 border-blue-500/20' };
+        return { label: 'Awaiting Finance', color: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' };
       case 'ready': 
-        return { label: 'Ready for Release', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' };
+        return { label: 'Ready for Release', color: 'bg-violet-500/10 text-violet-400 border-violet-500/20' };
       case 'paid': 
         return { label: 'Settled', color: 'bg-slate-500/10 text-slate-400 border-slate-500/20' };
       default: 
-        return { label: 'Pending Hours', color: 'bg-purple-500/10 text-purple-400 border-purple-500/20' };
+        return { label: 'Pending Hours', color: 'bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/20' };
     }
   };
 
@@ -91,10 +91,10 @@ export const EscrowCard = ({
   };
 
   return (
-    <div className="card-hover relative overflow-hidden rounded-2xl border border-white/5 bg-gradient-to-br from-slate-900/90 via-slate-900/80 to-slate-800/80 backdrop-blur-xl p-6 shadow-2xl shadow-black/20">
+    <div className="card-hover relative overflow-hidden rounded-2xl border border-white/5 bg-gradient-to-br from-slate-900/90 via-slate-900/80 to-violet-900/40 backdrop-blur-xl p-6 shadow-2xl shadow-black/20">
       {/* Subtle glow behind active cards */}
       {escrow.status === 'ready' && (
-        <div className="absolute -top-20 -right-20 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl animate-pulse-glow" />
+        <div className="absolute -top-20 -right-20 w-40 h-40 bg-violet-500/10 rounded-full blur-3xl animate-pulse-glow" />
       )}
 
       <div className="relative z-10">
@@ -134,7 +134,7 @@ export const EscrowCard = ({
                   <div className="flex flex-col items-center">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-colors duration-500 ${
                       step.completed 
-                        ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' 
+                        ? 'bg-violet-500/20 border-violet-500 text-violet-400' 
                         : 'bg-slate-800 border-slate-700 text-slate-500'
                     }`}>
                       <Icon className="w-4 h-4" />
@@ -143,8 +143,8 @@ export const EscrowCard = ({
                   </div>
                   {idx < steps.length - 1 && (
                     <div className={`h-0.5 flex-1 mx-2 transition-colors duration-500 ${
-                      step.completed && steps[idx + 1].completed ? 'bg-emerald-500/50' : 
-                      step.completed ? 'bg-emerald-500/30' : 'bg-slate-700'
+                      step.completed && steps[idx + 1].completed ? 'bg-violet-500/50' : 
+                      step.completed ? 'bg-violet-500/30' : 'bg-slate-700'
                     }`} />
                   )}
                 </div>
@@ -164,7 +164,7 @@ export const EscrowCard = ({
               <Button 
                 onClick={() => handleAction('manager')}
                 disabled={!isConnected || isLoading}
-                className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white shadow-lg shadow-blue-500/20"
+                className="bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white shadow-lg shadow-purple-500/20"
               >
                 <ShieldCheck className="w-4 h-4 mr-2" />
                 Manager Approve
@@ -174,7 +174,7 @@ export const EscrowCard = ({
               <Button 
                 onClick={() => handleAction('finance')}
                 disabled={!isConnected || isLoading}
-                className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white shadow-lg shadow-emerald-500/20"
+                className="bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white shadow-lg shadow-indigo-500/20"
               >
                 <CheckCircle2 className="w-4 h-4 mr-2" />
                 Finance Approve
@@ -184,7 +184,7 @@ export const EscrowCard = ({
               <Button 
                 onClick={() => handleAction('finalize')}
                 disabled={!isConnected || isLoading}
-                className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white shadow-lg shadow-teal-500/20"
+                className="bg-gradient-to-r from-violet-500 to-violet-600 hover:from-violet-400 hover:to-violet-500 text-white shadow-lg shadow-violet-500/20"
               >
                 <DollarSign className="w-4 h-4 mr-2" />
                 Release Payment

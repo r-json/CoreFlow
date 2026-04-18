@@ -60,7 +60,7 @@ export const WalletButton = ({ onConnect, onDisconnect }: WalletButtonProps) => 
               href="https://freighter.app/" 
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs text-emerald-400 hover:text-emerald-300 underline"
+              className="text-xs text-slate-500 hover:text-violet-400 underline"
             >
               Install Freighter
             </a>
@@ -69,13 +69,13 @@ export const WalletButton = ({ onConnect, onDisconnect }: WalletButtonProps) => 
       )}
       
       {isConnected && address ? (
-        <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-slate-800 to-slate-900 border border-emerald-500/30 hover:border-emerald-500/50 transition-all shadow-lg shadow-black/20 hover:shadow-emerald-500/10">
-          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+        <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-slate-800 to-slate-900 border border-violet-500/30 hover:border-violet-500/50 transition-all shadow-lg shadow-black/20 hover:shadow-violet-500/10">
+          <div className="w-2 h-2 rounded-full bg-violet-400 animate-pulse" />
           <span className="text-sm font-medium text-slate-200">
             {address.slice(0, 6)}...{address.slice(-4)}
           </span>
           <span className="w-1 h-1 rounded-full bg-slate-600" />
-          <span className="text-xs text-emerald-400 font-medium">Testnet</span>
+          <span className="text-xs text-violet-400 font-medium">Testnet</span>
           <button
             onClick={handleDisconnect}
             className="ml-2 text-xs text-slate-400 hover:text-slate-200 transition-colors"
@@ -89,7 +89,7 @@ export const WalletButton = ({ onConnect, onDisconnect }: WalletButtonProps) => 
           isLoading={isLoading}
           disabled={isLoading}
           title="Install Freighter wallet from https://freighter.app if not already installed"
-          className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400"
+          className="bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-500 hover:to-violet-400"
         >
           Connect Freighter
         </Button>

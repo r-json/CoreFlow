@@ -28,7 +28,7 @@ export const TransactionFeed = ({ transactions }: TransactionFeedProps) => {
   };
 
   return (
-    <div className="rounded-2xl border border-white/5 bg-gradient-to-br from-slate-900/80 via-slate-900/60 to-slate-800/60 backdrop-blur-xl p-4 shadow-2xl shadow-black/20">
+    <div className="rounded-2xl border border-white/5 bg-gradient-to-br from-slate-900/80 via-slate-900/60 to-violet-900/30 backdrop-blur-xl p-4 shadow-2xl shadow-black/20">
       <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1 custom-scrollbar">
         {transactions.length === 0 ? (
           <p className="text-sm text-slate-500 text-center py-8">No transactions yet</p>
@@ -37,9 +37,9 @@ export const TransactionFeed = ({ transactions }: TransactionFeedProps) => {
             <div key={tx.id} className="group flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all duration-200">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                 tx.status === 'success' 
-                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
+                  ? 'bg-violet-500/20 text-violet-400 border border-violet-500/30' 
                   : tx.status === 'pending'
-                  ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                  ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
                   : 'bg-red-500/20 text-red-400 border border-red-500/30'
               }`}>
                 {getIcon(tx.type)}
@@ -58,7 +58,7 @@ export const TransactionFeed = ({ transactions }: TransactionFeedProps) => {
                 rel="noopener noreferrer"
                 className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
               >
-                <ArrowUpRight className="w-4 h-4 text-slate-500 hover:text-emerald-400" />
+                <ArrowUpRight className="w-4 h-4 text-slate-500 hover:text-violet-400" />
               </a>
             </div>
           ))
