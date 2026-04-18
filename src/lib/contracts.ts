@@ -64,7 +64,7 @@ export class CoreFlowClient {
     try {
       const sdk = await this.loadSDK();
       const readAddress = STELLAR_CONFIG.addresses.readAddress;
-      
+
       if (!readAddress) {
         throw new Error('NEXT_PUBLIC_STELLAR_READ_ADDRESS not configured');
       }
@@ -99,7 +99,7 @@ export class CoreFlowClient {
     try {
       const sdk = await this.loadSDK();
       const readAddress = STELLAR_CONFIG.addresses.readAddress;
-      
+
       if (!readAddress) {
         throw new Error('NEXT_PUBLIC_STELLAR_READ_ADDRESS not configured');
       }
@@ -250,7 +250,7 @@ export class CoreFlowClient {
     try {
       const sdk = await this.loadSDK();
       const readAddress = STELLAR_CONFIG.addresses.readAddress;
-      
+
       if (!readAddress) {
         throw new Error('NEXT_PUBLIC_STELLAR_READ_ADDRESS not configured');
       }
