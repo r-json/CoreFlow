@@ -592,6 +592,12 @@ npm run dev
 
 ---
 
+#Video Demo Link
+
+https://github.com/user-attachments/assets/69dc75e8-108a-45c7-b93d-91fbfce375b7
+
+---
+
 <div align="center">
 
 **Built with ❤️ for [Stellar Philippines Bootcamp 2026](https://github.com/armlynobinguar/Stellar-Bootcamp-2026)**
