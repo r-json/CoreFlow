@@ -107,6 +107,25 @@
         }
       ]
     ],
+    [
+      [
+        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
+        {
+          "function": {
+            "contract_fn": {
+              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
+              "function_name": "cancel_escrow",
+              "args": [
+                {
+                  "u32": 1
+                }
+              ]
+            }
+          },
+          "sub_invocations": []
+        }
+      ]
+    ],
     []
   ],
   "ledger": {
@@ -160,7 +179,7 @@
                                 "symbol": "cancelled"
                               },
                               "val": {
-                                "bool": false
+                                "bool": true
                               }
                             },
                             {
@@ -265,7 +284,7 @@
                                           "symbol": "status"
                                         },
                                         "val": {
-                                          "u32": 0
+                                          "u32": 4
                                         }
                                       },
                                       {
@@ -328,6 +347,39 @@
                 "key": {
                   "ledger_key_nonce": {
                     "nonce": 801925984706572462
+                  }
+                },
+                "durability": "temporary",
+                "val": "void"
+              }
+            },
+            "ext": "v0"
+          },
+          15
+        ]
+      ],
+      [
+        {
+          "contract_data": {
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
+            "key": {
+              "ledger_key_nonce": {
+                "nonce": 5541220902715666415
+              }
+            },
+            "durability": "temporary"
+          }
+        },
+        [
+          {
+            "last_modified_ledger_seq": 0,
+            "data": {
+              "contract_data": {
+                "ext": "v0",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
+                "key": {
+                  "ledger_key_nonce": {
+                    "nonce": 5541220902715666415
                   }
                 },
                 "durability": "temporary",
@@ -548,27 +600,34 @@
                 "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
               },
               {
-                "symbol": "submit_hours_proof"
+                "symbol": "cancel_escrow"
               }
             ],
             "data": {
-              "vec": [
-                {
-                  "u32": 1
-                },
-                {
-                  "u32": 0
-                },
-                {
-                  "i128": {
-                    "hi": 0,
-                    "lo": 40
-                  }
-                },
-                {
-                  "bytes": ""
-                }
-              ]
+              "u32": 1
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "escrow"
+              },
+              {
+                "symbol": "cancel"
+              }
+            ],
+            "data": {
+              "u32": 1
             }
           }
         }
@@ -587,12 +646,59 @@
                 "symbol": "fn_return"
               },
               {
-                "symbol": "submit_hours_proof"
+                "symbol": "cancel_escrow"
+              }
+            ],
+            "data": "void"
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": null,
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_call"
+              },
+              {
+                "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
+              },
+              {
+                "symbol": "manager_approve"
+              }
+            ],
+            "data": {
+              "u32": 1
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_return"
+              },
+              {
+                "symbol": "manager_approve"
               }
             ],
             "data": {
               "error": {
-                "contract": 3
+                "contract": 8
               }
             }
           }
@@ -613,7 +719,7 @@
               },
               {
                 "error": {
-                  "contract": 3
+                  "contract": 8
                 }
               }
             ],
@@ -638,7 +744,7 @@
               },
               {
                 "error": {
-                  "contract": 3
+                  "contract": 8
                 }
               }
             ],
@@ -648,24 +754,12 @@
                   "string": "contract call failed"
                 },
                 {
-                  "symbol": "submit_hours_proof"
+                  "symbol": "manager_approve"
                 },
                 {
                   "vec": [
                     {
                       "u32": 1
-                    },
-                    {
-                      "u32": 0
-                    },
-                    {
-                      "i128": {
-                        "hi": 0,
-                        "lo": 40
-                      }
-                    },
-                    {
-                      "bytes": ""
                     }
                   ]
                 }
@@ -689,7 +783,7 @@
               },
               {
                 "error": {
-                  "contract": 3
+                  "contract": 8
                 }
               }
             ],

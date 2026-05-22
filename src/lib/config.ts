@@ -18,7 +18,7 @@ export const STELLAR_CONFIG = {
     },
     public: {
       name: 'PUBLIC_SDF_NETWORK_SDF_PUBLIC_SDF_NETWORK_SDF_PUBLIC_SDF_NETWORK_SDF_PUBLI_QBULR' as const,
-      rpcUrl: 'https://soroban-mainnet.stellar.org',
+      rpcUrl: 'https://mainnet.sorobanrpc.com',
       networkPassphrase: 'Public Global Stellar Network ; September 2015',
       friendbotUrl: null,
     },
@@ -27,7 +27,7 @@ export const STELLAR_CONFIG = {
   // Smart contract configuration
   contract: {
     // Replace with deployed contract ID
-    id: process.env.NEXT_PUBLIC_STELLAR_CONTRACT_ID || 'CAU3FQTWCAFJF4XFVRXSEPWRPBCVHDSRBSCPTM75HJFDZD5XQQQY47A4',
+    id: process.env.NEXT_PUBLIC_STELLAR_CONTRACT_ID || 'CCTF5WBOQR7JP2KPLQT372X7JCGCINHDFRSAPF4YTYRKZXZ3J2XPRFFW',
 
     // Network selection
     network: (process.env.NEXT_PUBLIC_STELLAR_NETWORK as 'testnet' | 'public') || 'testnet',

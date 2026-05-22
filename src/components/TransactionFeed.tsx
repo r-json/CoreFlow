@@ -1,11 +1,11 @@
 'use client';
 
-import { ArrowUpRight, Check, Clock, FileText } from 'lucide-react';
-
+import { ArrowUpRight, Check, Clock, FileText, X } from 'lucide-react';
+import { STELLAR_CONFIG } from '@/lib/config';
 
 export interface Transaction {
   id: string;
-  type: 'approval' | 'payment' | 'submission';
+  type: 'approval' | 'payment' | 'submission' | 'cancellation';
   escrowId: number;
   hash: string;
   status: 'pending' | 'success' | 'failed';
@@ -23,8 +23,16 @@ export const TransactionFeed = ({ transactions }: TransactionFeedProps) => {
       case 'approval': return <Check className="w-3.5 h-3.5" />;
       case 'submission': return <FileText className="w-3.5 h-3.5" />;
       case 'payment': return <ArrowUpRight className="w-3.5 h-3.5" />;
+      case 'cancellation': return <X className="w-3.5 h-3.5" />;
       default: return <Clock className="w-3.5 h-3.5" />;
     }
+  };
+
+  const getExplorerUrl = (hash: string) => {
+    const network = STELLAR_CONFIG.contract.network;
+    return network === 'public'
+      ? `https://stellar.expert/explorer/public/tx/${hash}`
+      : `https://stellar.expert/explorer/testnet/tx/${hash}`;
   };
 
   return (
@@ -52,7 +60,7 @@ export const TransactionFeed = ({ transactions }: TransactionFeedProps) => {
                 </div>
               </div>
               <a
-                href={`https://stellar.expert/explorer/testnet/tx/${tx.hash}`}
+                href={getExplorerUrl(tx.hash)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"

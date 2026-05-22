@@ -23,6 +23,34 @@
 
 ---
 
+> [!IMPORTANT]
+> **🚀 Stellar Mainnet Live Contract**
+> - **Contract ID**: `CCTF5WBOQR7JP2KPLQT372X7JCGCINHDFRSAPF4YTYRKZXZ3J2XPRFFW`
+> - **Deployer (Manager) Address**: `GBPLBGLHRDLWGA4XXIQOHCQXP23EN4IPJBCOTZ7KRDJXM5Y7YKPIL3SG`
+> - **WASM Hash**: `1ed0b9d99371d970b08cf74f3ff7c447721d6f01c1a3ba78d29645ab29999cee`
+> - **Network**: Stellar Public Network (Mainnet)
+
+## 🎥 5-Minute Demo Script (For Judges)
+
+1. **Freighter Wallet Connection**
+   - Click **Connect Wallet** in the top right. Select your Freighter wallet (ensure it is configured for **Mainnet**).
+   - Your balance and address will be read live from the Stellar mainnet ledger.
+2. **Dashboard Overview**
+   - View the live dashboard containing the **Impact Tracker** (cumulative savings vs bank wires, PHP conversions at live rates, total processed) and the live transaction feed.
+3. **Escrow Initialization**
+   - Click **Initialize Escrow**. Input a Worker's Stellar address, USDC amount (e.g. 0.5 USDC for tiny-fee mainnet testing), and hourly rate. Submit the transaction to deploy a secure escrow account on-chain.
+4. **Oracle Hours Proof**
+   - Click **Submit Hours**. Input the Escrow ID, payment schedule index, and logged hours. The oracle signs this proof with an Ed25519 private key, which is cryptographically verified by the smart contract before updating the payment hours.
+5. **On-Chain approvals**
+   - Under the active escrow, review the status timeline: `Deposited ➔ Hours Verified ➔ Manager Approved ➔ Finance Approved ➔ Released`.
+   - Click **Approve (Manager)** and **Approve (Finance)** to sign the multi-signature approvals.
+6. **Finalize and Download Receipt**
+   - Click **Finalize Payment**. Funds are released instantly on-chain from the escrow contract to the worker.
+   - Show the **Fee Savings** popup detailing the 5%+ saved compared to traditional banking.
+   - Click **Download Receipt** to get a signed payment record.
+
+---
+
 ## 📋 Table of Contents
 
 - [The Problem](#-the-problem)
