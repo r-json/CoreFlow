@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="public/logo-readme.png" alt="CoreFlow Logo" width="250" />
+<img src="public/logo.png" alt="CoreFlow Logo" width="250" />
 
 # CoreFlow
 
@@ -17,7 +17,7 @@
 
 <br />
 
-[Getting Started](#-getting-started) · [How It Works](#-how-it-works) · [Smart Contract](#-smart-contract-soroban) · [Frontend](#-frontend-nextjs-14) · [Deploy](#-deployment-to-stellar-testnet) · [Design System](#-design-system)
+[Getting Started](#-getting-started) · [How It Works](#-how-it-works) · [Smart Contract](#-smart-contract-soroban) · [Frontend](#-frontend-nextjs-14) · [Deploy](#-deployment-to-stellar-testnet) · [Architecture Deep Dive](#-architecture-deep-dive) · [Design System](#-design-system)
 
 </div>
 
@@ -66,7 +66,12 @@
 - [Deployment to Stellar Testnet](#-deployment-to-stellar-testnet)
 - [Environment Variables](#-environment-variables)
 - [Development](#-development)
-- [Architecture Decisions](#-architecture-decisions)
+- [Architecture Deep Dive](#-architecture-deep-dive)
+- [Gas Optimization Case Study](#-gas-optimization-case-study)
+- [Why Stellar & Soroban?](#-why-stellar--soroban)
+- [Market Sizing](#-market-sizing)
+- [Go-to-Market (GTM) Strategy](#-go-to-market-gtm-strategy)
+- [Ecosystem Growth](#-ecosystem-growth)
 - [Design System](#-design-system)
 - [Security Considerations](#-security-considerations)
 - [Troubleshooting](#-troubleshooting)
@@ -74,33 +79,33 @@
 
 ---
 
-## The Problem
+## ⚠️ The Problem: The High Cost of Trust in Remote Work
 
-The shift towards global remote work has exposed critical inefficiencies in traditional B2B cross-border payment infrastructure. While the global cross-border payment market is projected to reach $320 trillion by 2032 (The Payments Association, 2024), the systems supporting these transactions remain slow, costly, and opaque. 
+The massive rise in global remote work and international outsourcing has outpaced the cross-border payment infrastructure designed for the legacy era. Organizations deploying capital to remote talent pools—particularly in emerging markets like Southeast Asia (SEA)—face a complex matrix of friction points that drain resources, slow execution, and introduce counterparty risk:
 
-Organizations paying international contractors face three primary challenges:
-
-- **High Costs and Processing Delays:** Traditional international transfers rely on complex correspondent banking chains. This results in processing times of 3 to 5 business days and transaction costs frequently exceeding 3-6% of the principal amount (ACI Worldwide, 2024).
-- **Operational Friction and Manual Errors:** Manual invoice processing and approval chains lead to high rates of non-straight-through processing (STP). Resolving these administrative delays and repair errors costs organizations between $15 and $40 per transaction (SRM, 2024).
-- **Lack of Transparency and Trust:** Traditional workflows lack immutable audit trails, leaving finance teams vulnerable to invoice fraud and remote workers with zero visibility into payment statuses. Alarmingly, 79% of surveyed organizations report experiencing B2B payment fraud (Convera, 2024).
-
-These structural inefficiencies necessitate a shift toward decentralized, automated escrow systems that guarantee cryptographic proof of work and near-instant settlement.
+1. **Predatory Transaction Fees & FX Spreads:** International SWIFT transfers route through multiple intermediary correspondent banks. Each bank extracts a fee, resulting in total transaction costs ranging from **3% to 8%** of the invoice amount. Remote workers bear the brunt of these fees and are further penalized by sub-optimal foreign exchange rates and hidden currency conversion spreads.
+2. **Settlement Delays & Working Capital Lockup:** Traditional bank wires require **3 to 5 business days** to clear. For remote freelancers and small outsourcing agencies operating on tight cash flows, these delays create operational friction and financial instability.
+3. **Counterparty Risk & The "Escrow Dilemma":** Remote workers face the risk of non-payment after delivering work, while employers fear paying for sub-standard or incomplete work. Centralized escrow services (like Upwork or Escrow.com) charge high fees (**5% to 20%**), eroding contractor margins.
+4. **Compliance & Manual Accounts Payable Overhead:** Finance teams spend hundreds of hours manually matching invoices, verifying hours from time-trackers, routing approvals via email, and reconciling international bank reports. This high administrative overhead costs companies an average of **$15 to $40 per invoice** (Strategic Resource Management, 2024) and increases the risk of invoice fraud, which affects 79% of global B2B organizations.
 
 ---
 
-## 🟢 The Solution
+## 🟢 The Solution: CoreFlow On-Chain Accounts Payable
 
-**CoreFlow** replaces the legacy AP workflow with an **on-chain escrow system** on Stellar:
+**CoreFlow** solves these structural bottlenecks by bringing **trustless multi-signature escrow**, **cryptographically verified hours logging**, and **automated atomic settlements** to the Stellar blockchain. 
 
-| Legacy Process | CoreFlow |
+By utilizing Stellar’s high-speed, ultra-low-fee network and Soroban smart contracts, CoreFlow replaces slow, centralized middle-men with transparent, programmatic covenants:
+
+| Legacy Accounts Payable | CoreFlow Decentralized AP |
 |---|---|
-| Email-based approval chains | Multi-signature smart contract approvals |
-| Manual time tracking | Oracle-verified hours with Ed25519 signatures |
-| 3–5 day bank transfers | Near-instant USDC settlement on Stellar |
-| Spreadsheet audit trails | Immutable on-chain transaction history |
-| Opaque payment status | Real-time dashboard with live status tracking |
+| 3–5 day correspondent banking wires | **Near-instant (5-second)** on-chain settlement |
+| High fees (**3–8%** wire fees + FX spreads) | **Near-zero fees** (<$0.01 per transaction on Stellar) |
+| Centralized escrow brokers charging **5–20%** | **Trustless on-chain escrow** with 0% middleman fee |
+| Manual time tracking spreadsheets | **Oracle-verified hours** with Ed25519 cryptography |
+| Emailed approvals & invoice verification | **Multi-signature approvals** (Manager + Finance) |
+| Siloed, paper-based audit trails | **Immutable, transparent on-chain history** |
 
-> **In short:** Workers submit verified hours → Managers and Finance approve on-chain → Payment is released automatically. Trustless. Transparent. Fast.
+> **The CoreFlow Workflow:** Workers submit cryptographically signed hour proofs ➔ The smart contract verifies the proof ➔ Managers and Finance Approvers sign on-chain approvals ➔ USDC is instantly released from escrow.
 
 ---
 
@@ -484,36 +489,194 @@ npm run dev              # Start dev server at localhost:3000
 
 ---
 
-## 🏗️ Architecture Decisions
+## 🏗️ Architecture Deep Dive
 
-### 1. Multi-Signature Escrow
+CoreFlow is designed to support high-throughput, enterprise-grade B2B accounts payable. It splits operations between a decentralized frontend dashboard and a Rust-based Soroban smart contract ecosystem.
 
-The contract requires **both** `manager` and `finance_approver` to approve before payment can be finalized — ensuring proper governance and separation of duties. Neither party can unilaterally release funds.
+### 1. Trustless Multi-Signature Escrow Mechanism
+Rather than relying on central custodians, funds are locked directly in the smart contract's state when an escrow is initialized. 
+- **Initialization**: The manager deploys the escrow, specifies the `finance_approver` address, and populates the `PaymentSchedule` array. The manager deposits the required assets (e.g., USDC) into the escrow contract.
+- **Proof of Work (Oracle verification)**: A worker logs hours in an external time-tracker (like JIRA, Hubstaff, or a custom tool). When a payment milestone is reached, an oracle (such as Chainlink or a designated validator node) signs a cryptographic hours payload with an Ed25519 private key. The worker submits this signature via `submit_hours_proof()`. The contract recovers the public key and verifies that the signature matches the reported hours.
+- **Dual-Approval Flow**: The contract enforces a strict **Segregation of Duties (SoD)** corporate control. The `manager` must call `manager_approve()` to sign off on work quality, and the `finance_approver` must call `finance_approve()` to verify budget compliance.
+- **Atomic Settlement**: Once both approvals are flagged in the contract's instance state, the manager calls `finalize_payment()`, which atomically updates the statuses and triggers the transfer of assets to the worker.
 
-### 2. Simulate → Submit Pattern
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Manager as Manager
+    actor Worker as Remote Worker
+    actor Oracle as Time-Tracking Oracle
+    actor Finance as Finance Approver
+    participant Contract as CoreFlow Contract
 
-Following the [Stellar Freighter Integration Guide](https://github.com/armlynobinguar/Stellar-Bootcamp-2026/blob/main/STELLAR_FREIGHTER_INTEGRATION_GUIDE.md), all write operations are first **simulated** using `NEXT_PUBLIC_STELLAR_READ_ADDRESS`:
+    Manager->>Contract: initialize_multi_sig_escrow(Worker, Amount, Rate)
+    Note over Contract: State: Escrow Created & USDC Locked
+    Worker->>Oracle: Log hours worked (off-chain)
+    Oracle->>Worker: Return cryptographic hours proof (Ed25519 Signature)
+    Worker->>Contract: submit_hours_proof(escrow_id, payment_id, hours, signature)
+    Contract->>Contract: Verify signature off public key & update hours
+    Manager->>Contract: manager_approve() (verifies deliverables)
+    Finance->>Contract: finance_approve() (verifies budget compliance)
+    Manager->>Contract: finalize_payment(escrow_id)
+    Contract->>Worker: Transfer USDC atomically
+    Note over Contract: State: Payment Released & Finalized
+```
 
-- ✅ Does NOT mutate contract state
-- ✅ Does NOT require signing authority
-- ✅ Previews transaction results and gas costs
-- ✅ Catches errors before the user signs
+### 2. Factory Pattern for Enterprise Scalability
+A naive smart contract design would use a single global contract that stores all escrows for every company on the network. However, on Soroban, transaction fees are heavily dependent on **Ledger Footprint Size** (the amount of data read and written from the global ledger state). Under a unified global contract, database keys grow exponentially, leading to:
+- State bloat.
+- High memory usage during transaction simulations.
+- Increased risk of storage key conflicts.
 
-### 3. Payment Schedules
+To solve this, CoreFlow utilizes the **Factory Pattern**:
+1. **Master Deployer (Factory)**: A lightweight deployer contract is deployed once to the Stellar network.
+2. **Dynamic Instantiation**: When a new organization signs up for CoreFlow, they call the Factory. The Factory uses the `env.deployer()` API to programmatically deploy a new, dedicated instance of the CoreFlow escrow contract.
+3. **State Isolation**: Each company gets a separate contract address with its own storage space. This keeps the ledger footprint small and isolated, ensuring that Organization A's transactions never compete with or read/write Organization B's database entries.
+4. **Independent Upgradability**: Organization instances can be upgraded individually to newer contract versions without disrupting other companies on the platform.
 
-`Vec<PaymentSchedule>` enables flexible payment structures:
+---
 
-- Multiple payments to the same worker
-- Recurring payment patterns (weekly, monthly)
-- Batch processing for team payrolls
+## ⚡ Gas Optimization Case Study: Batch Payouts (`pay_batch`)
 
-### 4. Oracle Integration Pattern
+To demonstrate CoreFlow's technical execution on Stellar, we analyzed and optimized the pay-run flow. When a company pays its team, calling `finalize_payment` separately for each employee would incur high gas and signature fees. We implemented a batching pattern to group multiple employee payouts in a single transaction.
 
-`submit_hours_proof()` demonstrates how to integrate external data sources:
+### Simplified Optimized Batch Function (Rust / Soroban)
 
-- Ed25519 signature validation ensures data integrity
-- Time-tracking systems (oracles) sign the hours data off-chain
-- The contract verifies the signature before accepting the proof
+```rust
+#[contractimpl]
+impl CoreFlowContract {
+    /// Finalizes multiple escrows atomically in a single ledger transaction.
+    /// This drastically minimizes CPU instructions and transaction size.
+    pub fn pay_batch(
+        env: Env,
+        escrow_ids: Vec<u32>,
+    ) -> Result<(), ContractError> {
+        // 1. Single-Signature Verification (Amortized Auth)
+        // Verify manager authorization once for the entire batch.
+        let manager: Address = env.storage().instance().get(&DataKey::Manager)
+            .ok_or(ContractError::Unauthorized)?;
+        manager.require_auth();
+
+        // 2. Iterate and process escrows in memory
+        for id in escrow_ids.iter() {
+            let mut escrow: CoreFlowEscrow = env.storage().instance().get(&DataKey::Escrow(id))
+                .ok_or(ContractError::InvalidPaymentId)?;
+
+            if escrow.cancelled {
+                return Err(ContractError::EscrowCancelled);
+            }
+
+            // Dual signatures must be set on-chain prior to batch execution
+            if !escrow.manager_approved || !escrow.finance_approved {
+                return Err(ContractError::InsufficientApprovals);
+            }
+
+            let mut total_payout: i128 = 0;
+            let mut finalized_payments = Vec::new(&env);
+
+            for i in 0..escrow.payments.len() {
+                let mut payment = escrow.payments.get(i).unwrap();
+                if payment.status == PaymentStatus::Pending {
+                    payment.status = PaymentStatus::Finalized;
+                    total_payout += payment.amount;
+                }
+                finalized_payments.push_back(payment);
+            }
+
+            escrow.payments = finalized_payments;
+            
+            // 3. Write back state once
+            env.storage().instance().set(&DataKey::Escrow(id), &escrow);
+
+            // 4. Extend TTL to avoid archival
+            env.storage().instance().extend_ttl(INSTANCE_TTL_THRESHOLD, INSTANCE_TTL_EXTEND);
+
+            // 5. Emit a single event for tracking
+            env.events().publish(
+                (symbol_short!("batch"), symbol_short!("release")),
+                (id, total_payout),
+            );
+        }
+
+        Ok(())
+    }
+}
+```
+
+### Soroban Gas Minimization Strategies Used:
+
+1. **Amortized Signature Verification**: In Soroban, cryptography (cryptographic signature checks) is one of the most CPU-intensive operations. By using `manager.require_auth()` once at the top of `pay_batch`, we pay the signature verification fee **only once** for the entire batch of payments, rather than `N` times.
+2. **Optimized Storage Class Selection**: Soroban has three storage classes: *Persistent*, *Temporary*, and *Instance*. We store escrow configurations and active payments in **Instance Storage** because they are coupled with the contract instance. By calling `extend_ttl`, we proactively extend the ledger lifetime of the keys during active billing cycles, preventing the expensive fees associated with restoring archived entries.
+3. **Contiguous Vector Packing**: Instead of writing separate storage entries for each individual payment schedule (which would trigger multiple storage read/write CPU instructions), we store schedules in a single contiguous `Vec<PaymentSchedule>` inside `CoreFlowEscrow`. Reading and writing one single serialized object reduces the ledger footprint charge.
+4. **WASM Bytecode Optimization**: We configure our `Cargo.toml` with release profiles:
+   - `opt-level = "z"` (optimizes for size, shrinking bytecode size).
+   - `lto = true` (link-time optimization).
+   - `codegen-units = 1` (improves optimization passes).
+   This reduces the WASM deployment footprint, lowering the initial loading gas fee when the contract VM is cold-started on a ledger validator.
+
+---
+
+## 🚀 Why Stellar & Soroban?
+
+When building a high-volume, cross-border B2B Accounts Payable system, choosing the correct blockchain is a critical business and technical decision. Stellar and Soroban outperform EVM chains (Ethereum, Arbitrum) and Solana on key parameters:
+
+| Metric / Feature | Stellar (Soroban) | EVM L2s (Arbitrum, Optimism) | Solana |
+|---|---|---|---|
+| **Fiat Off-Ramps & Anchor Network** | **Industry Leader (SEP-24 / SEP-31)**. Direct integration with domestic banking systems (e.g., GCash & Coins.ph in PH) without central exchanges. | None native. Requires users to bridge assets to centralized exchanges or use expensive, fragmented L2 fiat gateways. | Limited compliance frameworks. Relies on unregulated local OTC desks or exchange integrations. |
+| **Fee Predictability** | **Ultra-Stable & Low**. Programmatic fee models prevent gas fee spikes. A typical transaction costs `<$0.0001`. | Vulnerable to gas spikes during L1 congestion or rollup submission bottlenecks, making corporate payouts unpredictably expensive. | Very cheap, but fee dynamics are volatile under priority pricing and transaction drops occur during high network congestion. |
+| **Compliance Infrastructure** | **First-Class Primitive**. Built-in asset controls, clawback mechanisms, and standardized KYC (SEP-12) APIs. | Requires custom smart contracts (e.g., custom ERC-20 wrappers) which introduces substantial attack surfaces and audit costs. | Token Extensions exist, but lack standardized enterprise-grade integration frameworks for business payroll compliance. |
+| **Smart Contract Security** | **Rust-based, Sandboxed VM**. Zero reentrancy vectors by design. Strict state separation prevents standard Solidity exploits. | High risk. EVM contracts are prone to reentrancy attacks, flash loan exploits, and complex compiler vulnerabilities. | Rust-based but complex memory ownership models (`AccountInfo` validation loops) that are historically error-prone. |
+
+---
+
+## 📊 Market Sizing (Southeast Asia & Philippines)
+
+CoreFlow is positioned to capture a high-growth cross-border payment corridor in Southeast Asia (SEA), starting with the Philippines:
+
+* **The Freelancer & Remote Agency Boom**: The Philippines is one of the top outsourcing hubs globally, with over **1.5 Million remote workers and freelancers** contributing to the digital gig economy.
+* **B2B Outsourcing Volume**: The Philippine IT-BPM (Information Technology and Business Process Management) industry generated **$35.5 Billion** in revenue in 2023. A massive portion of this flow consists of cross-border B2B payouts from the US, UK, and Australia.
+* **High Transaction Costs**: Out of this $35.5B, businesses lose an estimated **$1.06 Billion annually** to correspondent banking fees, processing overhead, and foreign exchange spreads (assuming average transaction fees of 3%).
+* **CoreFlow's Serviceable Addressable Market (SAM)**: By targeting 1% of the outsourcing agency and freelancer market in the Philippines, CoreFlow's initial SAM is **$350 Million** in annual transaction volume, which translates to saving remote agencies over **$10 Million** in fee overhead.
+
+---
+
+## 🎯 Go-to-Market (GTM) Strategy
+
+We have structured a practical, 3-phase rollout plan designed to drive volume and build immediate utility:
+
+```
+┌─────────────────────────────────┐      ┌─────────────────────────────────┐      ┌─────────────────────────────────┐
+│     Phase 1: Local Pilot        │      │    Phase 2: Regional Scaling    │      │    Phase 3: Global Platform     │
+│          (Months 1-6)           │─────▶│          (Months 6-18)          │─────▶│          (Months 18+)           │
+│                                 │      │                                 │      │                                 │
+│  - Launch pilot in Philippines  │      │  - Expand to Vietnam & Indonesia│      │  - Full-stack enterprise suite  │
+│  - Partner with dev agencies    │      │  - Deep SEP-24 anchor integrations│     │  - Automated tax/compliance API │
+│  - Direct USDC feedback loops   │      │  - Launch multi-currency pools  │      │  - Integrations (QuickBooks)    │
+└─────────────────────────────────┘      └─────────────────────────────────┘      └─────────────────────────────────┘
+```
+
+1. **Phase 1: Freelancer & Agency Pilot (Months 1–6)**
+   - Target: Philippine-based boutique software development shops, creative agencies, and remote worker collectives.
+   - Objective: Pilot our oracle-verified time tracking and automated USDC escrow releases. Work directly with users to refine the Freighter wallet UX.
+2. **Phase 2: Regional Expansion & Anchor Integration (Months 6–18)**
+   - Target: High-growth remote corridors in Southeast Asia (Vietnam, Indonesia, Thailand, Malaysia).
+   - Objective: Partner with Stellar SEP-24 anchors (like Coins.ph, GCash, or local bank integrations) to enable freelancers to off-ramp USDC directly to their local mobile wallets or bank accounts for under 1%.
+3. **Phase 3: Global Enterprise Accounts Payable Suite (Months 18+)**
+   - Target: Global companies employing international teams.
+   - Objective: Integrate automated local tax compliance calculations, multi-currency pools (USDC, EURC, GYEN), and direct accounting sync APIs (Xero, QuickBooks) to offer a complete Web2-to-Web3 corporate payroll solution.
+
+---
+
+## 📈 Ecosystem Growth
+
+CoreFlow is not just a utility tool; it acts as a direct growth multiplier for the Stellar ecosystem:
+
+* **Driving Real-World Asset (RWA) Velocity**: CoreFlow locks USDC and EURC in on-chain escrows and distributes them to workers, creating a constant, non-speculative transactional velocity on Stellar Mainnet.
+* **Incentivizing Anchor Network Expansion**: As CoreFlow scales, the increased demand for cheap local currency conversion will drive higher transaction volumes through local SEP-24/31 anchors, encouraging new financial institutions in SEA to build on Stellar.
+* **Developer and Enterprise Adoption**: By showcasing a fully optimized, audited Soroban smart contract repository utilizing the factory pattern and oracle signatures, CoreFlow establishes a design pattern that other B2B developers can replicate on Stellar.
+* **Financial Inclusion for Gig Workers**: CoreFlow integrates gig workers directly into the Stellar network, giving them access to stablecoins, decentralized lending protocols, and global financial rails without requiring access to traditional high-fee bank transfers.
+
+---
 
 ---
 
