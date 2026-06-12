@@ -9,6 +9,7 @@
 [![Rust](https://img.shields.io/badge/Rust-Smart%20Contracts-orange?style=for-the-badge&logo=rust&logoColor=white)](https://www.rust-lang.org/)
 [![Next.js 14](https://img.shields.io/badge/Next.js-14-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-F59E0B?style=for-the-badge)](LICENSE)
+[![CI/CD](https://github.com/r-json/CoreFlow/actions/workflows/ci.yml/badge.svg)](https://github.com/r-json/CoreFlow/actions/workflows/ci.yml)
 
 **CoreFlow** is an on-chain accounts payable and payroll escrow system for remote teams. It combines **Soroban smart contracts**, **multi-signature payment approvals**, **oracle-verified work records**, and **USDC-ready settlement** to help companies pay distributed workers with stronger transparency, auditability, and cost predictability.
 
@@ -18,11 +19,17 @@
 
 ---
 
+## 🔗 Deployed Contract
+
+> **Live on Stellar Mainnet** — View and verify the deployed CoreFlow smart contract on Stellar Expert:
+>
+> 🔗 **[View Deployed Contract on Stellar Expert](https://stellar.expert/explorer/public/contract/CCTF5WBOQR7JP2KPLQT372X7JCGCINHDFRSAPF4YTYRKZXZ3J2XPRFFW)**
+
 > [!IMPORTANT]
 > **Stellar Mainnet MVP Contract**
 >
-> - **Contract ID:** `CCTF5WBOQR7JP2KPLQT372X7JCGCINHDFRSAPF4YTYRKZXZ3J2XPRFFW`
-> - **Deployer / Manager Address:** `GBPLBGLHRDLWGA4XXIQOHCQXP23EN4IPJBCOTZ7KRDJXM5Y7YKPIL3SG`
+> - **Contract ID:** [`CCTF5WBOQR7JP2KPLQT372X7JCGCINHDFRSAPF4YTYRKZXZ3J2XPRFFW`](https://stellar.expert/explorer/public/contract/CCTF5WBOQR7JP2KPLQT372X7JCGCINHDFRSAPF4YTYRKZXZ3J2XPRFFW)
+> - **Deployer / Manager Address:** [`GBPLBGLHRDLWGA4XXIQOHCQXP23EN4IPJBCOTZ7KRDJXM5Y7YKPIL3SG`](https://stellar.expert/explorer/public/account/GBPLBGLHRDLWGA4XXIQOHCQXP23EN4IPJBCOTZ7KRDJXM5Y7YKPIL3SG)
 > - **WASM Hash:** `1ed0b9d99371d970b08cf74f3ff7c447721d6f01c1a3ba78d29645ab29999cee`
 > - **Network:** Stellar Public Network
 >
