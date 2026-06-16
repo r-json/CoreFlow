@@ -1,6 +1,6 @@
 {
   "generators": {
-    "address": 8,
+    "address": 9,
     "nonce": 0
   },
   "auth": [
@@ -80,7 +80,7 @@
                           "val": {
                             "i128": {
                               "hi": 0,
-                              "lo": 91295
+                              "lo": 40297
                             }
                           }
                         },
@@ -157,7 +157,7 @@
                           "val": {
                             "i128": {
                               "hi": 0,
-                              "lo": 38914
+                              "lo": 95674
                             }
                           }
                         },
@@ -234,7 +234,7 @@
                           "val": {
                             "i128": {
                               "hi": 0,
-                              "lo": 59726
+                              "lo": 93867
                             }
                           }
                         },
@@ -301,6 +301,83 @@
                           }
                         }
                       ]
+                    },
+                    {
+                      "map": [
+                        {
+                          "key": {
+                            "symbol": "amount"
+                          },
+                          "val": {
+                            "i128": {
+                              "hi": 0,
+                              "lo": 41026
+                            }
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "end_date"
+                          },
+                          "val": {
+                            "u64": 2
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "hours_logged"
+                          },
+                          "val": {
+                            "i128": {
+                              "hi": 0,
+                              "lo": 0
+                            }
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "id"
+                          },
+                          "val": {
+                            "u32": 4
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "rate_per_hour"
+                          },
+                          "val": {
+                            "i128": {
+                              "hi": 0,
+                              "lo": 1
+                            }
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "start_date"
+                          },
+                          "val": {
+                            "u64": 1
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "status"
+                          },
+                          "val": {
+                            "u32": 0
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "worker"
+                          },
+                          "val": {
+                            "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATYON"
+                          }
+                        }
+                      ]
                     }
                   ]
                 }
@@ -323,7 +400,7 @@
                     {
                       "i128": {
                         "hi": 0,
-                        "lo": 189935
+                        "lo": 270864
                       }
                     }
                   ]
@@ -394,6 +471,7 @@
         }
       ]
     ],
+    [],
     [],
     [],
     [],
@@ -570,7 +648,7 @@
                                 "val": {
                                   "i128": {
                                     "hi": 0,
-                                    "lo": 91295
+                                    "lo": 40297
                                   }
                                 }
                               },
@@ -647,7 +725,7 @@
                                 "val": {
                                   "i128": {
                                     "hi": 0,
-                                    "lo": 38914
+                                    "lo": 95674
                                   }
                                 }
                               },
@@ -724,7 +802,7 @@
                                 "val": {
                                   "i128": {
                                     "hi": 0,
-                                    "lo": 59726
+                                    "lo": 93867
                                   }
                                 }
                               },
@@ -788,6 +866,83 @@
                                 },
                                 "val": {
                                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARQG5"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "map": [
+                              {
+                                "key": {
+                                  "symbol": "amount"
+                                },
+                                "val": {
+                                  "i128": {
+                                    "hi": 0,
+                                    "lo": 41026
+                                  }
+                                }
+                              },
+                              {
+                                "key": {
+                                  "symbol": "end_date"
+                                },
+                                "val": {
+                                  "u64": 2
+                                }
+                              },
+                              {
+                                "key": {
+                                  "symbol": "hours_logged"
+                                },
+                                "val": {
+                                  "i128": {
+                                    "hi": 0,
+                                    "lo": 0
+                                  }
+                                }
+                              },
+                              {
+                                "key": {
+                                  "symbol": "id"
+                                },
+                                "val": {
+                                  "u32": 4
+                                }
+                              },
+                              {
+                                "key": {
+                                  "symbol": "rate_per_hour"
+                                },
+                                "val": {
+                                  "i128": {
+                                    "hi": 0,
+                                    "lo": 1
+                                  }
+                                }
+                              },
+                              {
+                                "key": {
+                                  "symbol": "start_date"
+                                },
+                                "val": {
+                                  "u64": 1
+                                }
+                              },
+                              {
+                                "key": {
+                                  "symbol": "status"
+                                },
+                                "val": {
+                                  "u32": 3
+                                }
+                              },
+                              {
+                                "key": {
+                                  "symbol": "worker"
+                                },
+                                "val": {
+                                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATYON"
                                 }
                               }
                             ]
@@ -1184,7 +1339,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 810065
+                          "lo": 729136
                         }
                       }
                     },
@@ -1257,7 +1412,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 91295
+                          "lo": 40297
                         }
                       }
                     },
@@ -1330,7 +1485,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 38914
+                          "lo": 95674
                         }
                       }
                     },
@@ -1403,7 +1558,80 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 59726
+                          "lo": 93867
+                        }
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "authorized"
+                      },
+                      "val": {
+                        "bool": true
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "clawback"
+                      },
+                      "val": {
+                        "bool": false
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "ext": "v0"
+          },
+          518400
+        ]
+      ],
+      [
+        {
+          "contract_data": {
+            "contract": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG",
+            "key": {
+              "vec": [
+                {
+                  "symbol": "Balance"
+                },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATYON"
+                }
+              ]
+            },
+            "durability": "persistent"
+          }
+        },
+        [
+          {
+            "last_modified_ledger_seq": 0,
+            "data": {
+              "contract_data": {
+                "ext": "v0",
+                "contract": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG",
+                "key": {
+                  "vec": [
+                    {
+                      "symbol": "Balance"
+                    },
+                    {
+                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATYON"
+                    }
+                  ]
+                },
+                "durability": "persistent",
+                "val": {
+                  "map": [
+                    {
+                      "key": {
+                        "symbol": "amount"
+                      },
+                      "val": {
+                        "i128": {
+                          "hi": 0,
+                          "lo": 41026
                         }
                       }
                     },
@@ -1820,7 +2048,7 @@
                           "val": {
                             "i128": {
                               "hi": 0,
-                              "lo": 91295
+                              "lo": 40297
                             }
                           }
                         },
@@ -1897,7 +2125,7 @@
                           "val": {
                             "i128": {
                               "hi": 0,
-                              "lo": 38914
+                              "lo": 95674
                             }
                           }
                         },
@@ -1974,7 +2202,7 @@
                           "val": {
                             "i128": {
                               "hi": 0,
-                              "lo": 59726
+                              "lo": 93867
                             }
                           }
                         },
@@ -2041,6 +2269,83 @@
                           }
                         }
                       ]
+                    },
+                    {
+                      "map": [
+                        {
+                          "key": {
+                            "symbol": "amount"
+                          },
+                          "val": {
+                            "i128": {
+                              "hi": 0,
+                              "lo": 41026
+                            }
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "end_date"
+                          },
+                          "val": {
+                            "u64": 2
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "hours_logged"
+                          },
+                          "val": {
+                            "i128": {
+                              "hi": 0,
+                              "lo": 0
+                            }
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "id"
+                          },
+                          "val": {
+                            "u32": 4
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "rate_per_hour"
+                          },
+                          "val": {
+                            "i128": {
+                              "hi": 0,
+                              "lo": 1
+                            }
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "start_date"
+                          },
+                          "val": {
+                            "u64": 1
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "status"
+                          },
+                          "val": {
+                            "u32": 0
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "worker"
+                          },
+                          "val": {
+                            "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATYON"
+                          }
+                        }
+                      ]
                     }
                   ]
                 }
@@ -2080,7 +2385,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 189935
+                    "lo": 270864
                   }
                 }
               ]
@@ -2114,7 +2419,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 189935
+                "lo": 270864
               }
             }
           }
@@ -2169,7 +2474,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 189935
+                    "lo": 270864
                   }
                 }
               ]
@@ -2246,7 +2551,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 189935
+                "lo": 270864
               }
             }
           }
@@ -2298,7 +2603,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 810065
+                "lo": 729136
               }
             }
           }
@@ -2501,7 +2806,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 91295
+                    "lo": 40297
                   }
                 }
               ]
@@ -2535,7 +2840,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 91295
+                "lo": 40297
               }
             }
           }
@@ -2593,7 +2898,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 38914
+                    "lo": 95674
                   }
                 }
               ]
@@ -2627,7 +2932,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 38914
+                "lo": 95674
               }
             }
           }
@@ -2685,7 +2990,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 59726
+                    "lo": 93867
                   }
                 }
               ]
@@ -2719,7 +3024,99 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 59726
+                "lo": 93867
+              }
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "d63a954726751a876d37290072af1ee723d7d761eec3bf4191849d2116acdc73",
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_return"
+              },
+              {
+                "symbol": "transfer"
+              }
+            ],
+            "data": "void"
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_call"
+              },
+              {
+                "bytes": "d63a954726751a876d37290072af1ee723d7d761eec3bf4191849d2116acdc73"
+              },
+              {
+                "symbol": "transfer"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
+                },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATYON"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 41026
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "d63a954726751a876d37290072af1ee723d7d761eec3bf4191849d2116acdc73",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "transfer"
+              },
+              {
+                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
+              },
+              {
+                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATYON"
+              },
+              {
+                "string": "aaa:GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL7NV"
+              }
+            ],
+            "data": {
+              "i128": {
+                "hi": 0,
+                "lo": 41026
               }
             }
           }
@@ -2771,11 +3168,11 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 189935
+                    "lo": 270864
                   }
                 },
                 {
-                  "u32": 3
+                  "u32": 4
                 }
               ]
             }
@@ -2810,7 +3207,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 91295
+                          "lo": 40297
                         }
                       }
                     },
@@ -2887,7 +3284,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 38914
+                          "lo": 95674
                         }
                       }
                     },
@@ -2964,7 +3361,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 59726
+                          "lo": 93867
                         }
                       }
                     },
@@ -3031,6 +3428,83 @@
                       }
                     }
                   ]
+                },
+                {
+                  "map": [
+                    {
+                      "key": {
+                        "symbol": "amount"
+                      },
+                      "val": {
+                        "i128": {
+                          "hi": 0,
+                          "lo": 41026
+                        }
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "end_date"
+                      },
+                      "val": {
+                        "u64": 2
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "hours_logged"
+                      },
+                      "val": {
+                        "i128": {
+                          "hi": 0,
+                          "lo": 0
+                        }
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "id"
+                      },
+                      "val": {
+                        "u32": 4
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "rate_per_hour"
+                      },
+                      "val": {
+                        "i128": {
+                          "hi": 0,
+                          "lo": 1
+                        }
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "start_date"
+                      },
+                      "val": {
+                        "u64": 1
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "status"
+                      },
+                      "val": {
+                        "u32": 3
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "worker"
+                      },
+                      "val": {
+                        "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATYON"
+                      }
+                    }
+                  ]
                 }
               ]
             }
@@ -3083,7 +3557,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 91295
+                "lo": 40297
               }
             }
           }
@@ -3135,7 +3609,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 38914
+                "lo": 95674
               }
             }
           }
@@ -3187,7 +3661,59 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 59726
+                "lo": 93867
+              }
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": null,
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_call"
+              },
+              {
+                "bytes": "d63a954726751a876d37290072af1ee723d7d761eec3bf4191849d2116acdc73"
+              },
+              {
+                "symbol": "balance"
+              }
+            ],
+            "data": {
+              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATYON"
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "d63a954726751a876d37290072af1ee723d7d761eec3bf4191849d2116acdc73",
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_return"
+              },
+              {
+                "symbol": "balance"
+              }
+            ],
+            "data": {
+              "i128": {
+                "hi": 0,
+                "lo": 41026
               }
             }
           }
