@@ -116,6 +116,32 @@ Operational steps:
 Rollback: revert the frontend/API; existing `role` values remain valid. To
 remove an admin, set `ADMIN_WALLETS=""` and downgrade via the endpoint (or DB).
 
+## M5 — Chain-event indexer
+
+The DB is now an authoritative projection of chain state instead of relying on
+fire-and-forget client writes that could silently drift.
+
+- `GET /api/indexer/run` (cron/secret-guarded) reads contract events from
+  Soroban RPC since the stored cursor and applies them idempotently.
+- `IndexerCursor` tracks the last processed ledger; `ChainEvent` dedupes by RPC
+  paging token. `applyEvent` uses upsert/updateMany so repeats and ordering are
+  safe.
+- Vercel Cron runs it every 5 min (`vercel.json`).
+- The client write-throughs remain as **optimistic UX only** — the indexer
+  reconciles the DB to chain regardless, so a failed/missed client write no
+  longer causes permanent drift. (Removing the optimistic writes entirely is a
+  safe follow-up once the indexer is validated on testnet.)
+
+Operational steps:
+1. Set `CRON_SECRET` (Vercel injects it as the cron `Authorization` header) or
+   `INDEXER_SECRET`, plus `NEXT_PUBLIC_STELLAR_READ_ADDRESS` (the indexer reads
+   full escrow detail on `created`).
+2. Apply `add_indexer_tables` (automatic via `migrate deploy`).
+3. Confirm the cron is firing (Vercel → Cron logs) and the cursor advances.
+
+Rollback: remove the cron entry; the indexer is additive (own tables) and the
+optimistic write-throughs keep the UI functioning. No schema rollback needed.
+
 ## Rollback (M1)
 
 - The backend is not yet on `main`/production; M1 ships on the

@@ -68,6 +68,24 @@ model Session {
   @@index([expiresAt])
 }
 
+// ─── Chain Indexer ────────────────────────────────────────────────────────────
+
+model IndexerCursor {
+  id         Int      @id @default(1) // single-row table
+  lastLedger Int      @default(0)
+  updatedAt  DateTime @updatedAt
+}
+
+model ChainEvent {
+  id              String   @id // RPC paging token — globally unique, used for idempotency
+  type            String
+  ledger          Int
+  escrowOnChainId Int?
+  processedAt     DateTime @default(now())
+
+  @@index([ledger])
+}
+
 model OracleAttestation {
   id              String   @id @default(cuid())
   escrowOnChainId Int      // The Soroban contract escrow ID
