@@ -214,6 +214,27 @@ Rollback: all additive; revert code with no schema impact.
 
 Rollback: revert files; `/dashboard` is unchanged. No schema/contract impact.
 
+## M10 — Mainnet readiness & Demo-Day hardening
+
+- **Contract admin + circuit breaker + upgrade:** `init_admin` (one-time),
+  `set_paused`/`is_paused`, and `upgrade(new_wasm_hash)` (admin only). Pausing
+  blocks new escrows/approvals/finalize but **keeps `cancel_escrow`** so funds
+  can always be refunded during an incident.
+- **Deploy automation:** `deploy.sh` builds → optimizes → deploys → `init_admin`
+  (driven by `NETWORK`/`SOURCE`/`ADMIN`).
+- **Runbook:** [RUNBOOK.md](./RUNBOOK.md) — incident pause, key rotation, upgrade
+  procedure, and the mainnet + Demo-Day checklists.
+- **Contract lint clean:** declared the `testutils` feature and fixed clippy/fmt
+  so the contract CI lint job (`clippy -D warnings`, `fmt --check`) passes.
+
+Operational steps:
+1. Deploy the new contract version (ABI changed: new admin/pause/upgrade fns).
+2. `init_admin <multisig>` immediately after deploy.
+3. Rehearse a pause/cancel drill on testnet before mainnet.
+
+Rollback: if a bad version ships, `set_paused(true)`, then `upgrade` back to the
+previous WASM hash (no address change, no fund migration).
+
 ## Rollback (M1)
 
 - The backend is not yet on `main`/production; M1 ships on the

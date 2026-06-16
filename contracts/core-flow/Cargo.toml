@@ -3,6 +3,11 @@ name = "core-flow"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+# Declares the feature the soroban-sdk macros gate test-only code behind, so
+# clippy's unexpected_cfgs lint recognizes the generated #[cfg(feature = "testutils")].
+testutils = ["soroban-sdk/testutils"]
+
 [dependencies]
 soroban-sdk = "=20.5.0"
 

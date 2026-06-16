@@ -1,6 +1,9 @@
 #![no_std]
-use soroban_sdk::{contract, contractimpl, contracttype, contracterror, Address, Bytes, BytesN, Env, Vec, symbol_short};
 use soroban_sdk::token::TokenClient;
+use soroban_sdk::{
+    contract, contracterror, contractimpl, contracttype, symbol_short, Address, Bytes, BytesN, Env,
+    Vec,
+};
 
 // ========== ENUMS & ERRORS ==========
 
@@ -17,6 +20,9 @@ pub enum ContractError {
     InvalidAmount = 7,
     EscrowCancelled = 8,
     InvalidNonce = 9,
+    NotAdmin = 10,
+    Paused = 11,
+    AdminAlreadySet = 12,
 }
 
 #[contracttype]
@@ -67,14 +73,16 @@ pub enum DataKey {
     EscrowCount,
     Escrow(u32),
     Nonce(u32),
+    Admin,
+    Paused,
 }
 
 // Storage TTL constants (in ledgers)
 // ~1 ledger ≈ 5 seconds; 17280 ledgers ≈ 1 day
-const INSTANCE_TTL_THRESHOLD: u32 = 17280;       // Extend when below 1 day
-const INSTANCE_TTL_EXTEND: u32 = 17280 * 30;     // Extend to 30 days
-const PERSISTENT_TTL_THRESHOLD: u32 = 17280;     // Extend when below 1 day
-const PERSISTENT_TTL_EXTEND: u32 = 17280 * 90;   // Extend to 90 days
+const INSTANCE_TTL_THRESHOLD: u32 = 17280; // Extend when below 1 day
+const INSTANCE_TTL_EXTEND: u32 = 17280 * 30; // Extend to 30 days
+const PERSISTENT_TTL_THRESHOLD: u32 = 17280; // Extend when below 1 day
+const PERSISTENT_TTL_EXTEND: u32 = 17280 * 90; // Extend to 90 days
 
 // ========== CONTRACT ==========
 
@@ -83,6 +91,73 @@ pub struct CoreFlowContract;
 
 #[contractimpl]
 impl CoreFlowContract {
+    // ===== Admin / circuit breaker / upgrade =====
+
+    /// Set the contract admin once, immediately after deploy. Idempotent-guard:
+    /// fails if an admin is already configured. If never called, the contract
+    /// simply has no admin and can never be paused or upgraded.
+    pub fn init_admin(env: Env, admin: Address) -> Result<(), ContractError> {
+        if env.storage().instance().has(&DataKey::Admin) {
+            return Err(ContractError::AdminAlreadySet);
+        }
+        admin.require_auth();
+        env.storage().instance().set(&DataKey::Admin, &admin);
+        env.storage()
+            .instance()
+            .extend_ttl(INSTANCE_TTL_THRESHOLD, INSTANCE_TTL_EXTEND);
+        Ok(())
+    }
+
+    /// Pause or unpause state-changing operations (admin only). `cancel_escrow`
+    /// stays available while paused so funds can always be refunded.
+    pub fn set_paused(env: Env, paused: bool) -> Result<(), ContractError> {
+        Self::require_admin(&env)?;
+        env.storage().instance().set(&DataKey::Paused, &paused);
+        env.storage()
+            .instance()
+            .extend_ttl(INSTANCE_TTL_THRESHOLD, INSTANCE_TTL_EXTEND);
+        env.events()
+            .publish((symbol_short!("admin"), symbol_short!("paused")), paused);
+        Ok(())
+    }
+
+    pub fn is_paused(env: Env) -> bool {
+        env.storage()
+            .instance()
+            .get(&DataKey::Paused)
+            .unwrap_or(false)
+    }
+
+    /// Upgrade the contract WASM (admin only). Enables fixes without changing
+    /// the contract address or migrating escrow funds.
+    pub fn upgrade(env: Env, new_wasm_hash: BytesN<32>) -> Result<(), ContractError> {
+        Self::require_admin(&env)?;
+        env.deployer().update_current_contract_wasm(new_wasm_hash);
+        Ok(())
+    }
+
+    fn require_admin(env: &Env) -> Result<Address, ContractError> {
+        let admin: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::Admin)
+            .ok_or(ContractError::NotAdmin)?;
+        admin.require_auth();
+        Ok(admin)
+    }
+
+    fn require_not_paused(env: &Env) -> Result<(), ContractError> {
+        if env
+            .storage()
+            .instance()
+            .get(&DataKey::Paused)
+            .unwrap_or(false)
+        {
+            return Err(ContractError::Paused);
+        }
+        Ok(())
+    }
+
     /// Initialize a multi-signature escrow with payment schedules and oracle public key.
     /// The oracle_pubkey is an Ed25519 public key used to verify work proof signatures.
     pub fn initialize_multi_sig_escrow(
@@ -93,9 +168,10 @@ impl CoreFlowContract {
         oracle_pubkey: BytesN<32>,
         payments: Vec<PaymentSchedule>,
     ) -> Result<u32, ContractError> {
+        Self::require_not_paused(&env)?;
         manager.require_auth();
 
-        if payments.len() == 0 {
+        if payments.is_empty() {
             return Err(ContractError::InvalidAmount);
         }
 
@@ -110,8 +186,12 @@ impl CoreFlowContract {
         }
 
         // EscrowCount stays in instance storage (lightweight counter)
-        let escrow_id: u32 = env.storage().instance().get(&DataKey::EscrowCount)
-            .unwrap_or(0u32) + 1;
+        let escrow_id: u32 = env
+            .storage()
+            .instance()
+            .get(&DataKey::EscrowCount)
+            .unwrap_or(0u32)
+            + 1;
 
         // Pull the full escrow amount from the manager into contract custody.
         // Requires the manager's authorization for the token sub-invocation and
@@ -131,7 +211,9 @@ impl CoreFlowContract {
         };
 
         // Store escrow in persistent storage (per-key TTL control)
-        env.storage().persistent().set(&DataKey::Escrow(escrow_id), &escrow);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Escrow(escrow_id), &escrow);
         env.storage().persistent().extend_ttl(
             &DataKey::Escrow(escrow_id),
             PERSISTENT_TTL_THRESHOLD,
@@ -139,7 +221,9 @@ impl CoreFlowContract {
         );
 
         // Initialize nonce for this escrow
-        env.storage().persistent().set(&DataKey::Nonce(escrow_id), &0u64);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Nonce(escrow_id), &0u64);
         env.storage().persistent().extend_ttl(
             &DataKey::Nonce(escrow_id),
             PERSISTENT_TTL_THRESHOLD,
@@ -147,8 +231,12 @@ impl CoreFlowContract {
         );
 
         // Counter stays in instance storage
-        env.storage().instance().set(&DataKey::EscrowCount, &escrow_id);
-        env.storage().instance().extend_ttl(INSTANCE_TTL_THRESHOLD, INSTANCE_TTL_EXTEND);
+        env.storage()
+            .instance()
+            .set(&DataKey::EscrowCount, &escrow_id);
+        env.storage()
+            .instance()
+            .extend_ttl(INSTANCE_TTL_THRESHOLD, INSTANCE_TTL_EXTEND);
 
         // Emit event: escrow_created (escrow_id, manager, total funded amount)
         env.events().publish(
@@ -175,8 +263,12 @@ impl CoreFlowContract {
         nonce: u64,
         signature: BytesN<64>,
     ) -> Result<(), ContractError> {
+        Self::require_not_paused(&env)?;
         // Validate escrow exists (persistent storage)
-        let mut escrow: CoreFlowEscrow = env.storage().persistent().get(&DataKey::Escrow(escrow_id))
+        let mut escrow: CoreFlowEscrow = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Escrow(escrow_id))
             .ok_or(ContractError::InvalidPaymentId)?;
 
         // Guard: check if escrow is cancelled
@@ -194,7 +286,10 @@ impl CoreFlowContract {
         }
 
         // Verify nonce matches expected value (replay protection)
-        let expected_nonce: u64 = env.storage().persistent().get(&DataKey::Nonce(escrow_id))
+        let expected_nonce: u64 = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Nonce(escrow_id))
             .unwrap_or(0u64);
         if nonce != expected_nonce {
             return Err(ContractError::InvalidNonce);
@@ -209,10 +304,13 @@ impl CoreFlowContract {
         let message = Bytes::from_slice(&env, &msg_data);
 
         // Ed25519 signature verification — panics on failure (host-level error)
-        env.crypto().ed25519_verify(&escrow.oracle_pubkey, &message, &signature);
+        env.crypto()
+            .ed25519_verify(&escrow.oracle_pubkey, &message, &signature);
 
         // Increment nonce after successful verification
-        env.storage().persistent().set(&DataKey::Nonce(escrow_id), &(nonce + 1));
+        env.storage()
+            .persistent()
+            .set(&DataKey::Nonce(escrow_id), &(nonce + 1));
         env.storage().persistent().extend_ttl(
             &DataKey::Nonce(escrow_id),
             PERSISTENT_TTL_THRESHOLD,
@@ -224,7 +322,9 @@ impl CoreFlowContract {
         payment.hours_logged = hours_logged;
 
         escrow.payments.set(payment_id, payment);
-        env.storage().persistent().set(&DataKey::Escrow(escrow_id), &escrow);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Escrow(escrow_id), &escrow);
         env.storage().persistent().extend_ttl(
             &DataKey::Escrow(escrow_id),
             PERSISTENT_TTL_THRESHOLD,
@@ -241,11 +341,12 @@ impl CoreFlowContract {
     }
 
     /// Manager approval of payment(s)
-    pub fn manager_approve(
-        env: Env,
-        escrow_id: u32,
-    ) -> Result<(), ContractError> {
-        let mut escrow: CoreFlowEscrow = env.storage().persistent().get(&DataKey::Escrow(escrow_id))
+    pub fn manager_approve(env: Env, escrow_id: u32) -> Result<(), ContractError> {
+        Self::require_not_paused(&env)?;
+        let mut escrow: CoreFlowEscrow = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Escrow(escrow_id))
             .ok_or(ContractError::InvalidPaymentId)?;
 
         // Guard: check if escrow is cancelled
@@ -260,7 +361,9 @@ impl CoreFlowContract {
         }
 
         escrow.manager_approved = true;
-        env.storage().persistent().set(&DataKey::Escrow(escrow_id), &escrow);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Escrow(escrow_id), &escrow);
         env.storage().persistent().extend_ttl(
             &DataKey::Escrow(escrow_id),
             PERSISTENT_TTL_THRESHOLD,
@@ -277,11 +380,12 @@ impl CoreFlowContract {
     }
 
     /// Finance approval of payment(s)
-    pub fn finance_approve(
-        env: Env,
-        escrow_id: u32,
-    ) -> Result<(), ContractError> {
-        let mut escrow: CoreFlowEscrow = env.storage().persistent().get(&DataKey::Escrow(escrow_id))
+    pub fn finance_approve(env: Env, escrow_id: u32) -> Result<(), ContractError> {
+        Self::require_not_paused(&env)?;
+        let mut escrow: CoreFlowEscrow = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Escrow(escrow_id))
             .ok_or(ContractError::InvalidPaymentId)?;
 
         // Guard: check if escrow is cancelled
@@ -296,7 +400,9 @@ impl CoreFlowContract {
         }
 
         escrow.finance_approved = true;
-        env.storage().persistent().set(&DataKey::Escrow(escrow_id), &escrow);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Escrow(escrow_id), &escrow);
         env.storage().persistent().extend_ttl(
             &DataKey::Escrow(escrow_id),
             PERSISTENT_TTL_THRESHOLD,
@@ -317,7 +423,11 @@ impl CoreFlowContract {
         env: Env,
         escrow_id: u32,
     ) -> Result<Vec<PaymentSchedule>, ContractError> {
-        let mut escrow: CoreFlowEscrow = env.storage().persistent().get(&DataKey::Escrow(escrow_id))
+        Self::require_not_paused(&env)?;
+        let mut escrow: CoreFlowEscrow = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Escrow(escrow_id))
             .ok_or(ContractError::InvalidPaymentId)?;
 
         // Guard: check if escrow is cancelled
@@ -354,7 +464,9 @@ impl CoreFlowContract {
         }
 
         escrow.payments = finalized_payments.clone();
-        env.storage().persistent().set(&DataKey::Escrow(escrow_id), &escrow);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Escrow(escrow_id), &escrow);
 
         // Extend storage TTL to preserve finalized records
         env.storage().persistent().extend_ttl(
@@ -373,11 +485,11 @@ impl CoreFlowContract {
     }
 
     /// Cancel an escrow (dispute resolution — manager only)
-    pub fn cancel_escrow(
-        env: Env,
-        escrow_id: u32,
-    ) -> Result<(), ContractError> {
-        let mut escrow: CoreFlowEscrow = env.storage().persistent().get(&DataKey::Escrow(escrow_id))
+    pub fn cancel_escrow(env: Env, escrow_id: u32) -> Result<(), ContractError> {
+        let mut escrow: CoreFlowEscrow = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Escrow(escrow_id))
             .ok_or(ContractError::InvalidPaymentId)?;
 
         escrow.manager.require_auth();
@@ -396,7 +508,11 @@ impl CoreFlowContract {
         // released since finalize settles all payments atomically).
         if refund_amount > 0 {
             let token_client = TokenClient::new(&env, &escrow.token);
-            token_client.transfer(&env.current_contract_address(), &escrow.manager, &refund_amount);
+            token_client.transfer(
+                &env.current_contract_address(),
+                &escrow.manager,
+                &refund_amount,
+            );
         }
 
         escrow.cancelled = true;
@@ -410,7 +526,9 @@ impl CoreFlowContract {
         }
         escrow.payments = cancelled_payments;
 
-        env.storage().persistent().set(&DataKey::Escrow(escrow_id), &escrow);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Escrow(escrow_id), &escrow);
 
         // Emit event: escrow_cancelled
         env.events().publish(
@@ -422,22 +540,21 @@ impl CoreFlowContract {
     }
 
     /// Retrieve escrow details
-    pub fn get_escrow(
-        env: Env,
-        escrow_id: u32,
-    ) -> Result<CoreFlowEscrow, ContractError> {
-        env.storage().persistent().get(&DataKey::Escrow(escrow_id))
+    pub fn get_escrow(env: Env, escrow_id: u32) -> Result<CoreFlowEscrow, ContractError> {
+        env.storage()
+            .persistent()
+            .get(&DataKey::Escrow(escrow_id))
             .ok_or(ContractError::InvalidPaymentId)
     }
 
     /// Return the next expected oracle nonce for an escrow.
     /// The oracle must sign a proof using this exact value (replay protection).
     /// Returns 0 for an unknown/uninitialized escrow.
-    pub fn get_nonce(
-        env: Env,
-        escrow_id: u32,
-    ) -> u64 {
-        env.storage().persistent().get(&DataKey::Nonce(escrow_id)).unwrap_or(0u64)
+    pub fn get_nonce(env: Env, escrow_id: u32) -> u64 {
+        env.storage()
+            .persistent()
+            .get(&DataKey::Nonce(escrow_id))
+            .unwrap_or(0u64)
     }
 }
 
