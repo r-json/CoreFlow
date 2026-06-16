@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db/prisma';
-import { getUserFromRequest } from '@/lib/auth';
+import { getUserFromRequest, hasRole } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   // Auth guard — all authenticated users can list escrows
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  if (!['manager', 'finance'].includes(user.role)) {
+  if (!hasRole(user, ['manager', 'finance'])) {
     return NextResponse.json({ error: 'Forbidden: insufficient role' }, { status: 403 });
   }
 

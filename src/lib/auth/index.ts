@@ -119,16 +119,41 @@ export async function verifyChallenge(
   }
 }
 
+export const ROLES = ['admin', 'manager', 'finance', 'worker', 'viewer'] as const;
+export type Role = (typeof ROLES)[number];
+
+/** Wallet addresses (comma-separated) that are bootstrapped to `admin` on login. */
+function adminAllowlist(): string[] {
+  return (process.env.ADMIN_WALLETS || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+/** True if the payload's role is in the allowed set. `admin` is allowed everywhere. */
+export function hasRole(payload: { role: string } | null | undefined, allowed: Role[]): boolean {
+  if (!payload) return false;
+  if (payload.role === 'admin') return true;
+  return (allowed as string[]).includes(payload.role);
+}
+
 /**
- * Upserts a User in the database (creates on first login, updates nothing on repeat).
- * Returns the user record.
+ * Upserts a User in the database (creates on first login, no-op on repeat),
+ * then bootstraps configured admin wallets to the `admin` role. This is the
+ * only zero-touch path to a privileged role; all other grants go through the
+ * admin role-management endpoint.
  */
 export async function upsertUser(walletAddress: string) {
-  return prisma.user.upsert({
+  const user = await prisma.user.upsert({
     where: { walletAddress },
     create: { walletAddress, role: 'viewer' },
     update: {}, // Never downgrade an existing role on login
   });
+
+  if (adminAllowlist().includes(walletAddress) && user.role !== 'admin') {
+    return prisma.user.update({ where: { walletAddress }, data: { role: 'admin' } });
+  }
+  return user;
 }
 
 /**
@@ -164,15 +189,24 @@ export async function getSession(token: string | undefined): Promise<AuthPayload
   const payload = await verifyJwt(token);
   if (!payload) return null;
 
-  // Check the session row still exists (revocation check)
+  // Check the session row still exists (revocation check) and pull the CURRENT
+  // role/wallet from the DB — the JWT role claim can be stale for up to 24h
+  // after a promotion/demotion, so it must not be trusted for authorization.
   const session = await prisma.session.findUnique({
     where: { token },
-    select: { id: true, expiresAt: true },
+    select: {
+      expiresAt: true,
+      user: { select: { role: true, walletAddress: true } },
+    },
   });
 
   if (!session || session.expiresAt < new Date()) return null;
 
-  return payload;
+  return {
+    ...payload,
+    role: session.user.role,
+    walletAddress: session.user.walletAddress,
+  };
 }
 
 /**

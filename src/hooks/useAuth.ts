@@ -15,7 +15,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { STELLAR_CONFIG } from '@/lib/config';
 
-export type UserRole = 'manager' | 'finance' | 'worker' | 'viewer';
+export type UserRole = 'admin' | 'manager' | 'finance' | 'worker' | 'viewer';
 
 interface AuthState {
   isAuthenticated: boolean;

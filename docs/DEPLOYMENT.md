@@ -93,6 +93,29 @@ previous build disables the attest flow; no schema rollback needed (table is
 additive). Treat `ORACLE_SECRET_KEY` like any signing key — compromise requires
 rotation + re-creation of affected escrows.
 
+## M4 — Authorization & roles
+
+Closes the role gap (previously every user was a permanent `viewer`, so the
+write endpoints were unreachable).
+
+- Roles: `admin | manager | finance | worker | viewer`. `admin` passes every check.
+- Bootstrap: `ADMIN_WALLETS` (comma-separated) promotes wallets to `admin` on login.
+- Grants: `GET/POST /api/admin/roles` (admin only) lists users and sets roles;
+  upserts so roles can be pre-assigned before first login.
+- Role is read from the **DB on every request** (`getSession`), so grants take
+  effect immediately — the JWT role claim is no longer trusted for authz.
+- UI gates manager/finance/create actions by role (live mode only; mock demo
+  stays fully interactive). Enforcement is server/chain-side regardless.
+
+No DB migration — `role` is an existing string column; `admin` is a new value.
+
+Operational steps:
+1. Set `ADMIN_WALLETS` to your admin wallet(s) as a Vercel env var.
+2. Sign in with that wallet, then grant teammates roles via the admin endpoint.
+
+Rollback: revert the frontend/API; existing `role` values remain valid. To
+remove an admin, set `ADMIN_WALLETS=""` and downgrade via the endpoint (or DB).
+
 ## Rollback (M1)
 
 - The backend is not yet on `main`/production; M1 ships on the
