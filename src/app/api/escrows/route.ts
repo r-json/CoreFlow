@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db/prisma';
 import { getUserFromRequest, hasRole } from '@/lib/auth';
+import { parseBody, createEscrowSchema } from '@/lib/validation/schemas';
+import { audit } from '@/lib/audit';
 
 export async function GET(request: NextRequest) {
   // Auth guard — all authenticated users can list escrows
@@ -56,27 +58,28 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json();
-    const { onChainId, workerPubKey, amountCents, rateCents, tokenAddress } = body;
-
-    if (!workerPubKey || amountCents == null || rateCents == null) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    const body = await request.json().catch(() => null);
+    const parsed = parseBody(createEscrowSchema, body);
+    if (!parsed.ok) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
-
-    // Only index a real on-chain id. A missing/zero/negative id would otherwise
-    // be stored as 0, and the second such escrow would collide on the @unique
-    // constraint and be silently dropped as "already indexed".
-    const normalizedOnChainId =
-      typeof onChainId === 'number' && onChainId > 0 ? onChainId : null;
+    // onChainId is validated as positive-or-absent, so it never collides at 0.
+    const { onChainId, workerPubKey, amountCents, rateCents, tokenAddress } = parsed.data;
 
     const escrow = await prisma.escrow.create({
       data: {
-        onChainId: normalizedOnChainId,
+        onChainId: onChainId ?? null,
         workerPubKey,
         amountCents,
         rateCents,
-        tokenAddress: typeof tokenAddress === 'string' ? tokenAddress : null,
+        tokenAddress: tokenAddress ?? null,
       },
+    });
+
+    await audit('escrow.create', {
+      actor: user.walletAddress,
+      target: String(escrow.id),
+      metadata: { onChainId: escrow.onChainId },
     });
 
     return NextResponse.json({ escrow }, { status: 201 });

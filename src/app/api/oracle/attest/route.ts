@@ -15,11 +15,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db/prisma';
 import { getUserFromRequest } from '@/lib/auth';
 import { signHoursProof, getOraclePublicKeyHex } from '@/lib/oracle';
+import { parseBody, attestSchema } from '@/lib/validation/schemas';
+import { rateLimit } from '@/lib/ratelimit';
 
 export async function POST(request: NextRequest) {
   const user = await getUserFromRequest(request);
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const rl = rateLimit(`attest:${user.walletAddress}`, 30, 60_000);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } }
+    );
   }
 
   let pubkey: string;
@@ -30,21 +40,12 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json();
-    const { onChainId, paymentId, hoursLogged, nonce } = body;
-
-    if (
-      !Number.isInteger(onChainId) ||
-      !Number.isInteger(paymentId) ||
-      !Number.isInteger(hoursLogged) ||
-      !Number.isInteger(nonce) ||
-      onChainId < 0 ||
-      paymentId < 0 ||
-      hoursLogged <= 0 ||
-      nonce < 0
-    ) {
-      return NextResponse.json({ error: 'Invalid attestation request' }, { status: 400 });
+    const body = await request.json().catch(() => null);
+    const parsed = parseBody(attestSchema, body);
+    if (!parsed.ok) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
+    const { onChainId, paymentId, hoursLogged, nonce } = parsed.data;
 
     // Idempotency: never sign the same (escrow, payment, nonce) twice.
     const existing = await prisma.oracleAttestation.findUnique({

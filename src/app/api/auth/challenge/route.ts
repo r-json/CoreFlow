@@ -11,23 +11,26 @@
 
 import { NextResponse } from 'next/server';
 import { createChallenge } from '@/lib/auth';
+import { parseBody, challengeSchema } from '@/lib/validation/schemas';
+import { rateLimit, clientIp } from '@/lib/ratelimit';
 
 export async function POST(request: Request) {
+  const rl = rateLimit(`challenge:${clientIp(request)}`, 20, 60_000);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } }
+    );
+  }
+
   try {
     const body = await request.json().catch(() => null);
-    const walletAddress = body?.walletAddress;
-
-    if (!walletAddress || typeof walletAddress !== 'string') {
-      return NextResponse.json({ error: 'walletAddress is required' }, { status: 400 });
+    const parsed = parseBody(challengeSchema, body);
+    if (!parsed.ok) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
 
-    // Basic Stellar address format check (G... or C... 56 chars)
-    if (!/^[GC][A-Z2-7]{55}$/.test(walletAddress)) {
-      return NextResponse.json({ error: 'Invalid Stellar wallet address' }, { status: 400 });
-    }
-
-    const challenge = await createChallenge(walletAddress);
-
+    const challenge = await createChallenge(parsed.data.walletAddress);
     return NextResponse.json({ challenge }, { status: 200 });
   } catch (error) {
     console.error('[auth/challenge] Error:', error);
