@@ -464,9 +464,14 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
           }
         ];
 
-        // Demo oracle public key (in production, use a real oracle service key)
-        const demoOraclePubkey = '0101010101010101010101010101010101010101010101010101010101010101';
-        const txResult = await client.submitInitializeEscrow(walletAddress, walletAddress, tokenAddress, demoOraclePubkey, payload);
+        // Fetch the oracle's public key so the escrow only accepts hours
+        // proofs signed by our attestation service.
+        const pubkeyRes = await fetch('/api/oracle/pubkey');
+        if (!pubkeyRes.ok) {
+          throw new Error('Oracle is not configured; cannot create a verifiable escrow.');
+        }
+        const { pubkey: oraclePubkey } = await pubkeyRes.json();
+        const txResult = await client.submitInitializeEscrow(walletAddress, walletAddress, tokenAddress, oraclePubkey, payload);
         
         // Sync to backend DB - non-blocking
         try {
@@ -545,15 +550,35 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
     try {
       const isMock = escrows.find((e) => e.id === hoursEscrowId)?.isMock || isMockMode;
       if (isContractConfigured && !isMock) {
-        // Generates dummy Ed25519 signature of length 64 (all 1s) to satisfy smart contract length requirements
-        const dummySignature = Buffer.alloc(64, 1).toString('base64');
-        
+        const hours = parseInt(hoursValue);
+
+        // 1) Read the on-chain expected nonce (replay protection).
+        const nonce = await client.getNonce(hoursEscrowId);
+
+        // 2) Ask the oracle to attest these hours at that nonce.
+        const attestRes = await fetch('/api/oracle/attest', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            onChainId: hoursEscrowId,
+            paymentId: hoursPaymentId,
+            hoursLogged: hours,
+            nonce,
+          }),
+        });
+        if (!attestRes.ok) {
+          const err = await attestRes.json().catch(() => ({}));
+          throw new Error(err.error || 'Oracle attestation failed');
+        }
+        const { signature } = await attestRes.json();
+
+        // 3) Submit the oracle-signed proof on-chain.
         const result = await client.submitHoursProof(
           hoursEscrowId,
           hoursPaymentId,
-          parseInt(hoursValue),
-          0, // nonce — first submission
-          dummySignature
+          hours,
+          nonce,
+          signature
         );
 
         // Sync to backend DB - non-blocking

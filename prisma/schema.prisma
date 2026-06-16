@@ -68,6 +68,21 @@ model Session {
   @@index([expiresAt])
 }
 
+model OracleAttestation {
+  id              String   @id @default(cuid())
+  escrowOnChainId Int      // The Soroban contract escrow ID
+  paymentId       Int      // Payment schedule index
+  hoursLogged     Int
+  nonce           Int      // Must match the on-chain expected nonce
+  signature       String   // base64 Ed25519 signature
+  createdBy       String   // wallet address that requested the attestation
+  createdAt       DateTime @default(now())
+
+  // One attestation per (escrow, payment, nonce) — prevents double-signing a nonce.
+  @@unique([escrowOnChainId, paymentId, nonce])
+  @@index([escrowOnChainId])
+}
+
 model AuthChallenge {
   id            String   @id @default(cuid())
   walletAddress String
