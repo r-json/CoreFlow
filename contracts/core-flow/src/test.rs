@@ -714,4 +714,67 @@ mod tests {
 
         client.initialize_multi_sig_escrow(&manager, &finance, &token, &oracle_pubkey, &payments);
     }
+
+    // ========== PROPERTY / FUZZ ==========
+
+    #[test]
+    fn test_custody_sum_invariant_fuzz() {
+        // Deterministic pseudo-random scenarios assert the custody invariant:
+        // the contract pulls in exactly the sum of payments, pays each worker
+        // its amount on finalize, and ends at a zero balance.
+        let mut seed: u64 = 0xC0FFEE_1234;
+        let mut next = || {
+            seed = seed
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
+            seed >> 33
+        };
+
+        for _ in 0..30 {
+            let env = Env::default();
+            env.mock_all_auths();
+            let contract_id = env.register_contract(None, CoreFlowContract);
+            let client = CoreFlowContractClient::new(&env, &contract_id);
+
+            let manager = Address::generate(&env);
+            let finance = Address::generate(&env);
+            let token = setup_token(&env, &manager);
+            let (_sk, oracle_pubkey) = generate_oracle_keypair(&env);
+
+            let n = (next() % 4) + 1; // 1..=4 payments
+            let mut payments = Vec::new(&env);
+            let mut total: i128 = 0;
+            for i in 0..n {
+                let amount = ((next() % 100_000) + 1) as i128; // 1..=100000, always positive
+                total += amount;
+                payments.push_back(PaymentSchedule {
+                    id: (i + 1) as u32,
+                    worker: Address::generate(&env),
+                    amount,
+                    start_date: 1,
+                    end_date: 2,
+                    hours_logged: 0,
+                    rate_per_hour: 1,
+                    status: PaymentStatus::Pending,
+                });
+            }
+
+            // Max possible total (4 * 100000) stays well under MINT_AMOUNT.
+            let escrow_id =
+                client.initialize_multi_sig_escrow(&manager, &finance, &token, &oracle_pubkey, &payments);
+
+            assert_eq!(balance_of(&env, &token, &contract_id), total);
+            assert_eq!(balance_of(&env, &token, &manager), MINT_AMOUNT - total);
+
+            client.manager_approve(&escrow_id);
+            client.finance_approve(&escrow_id);
+            let finalized = client.finalize_payment(&escrow_id);
+
+            for i in 0..finalized.len() {
+                let p = finalized.get(i).unwrap();
+                assert_eq!(balance_of(&env, &token, &p.worker), p.amount);
+            }
+            assert_eq!(balance_of(&env, &token, &contract_id), 0);
+        }
+    }
 }

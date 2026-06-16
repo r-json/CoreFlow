@@ -10,7 +10,10 @@
     "lint": "next lint",
     "test": "vitest",
     "test:ci": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",
+    "typecheck": "tsc --noEmit",
+    "e2e": "playwright test",
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
@@ -34,6 +37,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
@@ -41,6 +45,7 @@
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "@vitejs/plugin-react": "^6.0.2",
+    "@vitest/coverage-v8": "^4.1.9",
     "autoprefixer": "^10.4.14",
     "dotenv": "^17.4.2",
     "eslint": "^8.57.1",
