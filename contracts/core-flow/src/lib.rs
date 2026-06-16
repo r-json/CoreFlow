@@ -1,5 +1,6 @@
 #![no_std]
 use soroban_sdk::{contract, contractimpl, contracttype, contracterror, Address, Bytes, BytesN, Env, Vec, symbol_short};
+use soroban_sdk::token::TokenClient;
 
 // ========== ENUMS & ERRORS ==========
 
@@ -49,6 +50,8 @@ pub struct PaymentSchedule {
 pub struct CoreFlowEscrow {
     pub manager: Address,
     pub finance_approver: Address,
+    /// Stellar Asset Contract (SAC) address used for custody/settlement (e.g. USDC).
+    pub token: Address,
     pub oracle_pubkey: BytesN<32>,
     pub payments: Vec<PaymentSchedule>,
     pub manager_approved: bool,
@@ -86,6 +89,7 @@ impl CoreFlowContract {
         env: Env,
         manager: Address,
         finance_approver: Address,
+        token: Address,
         oracle_pubkey: BytesN<32>,
         payments: Vec<PaymentSchedule>,
     ) -> Result<u32, ContractError> {
@@ -95,21 +99,30 @@ impl CoreFlowContract {
             return Err(ContractError::InvalidAmount);
         }
 
-        // Guard: prevent negative or zero amounts and rates
+        // Guard amounts/rates and sum the total to be escrowed.
+        let mut total_amount: i128 = 0;
         for i in 0..payments.len() {
             let p = payments.get(i).unwrap();
             if p.amount <= 0 || p.rate_per_hour <= 0 {
                 return Err(ContractError::InvalidAmount);
             }
+            total_amount += p.amount;
         }
 
         // EscrowCount stays in instance storage (lightweight counter)
         let escrow_id: u32 = env.storage().instance().get(&DataKey::EscrowCount)
             .unwrap_or(0u32) + 1;
 
+        // Pull the full escrow amount from the manager into contract custody.
+        // Requires the manager's authorization for the token sub-invocation and
+        // reverts (host trap) if the manager has insufficient balance.
+        let token_client = TokenClient::new(&env, &token);
+        token_client.transfer(&manager, &env.current_contract_address(), &total_amount);
+
         let escrow = CoreFlowEscrow {
             manager: manager.clone(),
             finance_approver: finance_approver.clone(),
+            token: token.clone(),
             oracle_pubkey,
             payments: payments.clone(),
             manager_approved: false,
@@ -137,10 +150,10 @@ impl CoreFlowContract {
         env.storage().instance().set(&DataKey::EscrowCount, &escrow_id);
         env.storage().instance().extend_ttl(INSTANCE_TTL_THRESHOLD, INSTANCE_TTL_EXTEND);
 
-        // Emit event: escrow_created
+        // Emit event: escrow_created (escrow_id, manager, total funded amount)
         env.events().publish(
             (symbol_short!("escrow"), symbol_short!("created")),
-            (escrow_id, manager, payments.len()),
+            (escrow_id, manager, total_amount),
         );
 
         Ok(escrow_id)
@@ -326,12 +339,16 @@ impl CoreFlowContract {
             }
         }
 
-        // Mark all payments as finalized
+        // Mark all payments as finalized and release escrowed funds to workers.
+        let token_client = TokenClient::new(&env, &escrow.token);
+        let contract_addr = env.current_contract_address();
         let mut finalized_payments = Vec::new(&env);
         let mut total_amount: i128 = 0;
         for i in 0..escrow.payments.len() {
             let mut p = escrow.payments.get(i).unwrap();
             p.status = PaymentStatus::Finalized;
+            // Transfer this payment's amount from contract custody to the worker.
+            token_client.transfer(&contract_addr, &p.worker, &p.amount);
             total_amount += p.amount;
             finalized_payments.push_back(p);
         }
@@ -365,12 +382,21 @@ impl CoreFlowContract {
 
         escrow.manager.require_auth();
 
-        // Cannot cancel already finalized escrows
+        // Cannot cancel already finalized escrows; total the refund owed.
+        let mut refund_amount: i128 = 0;
         for i in 0..escrow.payments.len() {
             let p = escrow.payments.get(i).unwrap();
             if p.status == PaymentStatus::Finalized {
                 return Err(ContractError::PaymentAlreadyFinalized);
             }
+            refund_amount += p.amount;
+        }
+
+        // Refund the full escrowed amount back to the manager (nothing was
+        // released since finalize settles all payments atomically).
+        if refund_amount > 0 {
+            let token_client = TokenClient::new(&env, &escrow.token);
+            token_client.transfer(&env.current_contract_address(), &escrow.manager, &refund_amount);
         }
 
         escrow.cancelled = true;

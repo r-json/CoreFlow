@@ -29,6 +29,7 @@ export interface PaymentSchedule {
 export interface EscrowDetails {
   manager: string;
   finance_approver: string;
+  token: string;
   oracle_pubkey: string;
   payments: PaymentSchedule[];
   manager_approved: boolean;
@@ -202,6 +203,7 @@ export class CoreFlowClient {
       return {
         manager: rawEscrow.manager,
         finance_approver: rawEscrow.finance_approver,
+        token: rawEscrow.token,
         oracle_pubkey: rawEscrow.oracle_pubkey,
         manager_approved: rawEscrow.manager_approved,
         finance_approved: rawEscrow.finance_approved,
@@ -228,6 +230,7 @@ export class CoreFlowClient {
   async submitInitializeEscrow(
     managerAddress: string,
     financeAddress: string,
+    tokenAddress: string,
     oraclePubkeyHex: string,
     payments: PaymentScheduleInput[]
   ): Promise<SubmitResult> {
@@ -247,6 +250,8 @@ export class CoreFlowClient {
 
     const managerScVal = sdk.Address.fromString(managerAddress);
     const financeScVal = sdk.Address.fromString(financeAddress);
+    // Token (Stellar Asset Contract) address used for custody/settlement.
+    const tokenScVal = sdk.Address.fromString(tokenAddress);
     // Convert hex oracle public key to BytesN<32> ScVal
     const oracleBytes = Buffer.from(oraclePubkeyHex, 'hex');
     const oraclePubkeyScVal = sdk.xdr.ScVal.scvBytes(oracleBytes);
@@ -255,6 +260,7 @@ export class CoreFlowClient {
     return this.submitTransaction('initialize_multi_sig_escrow', [
       managerScVal,
       financeScVal,
+      tokenScVal,
       oraclePubkeyScVal,
       paymentsScVal,
     ]);

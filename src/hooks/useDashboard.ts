@@ -445,6 +445,15 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
           );
         }
 
+        // The settlement token (USDC SAC) must be configured for on-chain
+        // custody — the contract pulls funds from the manager on creation.
+        const tokenAddress = STELLAR_CONFIG.token.id;
+        if (!tokenAddress) {
+          throw new Error(
+            'Settlement token not configured. Set NEXT_PUBLIC_STELLAR_TOKEN_ID to the USDC Stellar Asset Contract address for on-chain custody.'
+          );
+        }
+
         const payload = [
           {
             worker: workerPubKey,
@@ -457,7 +466,7 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
 
         // Demo oracle public key (in production, use a real oracle service key)
         const demoOraclePubkey = '0101010101010101010101010101010101010101010101010101010101010101';
-        const txResult = await client.submitInitializeEscrow(walletAddress, walletAddress, demoOraclePubkey, payload);
+        const txResult = await client.submitInitializeEscrow(walletAddress, walletAddress, tokenAddress, demoOraclePubkey, payload);
         
         // Sync to backend DB - non-blocking
         try {
@@ -469,6 +478,7 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
               workerPubKey,
               amountCents,
               rateCents,
+              tokenAddress,
             }),
           });
         } catch (e) {

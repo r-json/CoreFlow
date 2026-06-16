@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { onChainId, workerPubKey, amountCents, rateCents } = body;
+    const { onChainId, workerPubKey, amountCents, rateCents, tokenAddress } = body;
 
     if (!workerPubKey || amountCents == null || rateCents == null) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -70,7 +70,13 @@ export async function POST(request: NextRequest) {
       typeof onChainId === 'number' && onChainId > 0 ? onChainId : null;
 
     const escrow = await prisma.escrow.create({
-      data: { onChainId: normalizedOnChainId, workerPubKey, amountCents, rateCents },
+      data: {
+        onChainId: normalizedOnChainId,
+        workerPubKey,
+        amountCents,
+        rateCents,
+        tokenAddress: typeof tokenAddress === 'string' ? tokenAddress : null,
+      },
     });
 
     return NextResponse.json({ escrow }, { status: 201 });

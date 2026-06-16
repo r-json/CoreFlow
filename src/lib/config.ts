@@ -33,6 +33,12 @@ export const STELLAR_CONFIG = {
     network: (process.env.NEXT_PUBLIC_STELLAR_NETWORK as 'testnet' | 'public') || 'testnet',
   },
 
+  // Settlement token (Stellar Asset Contract address, e.g. USDC SAC).
+  // Funds are pulled into escrow custody on creation and released on finalize.
+  token: {
+    id: process.env.NEXT_PUBLIC_STELLAR_TOKEN_ID || '',
+  },
+
   // Wallet configuration
   wallet: {
     // Freighter wallet configuration

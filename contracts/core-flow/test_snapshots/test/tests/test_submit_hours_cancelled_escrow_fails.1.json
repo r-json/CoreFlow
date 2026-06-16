@@ -1589,11 +1589,30 @@
                 "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
               },
               {
-                "symbol": "manager_approve"
+                "symbol": "submit_hours_proof"
               }
             ],
             "data": {
-              "u32": 1
+              "vec": [
+                {
+                  "u32": 1
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 40
+                  }
+                },
+                {
+                  "u64": 0
+                },
+                {
+                  "bytes": "18b2d8e96e718093ac9417a09ce651296f21324e8f8cdefef2c1d48994e12f55a088fcf42b739934eb8a1dd789ae594e76d68cd784b60c979e10ec5a62ff6b0c"
+                }
+              ]
             }
           }
         }
@@ -1612,7 +1631,7 @@
                 "symbol": "fn_return"
               },
               {
-                "symbol": "manager_approve"
+                "symbol": "submit_hours_proof"
               }
             ],
             "data": {
@@ -1673,12 +1692,27 @@
                   "string": "contract call failed"
                 },
                 {
-                  "symbol": "manager_approve"
+                  "symbol": "submit_hours_proof"
                 },
                 {
                   "vec": [
                     {
                       "u32": 1
+                    },
+                    {
+                      "u32": 0
+                    },
+                    {
+                      "i128": {
+                        "hi": 0,
+                        "lo": 40
+                      }
+                    },
+                    {
+                      "u64": 0
+                    },
+                    {
+                      "bytes": "18b2d8e96e718093ac9417a09ce651296f21324e8f8cdefef2c1d48994e12f55a088fcf42b739934eb8a1dd789ae594e76d68cd784b60c979e10ec5a62ff6b0c"
                     }
                   ]
                 }

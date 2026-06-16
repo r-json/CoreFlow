@@ -49,6 +49,26 @@ No Docker? Point `DATABASE_URL`/`DIRECT_URL` at any reachable Postgres 14+.
    `prisma generate && prisma migrate deploy && next build`
    — so every deploy regenerates the client and applies pending migrations.
 
+## M2 — Custodial escrow (token transfers)
+
+The contract now holds and moves real funds:
+- `initialize_multi_sig_escrow(manager, finance, token, oracle_pubkey, payments)`
+  pulls the total amount from the manager into contract custody.
+- `finalize_payment` transfers each payment to its worker.
+- `cancel_escrow` refunds the full balance to the manager.
+
+Operational steps:
+1. The escrow ABI changed (new `token` arg + struct field) — **deploy a new
+   contract version**. Deploy to **testnet first**.
+2. Set `NEXT_PUBLIC_STELLAR_CONTRACT_ID` to the new contract and
+   `NEXT_PUBLIC_STELLAR_TOKEN_ID` to the USDC SAC address for that network.
+3. Apply the `add_escrow_token` DB migration (automatic via `migrate deploy`).
+
+Rollback: point `NEXT_PUBLIC_STELLAR_CONTRACT_ID` back to the previous
+(non-custodial) contract id and redeploy the previous frontend build. Funds are
+per-escrow and never pooled, so no fund migration is required. The
+`tokenAddress` column is nullable and additive — safe to leave in place.
+
 ## Rollback (M1)
 
 - The backend is not yet on `main`/production; M1 ships on the
