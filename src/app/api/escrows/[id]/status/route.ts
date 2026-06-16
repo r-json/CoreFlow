@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db/prisma';
-import { getUserFromRequest } from '@/lib/auth';
+import { getUserFromRequest, hasRole } from '@/lib/auth';
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   // Role guard — only manager or finance can update escrow status
@@ -8,7 +8,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  if (!['manager', 'finance'].includes(user.role)) {
+  if (!hasRole(user, ['manager', 'finance'])) {
     return NextResponse.json({ error: 'Forbidden: insufficient role' }, { status: 403 });
   }
 
@@ -21,14 +21,14 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const body = await request.json();
     const { status, managerApproved, financeApproved } = body;
 
-    // Prevent finance from doing manager actions and vice versa
-    if (managerApproved !== undefined && user.role !== 'manager') {
+    // Prevent finance from doing manager actions and vice versa (admin may do both)
+    if (managerApproved !== undefined && !hasRole(user, ['manager'])) {
       return NextResponse.json(
         { error: 'Forbidden: only managers can set managerApproved' },
         { status: 403 }
       );
     }
-    if (financeApproved !== undefined && user.role !== 'finance') {
+    if (financeApproved !== undefined && !hasRole(user, ['finance'])) {
       return NextResponse.json(
         { error: 'Forbidden: only finance can set financeApproved' },
         { status: 403 }

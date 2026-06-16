@@ -30,6 +30,10 @@ interface EscrowCardProps {
   onFinalize?: (escrowId: number) => Promise<void>;
   onCancel?: (escrowId: number) => Promise<void>;
   isConnected?: boolean;
+  /** Whether the current user may perform manager actions (approve/finalize/cancel). */
+  canManage?: boolean;
+  /** Whether the current user may perform finance approvals. */
+  canFinance?: boolean;
 }
 
 export const EscrowCard = ({
@@ -39,6 +43,8 @@ export const EscrowCard = ({
   onFinalize,
   onCancel,
   isConnected = false,
+  canManage = true,
+  canFinance = true,
 }: EscrowCardProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -183,7 +189,8 @@ export const EscrowCard = ({
               <>
                 <Button
                   onClick={() => handleAction('manager')}
-                  disabled={!isConnected || isLoading}
+                  disabled={!isConnected || isLoading || !canManage}
+                  title={!canManage ? 'Requires the manager role' : undefined}
                   className="bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white font-semibold text-xs py-2 px-4 shadow-lg shadow-purple-500/20 active:scale-95 transition-transform"
                 >
                   <ShieldCheck className="w-4 h-4 mr-1.5" />
@@ -191,7 +198,8 @@ export const EscrowCard = ({
                 </Button>
                 <Button
                   onClick={() => handleAction('cancel')}
-                  disabled={!isConnected || isLoading}
+                  disabled={!isConnected || isLoading || !canManage}
+                  title={!canManage ? 'Requires the manager role' : undefined}
                   className="bg-slate-900 hover:bg-rose-950/40 text-slate-400 hover:text-rose-400 font-semibold text-xs py-2 px-4 border border-white/5 hover:border-rose-950/50 active:scale-95 transition-transform"
                 >
                   <XCircle className="w-4 h-4 mr-1.5" />
@@ -203,7 +211,8 @@ export const EscrowCard = ({
               <>
                 <Button
                   onClick={() => handleAction('finance')}
-                  disabled={!isConnected || isLoading}
+                  disabled={!isConnected || isLoading || !canFinance}
+                  title={!canFinance ? 'Requires the finance role' : undefined}
                   className="bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-semibold text-xs py-2 px-4 shadow-lg shadow-indigo-500/20 active:scale-95 transition-transform"
                 >
                   <CheckCircle2 className="w-4 h-4 mr-1.5" />
@@ -211,7 +220,8 @@ export const EscrowCard = ({
                 </Button>
                 <Button
                   onClick={() => handleAction('cancel')}
-                  disabled={!isConnected || isLoading}
+                  disabled={!isConnected || isLoading || !canManage}
+                  title={!canManage ? 'Requires the manager role' : undefined}
                   className="bg-slate-900 hover:bg-rose-950/40 text-slate-400 hover:text-rose-400 font-semibold text-xs py-2 px-4 border border-white/5 hover:border-rose-950/50 active:scale-95 transition-transform"
                 >
                   <XCircle className="w-4 h-4 mr-1.5" />
@@ -223,7 +233,8 @@ export const EscrowCard = ({
               <>
                 <Button
                   onClick={() => handleAction('finalize')}
-                  disabled={!isConnected || isLoading}
+                  disabled={!isConnected || isLoading || !canManage}
+                  title={!canManage ? 'Requires the manager role' : undefined}
                   className="bg-gradient-to-r from-violet-500 to-indigo-600 hover:from-violet-400 hover:to-indigo-500 text-white font-semibold text-xs py-2 px-4 shadow-lg shadow-violet-500/20 active:scale-95 transition-transform"
                 >
                   <DollarSign className="w-4 h-4 mr-1.5 animate-bounce" style={{ animationDuration: '2s' }} />
@@ -231,7 +242,8 @@ export const EscrowCard = ({
                 </Button>
                 <Button
                   onClick={() => handleAction('cancel')}
-                  disabled={!isConnected || isLoading}
+                  disabled={!isConnected || isLoading || !canManage}
+                  title={!canManage ? 'Requires the manager role' : undefined}
                   className="bg-slate-900 hover:bg-rose-950/40 text-slate-400 hover:text-rose-400 font-semibold text-xs py-2 px-4 border border-white/5 hover:border-rose-950/50 active:scale-95 transition-transform"
                 >
                   <XCircle className="w-4 h-4 mr-1.5" />

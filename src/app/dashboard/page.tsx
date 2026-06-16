@@ -33,6 +33,12 @@ export default function DashboardPage() {
     stats,
   } = state;
 
+  // Role-based gating applies only to live on-chain/DB writes. In mock demo
+  // mode every action stays available for showcase purposes.
+  const gateActions = isContractConfigured && !isMockMode;
+  const canManage = !gateActions || auth.role === 'manager' || auth.role === 'admin';
+  const canFinance = !gateActions || auth.role === 'finance' || auth.role === 'admin';
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950/60 to-slate-950 text-slate-100 flex flex-col font-sans">
       
@@ -94,7 +100,9 @@ export default function DashboardPage() {
             </button>
             <button
               onClick={() => actions.setShowCreateModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white transition-colors shadow-md shadow-violet-500/15"
+              disabled={!canManage}
+              title={!canManage ? 'Requires the manager role' : undefined}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white transition-colors shadow-md shadow-violet-500/15 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <PlusCircle className="w-3.5 h-3.5" />
               New Escrow
@@ -128,6 +136,8 @@ export default function DashboardPage() {
                   onFinalize={actions.handleFinalize}
                   onCancel={actions.handleCancelEscrow}
                   isConnected={isConnected}
+                  canManage={canManage}
+                  canFinance={canFinance}
                 />
               ))
             )}

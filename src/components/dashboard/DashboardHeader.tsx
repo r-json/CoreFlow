@@ -16,6 +16,7 @@ interface DashboardHeaderProps {
 }
 
 const ROLE_LABELS: Record<UserRole, string> = {
+  admin: 'Admin',
   manager: 'Manager',
   finance: 'Finance',
   worker: 'Worker',
@@ -23,6 +24,7 @@ const ROLE_LABELS: Record<UserRole, string> = {
 };
 
 const ROLE_COLORS: Record<UserRole, string> = {
+  admin: 'text-amber-400 border-amber-500/30 bg-amber-500/10',
   manager: 'text-violet-400 border-violet-500/30 bg-violet-500/10',
   finance: 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10',
   worker: 'text-sky-400 border-sky-500/30 bg-sky-500/10',

@@ -18,7 +18,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 
-const PROTECTED_API_PREFIXES = ['/api/escrows', '/api/hours'];
+const PROTECTED_API_PREFIXES = ['/api/escrows', '/api/hours', '/api/admin', '/api/oracle/attest'];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -61,5 +61,10 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/api/escrows/:path*', '/api/hours/:path*'],
+  matcher: [
+    '/api/escrows/:path*',
+    '/api/hours/:path*',
+    '/api/admin/:path*',
+    '/api/oracle/attest',
+  ],
 };
