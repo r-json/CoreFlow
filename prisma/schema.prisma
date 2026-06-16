@@ -6,8 +6,12 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  // Pooled connection (PgBouncer / Neon / Supabase pooler) used by the app at runtime.
+  url       = env("DATABASE_URL")
+  // Direct (unpooled) connection used only for migrations/introspection.
+  // Falls back to DATABASE_URL locally if DIRECT_URL is unset.
+  directUrl = env("DIRECT_URL")
 }
 
 model Escrow {

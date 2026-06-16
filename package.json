@@ -5,11 +5,16 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "vercel-build": "prisma generate && prisma migrate deploy && next build",
     "start": "next start",
     "lint": "next lint",
     "test": "vitest",
     "test:ci": "vitest run",
     "test:ui": "vitest --ui",
+    "postinstall": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:studio": "prisma studio",
     "contract:build": "cd contracts/core-flow && cargo build --target wasm32-unknown-unknown --release",
     "contract:test": "cd contracts/core-flow && cargo test"
   },
