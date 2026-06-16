@@ -7,16 +7,22 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { deleteSession, SESSION_COOKIE_NAME } from '@/lib/auth';
+import { deleteSession, getSession, SESSION_COOKIE_NAME } from '@/lib/auth';
+import { audit } from '@/lib/audit';
 
 export async function POST(request: NextRequest) {
   try {
     const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
 
     if (token) {
+      // Record who logged out (best-effort) before revoking the session.
+      const session = await getSession(token).catch(() => null);
       // Non-blocking: even if DB delete fails, we still clear the cookie
       try {
         await deleteSession(token);
+        if (session) {
+          await audit('auth.logout', { actor: session.walletAddress });
+        }
       } catch (e) {
         console.error('[auth/logout] DB delete failed (cookie still cleared):', e);
       }

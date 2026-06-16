@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db/prisma';
 import { getUserFromRequest } from '@/lib/auth';
+import { parseBody, hoursSchema } from '@/lib/validation/schemas';
 
 export async function POST(request: NextRequest) {
   // Auth guard — any authenticated user can submit hours (worker, manager, finance)
@@ -10,12 +11,12 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json();
-    const { onChainId, hoursLogged, paymentId, txHash } = body;
-
-    if (onChainId == null || hoursLogged == null || paymentId == null) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    const body = await request.json().catch(() => null);
+    const parsed = parseBody(hoursSchema, body);
+    if (!parsed.ok) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
+    const { onChainId, hoursLogged, paymentId, txHash } = parsed.data;
 
     const escrow = await prisma.escrow.findUnique({ where: { onChainId } });
 

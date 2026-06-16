@@ -12,7 +12,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db/prisma';
-import { getUserFromRequest, hasRole, ROLES, type Role } from '@/lib/auth';
+import { getUserFromRequest, hasRole, type Role } from '@/lib/auth';
+import { parseBody, roleGrantSchema } from '@/lib/validation/schemas';
+import { audit } from '@/lib/audit';
 
 export async function GET(request: NextRequest) {
   const user = await getUserFromRequest(request);
@@ -38,24 +40,24 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json();
-    const { walletAddress, role } = body ?? {};
-
-    if (!walletAddress || typeof walletAddress !== 'string' || !/^[GC][A-Z2-7]{55}$/.test(walletAddress)) {
-      return NextResponse.json({ error: 'Invalid wallet address' }, { status: 400 });
+    const body = await request.json().catch(() => null);
+    const parsed = parseBody(roleGrantSchema, body);
+    if (!parsed.ok) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
-    if (!ROLES.includes(role)) {
-      return NextResponse.json(
-        { error: `Invalid role. Must be one of: ${ROLES.join(', ')}` },
-        { status: 400 }
-      );
-    }
+    const { walletAddress, role } = parsed.data;
 
     // Upsert so an admin can pre-assign a role before the user's first login.
     const updated = await prisma.user.upsert({
       where: { walletAddress },
       create: { walletAddress, role: role as Role },
       update: { role: role as Role },
+    });
+
+    await audit('role.grant', {
+      actor: user.walletAddress,
+      target: walletAddress,
+      metadata: { role },
     });
 
     return NextResponse.json(

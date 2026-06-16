@@ -14,18 +14,25 @@
 
 import { NextResponse } from 'next/server';
 import { verifyChallenge, upsertUser, createSession, SESSION_COOKIE_OPTIONS, SESSION_COOKIE_NAME } from '@/lib/auth';
+import { parseBody, verifySchema } from '@/lib/validation/schemas';
+import { rateLimit, clientIp } from '@/lib/ratelimit';
 
 export async function POST(request: Request) {
+  const rl = rateLimit(`verify:${clientIp(request)}`, 10, 60_000);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } }
+    );
+  }
+
   try {
     const body = await request.json().catch(() => null);
-    const { walletAddress, signature } = body ?? {};
-
-    if (!walletAddress || typeof walletAddress !== 'string') {
-      return NextResponse.json({ error: 'walletAddress is required' }, { status: 400 });
+    const parsed = parseBody(verifySchema, body);
+    if (!parsed.ok) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
-    if (!signature || typeof signature !== 'string') {
-      return NextResponse.json({ error: 'signature is required' }, { status: 400 });
-    }
+    const { walletAddress, signature } = parsed.data;
 
     const valid = await verifyChallenge(walletAddress, signature);
 

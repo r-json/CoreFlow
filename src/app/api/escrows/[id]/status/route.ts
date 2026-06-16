@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db/prisma';
 import { getUserFromRequest, hasRole } from '@/lib/auth';
+import { parseBody, statusPatchSchema } from '@/lib/validation/schemas';
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   // Role guard — only manager or finance can update escrow status
@@ -18,8 +19,12 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ error: 'Invalid escrow ID' }, { status: 400 });
     }
 
-    const body = await request.json();
-    const { status, managerApproved, financeApproved } = body;
+    const body = await request.json().catch(() => null);
+    const parsed = parseBody(statusPatchSchema, body);
+    if (!parsed.ok) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
+    }
+    const { status, managerApproved, financeApproved } = parsed.data;
 
     // Prevent finance from doing manager actions and vice versa (admin may do both)
     if (managerApproved !== undefined && !hasRole(user, ['manager'])) {

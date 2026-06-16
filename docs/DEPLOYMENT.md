@@ -142,6 +142,30 @@ Operational steps:
 Rollback: remove the cron entry; the indexer is additive (own tables) and the
 optimistic write-throughs keep the UI functioning. No schema rollback needed.
 
+## M6 — Security hardening
+
+- **Validation:** every mutating route validates its body with zod
+  (`src/lib/validation/schemas.ts`) and returns a consistent 400. The escrow
+  `onChainId` is now schema-enforced positive-or-absent (no 0-collision path).
+- **Rate limiting:** `src/lib/ratelimit.ts` (fixed window) brakes
+  `auth/challenge` (20/min/IP), `auth/verify` (10/min/IP), `oracle/attest`
+  (30/min/wallet). In-memory + per-instance — for multi-instance scale swap the
+  Map for Upstash Redis / Vercel KV behind the same interface.
+- **Security headers:** `next.config.js` sends HSTS, X-Frame-Options=DENY,
+  X-Content-Type-Options=nosniff, Referrer-Policy, Permissions-Policy, and a
+  **Report-Only** CSP (connect-src allows the Stellar RPC). Promote CSP to
+  enforcing after validating reports.
+- **Audit log:** `AuditLog` table + `audit()` records `role.grant`,
+  `escrow.create`, `auth.logout` (best-effort; never blocks the action).
+
+Operational steps:
+1. Apply `add_audit_log` (automatic via `migrate deploy`).
+2. After deploy, watch CSP report-only violations; once clean, switch the header
+   key to `Content-Security-Policy`.
+3. For >1 instance, point the rate limiter at a shared store.
+
+Rollback: all additive. Revert code; the `AuditLog` table can remain unused.
+
 ## Rollback (M1)
 
 - The backend is not yet on `main`/production; M1 ships on the

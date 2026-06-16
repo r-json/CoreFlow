@@ -68,6 +68,18 @@ model Session {
   @@index([expiresAt])
 }
 
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String   // e.g. role.grant, escrow.create, auth.logout
+  actor     String?  // wallet address of the actor
+  target    String?  // affected entity (wallet / escrow id)
+  metadata  String?  // JSON blob of extra context
+  createdAt DateTime @default(now())
+
+  @@index([action])
+  @@index([createdAt])
+}
+
 // ─── Chain Indexer ────────────────────────────────────────────────────────────
 
 model IndexerCursor {
