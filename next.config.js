@@ -3,7 +3,12 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   compiler: {
-    removeConsole: process.env.NODE_ENV === "production",
+    // Strip console.* in production but keep error/warn so server-side
+    // logging in API routes and auth survives for incident debugging.
+    removeConsole:
+      process.env.NODE_ENV === "production"
+        ? { exclude: ["error", "warn"] }
+        : false,
   },
   webpack: (config, { isServer }) => {
     config.resolve.fallback = {

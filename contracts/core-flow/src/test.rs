@@ -1,8 +1,48 @@
 #[cfg(test)]
 mod tests {
     use crate::{CoreFlowContract, CoreFlowContractClient, PaymentSchedule, PaymentStatus, ContractError};
-    use soroban_sdk::{Address, Bytes, Env, Vec};
+    use soroban_sdk::{Address, Bytes, BytesN, Env, Vec};
     use soroban_sdk::testutils::Address as _;
+    use ed25519_dalek::{SigningKey, Signer};
+
+    // ========== HELPERS ==========
+
+    /// Generate a deterministic Ed25519 keypair for testing.
+    /// Returns (signing_key, oracle_pubkey_bytes).
+    fn generate_oracle_keypair(env: &Env) -> (SigningKey, BytesN<32>) {
+        let secret_bytes: [u8; 32] = [
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+            17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
+        ];
+        let signing_key = SigningKey::from_bytes(&secret_bytes);
+        let pubkey_bytes = signing_key.verifying_key().to_bytes();
+        let oracle_pubkey = BytesN::from_array(env, &pubkey_bytes);
+        (signing_key, oracle_pubkey)
+    }
+
+    /// Construct the 32-byte message that the oracle should sign.
+    fn build_oracle_message(escrow_id: u32, payment_id: u32, hours_logged: i128, nonce: u64) -> [u8; 32] {
+        let mut msg = [0u8; 32];
+        msg[0..4].copy_from_slice(&escrow_id.to_be_bytes());
+        msg[4..8].copy_from_slice(&payment_id.to_be_bytes());
+        msg[8..24].copy_from_slice(&hours_logged.to_be_bytes());
+        msg[24..32].copy_from_slice(&nonce.to_be_bytes());
+        msg
+    }
+
+    /// Sign an oracle message and return BytesN<64> signature.
+    fn sign_oracle_proof(
+        env: &Env,
+        signing_key: &SigningKey,
+        escrow_id: u32,
+        payment_id: u32,
+        hours_logged: i128,
+        nonce: u64,
+    ) -> BytesN<64> {
+        let msg = build_oracle_message(escrow_id, payment_id, hours_logged, nonce);
+        let signature = signing_key.sign(&msg);
+        BytesN::from_array(env, &signature.to_bytes())
+    }
 
     fn create_test_payment(_env: &Env, worker: &Address) -> PaymentSchedule {
         PaymentSchedule {
@@ -54,16 +94,18 @@ mod tests {
         let manager = Address::generate(&env);
         let finance = Address::generate(&env);
         let worker = Address::generate(&env);
+        let (_signing_key, oracle_pubkey) = generate_oracle_keypair(&env);
 
         let mut payments = Vec::new(&env);
         payments.push_back(create_test_payment(&env, &worker));
 
-        let escrow_id = client.initialize_multi_sig_escrow(&manager, &finance, &payments);
+        let escrow_id = client.initialize_multi_sig_escrow(&manager, &finance, &oracle_pubkey, &payments);
         assert_eq!(escrow_id, 1);
 
         let retrieved = client.get_escrow(&escrow_id);
         assert_eq!(retrieved.manager, manager);
         assert_eq!(retrieved.finance_approver, finance);
+        assert_eq!(retrieved.oracle_pubkey, oracle_pubkey);
         assert_eq!(retrieved.payments.len(), 1);
         assert!(!retrieved.manager_approved);
         assert!(!retrieved.finance_approved);
@@ -80,11 +122,12 @@ mod tests {
         let manager = Address::generate(&env);
         let finance = Address::generate(&env);
         let worker = Address::generate(&env);
+        let (_signing_key, oracle_pubkey) = generate_oracle_keypair(&env);
 
         let mut payments = Vec::new(&env);
         payments.push_back(create_test_payment(&env, &worker));
 
-        let escrow_id = client.initialize_multi_sig_escrow(&manager, &finance, &payments);
+        let escrow_id = client.initialize_multi_sig_escrow(&manager, &finance, &oracle_pubkey, &payments);
 
         // Manager approval
         client.manager_approve(&escrow_id);
@@ -105,7 +148,7 @@ mod tests {
     }
 
     #[test]
-    fn test_submit_hours_proof_with_valid_signature() {
+    fn test_submit_hours_proof_with_valid_ed25519_signature() {
         let env = Env::default();
         env.mock_all_auths();
 
@@ -114,18 +157,19 @@ mod tests {
         let manager = Address::generate(&env);
         let finance = Address::generate(&env);
         let worker = Address::generate(&env);
+        let (signing_key, oracle_pubkey) = generate_oracle_keypair(&env);
 
         let mut payments = Vec::new(&env);
         payments.push_back(create_test_payment(&env, &worker));
 
-        let escrow_id = client.initialize_multi_sig_escrow(&manager, &finance, &payments);
+        let escrow_id = client.initialize_multi_sig_escrow(&manager, &finance, &oracle_pubkey, &payments);
 
-        // Create a valid 64-byte signature
-        let mut sig_bytes = [0u8; 64];
-        for i in 0..64 { sig_bytes[i] = (i as u8) + 1; }
-        let valid_sig = Bytes::from_slice(&env, &sig_bytes);
+        // Sign with real Ed25519 key
+        let hours: i128 = 80;
+        let nonce: u64 = 0;
+        let sig = sign_oracle_proof(&env, &signing_key, escrow_id, 0, hours, nonce);
 
-        client.submit_hours_proof(&escrow_id, &0, &80, &valid_sig);
+        client.submit_hours_proof(&escrow_id, &0, &hours, &nonce, &sig);
 
         let escrow = client.get_escrow(&escrow_id);
         assert_eq!(escrow.payments.get(0).unwrap().hours_logged, 80);
@@ -142,10 +186,11 @@ mod tests {
         let finance = Address::generate(&env);
         let worker1 = Address::generate(&env);
         let worker2 = Address::generate(&env);
+        let (_signing_key, oracle_pubkey) = generate_oracle_keypair(&env);
 
         let payments = create_multi_payments(&env, &worker1, &worker2);
 
-        let escrow_id = client.initialize_multi_sig_escrow(&manager, &finance, &payments);
+        let escrow_id = client.initialize_multi_sig_escrow(&manager, &finance, &oracle_pubkey, &payments);
         let escrow = client.get_escrow(&escrow_id);
         assert_eq!(escrow.payments.len(), 2);
         assert_eq!(escrow.payments.get(0).unwrap().amount, 5000);
@@ -170,13 +215,14 @@ mod tests {
         let manager = Address::generate(&env);
         let finance = Address::generate(&env);
         let worker = Address::generate(&env);
+        let (_signing_key, oracle_pubkey) = generate_oracle_keypair(&env);
 
         let mut payments = Vec::new(&env);
         payments.push_back(create_test_payment(&env, &worker));
 
-        let id1 = client.initialize_multi_sig_escrow(&manager, &finance, &payments);
-        let id2 = client.initialize_multi_sig_escrow(&manager, &finance, &payments);
-        let id3 = client.initialize_multi_sig_escrow(&manager, &finance, &payments);
+        let id1 = client.initialize_multi_sig_escrow(&manager, &finance, &oracle_pubkey, &payments);
+        let id2 = client.initialize_multi_sig_escrow(&manager, &finance, &oracle_pubkey, &payments);
+        let id3 = client.initialize_multi_sig_escrow(&manager, &finance, &oracle_pubkey, &payments);
 
         assert_eq!(id1, 1);
         assert_eq!(id2, 2);
@@ -195,11 +241,12 @@ mod tests {
         let manager = Address::generate(&env);
         let finance = Address::generate(&env);
         let worker = Address::generate(&env);
+        let (_signing_key, oracle_pubkey) = generate_oracle_keypair(&env);
 
         let mut payments = Vec::new(&env);
         payments.push_back(create_test_payment(&env, &worker));
 
-        let escrow_id = client.initialize_multi_sig_escrow(&manager, &finance, &payments);
+        let escrow_id = client.initialize_multi_sig_escrow(&manager, &finance, &oracle_pubkey, &payments);
         client.cancel_escrow(&escrow_id);
 
         let escrow = client.get_escrow(&escrow_id);
@@ -207,30 +254,91 @@ mod tests {
         assert_eq!(escrow.payments.get(0).unwrap().status, PaymentStatus::Cancelled);
     }
 
-    // ========== FAILURE CASES ==========
+    // ========== NONCE / ORACLE SECURITY ==========
 
     #[test]
-    #[should_panic(expected = "Error(Contract, #3)")]
-    fn test_invalid_oracle_signature_rejection() {
+    fn test_nonce_increments_after_proof() {
         let env = Env::default();
         env.mock_all_auths();
 
         let client = CoreFlowContractClient::new(&env, &env.register_contract(None, CoreFlowContract));
-        
+
         let manager = Address::generate(&env);
         let finance = Address::generate(&env);
         let worker = Address::generate(&env);
+        let (signing_key, oracle_pubkey) = generate_oracle_keypair(&env);
 
         let mut payments = Vec::new(&env);
         payments.push_back(create_test_payment(&env, &worker));
 
-        let escrow_id = client.initialize_multi_sig_escrow(&manager, &finance, &payments);
+        let escrow_id = client.initialize_multi_sig_escrow(&manager, &finance, &oracle_pubkey, &payments);
 
-        // Submit with invalid signature (too short - empty bytes)
-        let invalid_sig = Bytes::new(&env);
-        // This should panic with InvalidOracleSignature error
-        client.submit_hours_proof(&escrow_id, &0, &40, &invalid_sig);
+        // First submission with nonce 0
+        let sig0 = sign_oracle_proof(&env, &signing_key, escrow_id, 0, 40, 0);
+        client.submit_hours_proof(&escrow_id, &0, &40, &0, &sig0);
+
+        // Second submission with nonce 1 (updated hours)
+        let sig1 = sign_oracle_proof(&env, &signing_key, escrow_id, 0, 80, 1);
+        client.submit_hours_proof(&escrow_id, &0, &80, &1, &sig1);
+
+        let escrow = client.get_escrow(&escrow_id);
+        assert_eq!(escrow.payments.get(0).unwrap().hours_logged, 80);
     }
+
+    #[test]
+    #[should_panic(expected = "Error(Contract, #9)")]
+    fn test_nonce_replay_rejected() {
+        let env = Env::default();
+        env.mock_all_auths();
+
+        let client = CoreFlowContractClient::new(&env, &env.register_contract(None, CoreFlowContract));
+
+        let manager = Address::generate(&env);
+        let finance = Address::generate(&env);
+        let worker = Address::generate(&env);
+        let (signing_key, oracle_pubkey) = generate_oracle_keypair(&env);
+
+        let mut payments = Vec::new(&env);
+        payments.push_back(create_test_payment(&env, &worker));
+
+        let escrow_id = client.initialize_multi_sig_escrow(&manager, &finance, &oracle_pubkey, &payments);
+
+        // First submission succeeds
+        let sig = sign_oracle_proof(&env, &signing_key, escrow_id, 0, 40, 0);
+        client.submit_hours_proof(&escrow_id, &0, &40, &0, &sig);
+
+        // Replay same nonce — should panic with InvalidNonce
+        client.submit_hours_proof(&escrow_id, &0, &40, &0, &sig);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_wrong_oracle_key_rejected() {
+        let env = Env::default();
+        env.mock_all_auths();
+
+        let client = CoreFlowContractClient::new(&env, &env.register_contract(None, CoreFlowContract));
+
+        let manager = Address::generate(&env);
+        let finance = Address::generate(&env);
+        let worker = Address::generate(&env);
+        let (_signing_key, oracle_pubkey) = generate_oracle_keypair(&env);
+
+        let mut payments = Vec::new(&env);
+        payments.push_back(create_test_payment(&env, &worker));
+
+        let escrow_id = client.initialize_multi_sig_escrow(&manager, &finance, &oracle_pubkey, &payments);
+
+        // Sign with a DIFFERENT key than the one registered
+        let wrong_secret: [u8; 32] = [99u8; 32];
+        let wrong_key = SigningKey::from_bytes(&wrong_secret);
+        let sig = sign_oracle_proof(&env, &wrong_key, escrow_id, 0, 40, 0);
+
+        // Should panic — Ed25519 verification fails at host level
+        client.submit_hours_proof(&escrow_id, &0, &40, &0, &sig);
+    }
+
+    // ========== FAILURE CASES ==========
 
     #[test]
     #[should_panic(expected = "Error(Contract, #5)")]
@@ -243,11 +351,12 @@ mod tests {
         let manager = Address::generate(&env);
         let finance = Address::generate(&env);
         let worker = Address::generate(&env);
+        let (_signing_key, oracle_pubkey) = generate_oracle_keypair(&env);
 
         let mut payments = Vec::new(&env);
         payments.push_back(create_test_payment(&env, &worker));
 
-        let escrow_id = client.initialize_multi_sig_escrow(&manager, &finance, &payments);
+        let escrow_id = client.initialize_multi_sig_escrow(&manager, &finance, &oracle_pubkey, &payments);
 
         // Only manager approval, no finance approval
         client.manager_approve(&escrow_id);
@@ -267,11 +376,12 @@ mod tests {
         let manager = Address::generate(&env);
         let finance = Address::generate(&env);
         let worker = Address::generate(&env);
+        let (_signing_key, oracle_pubkey) = generate_oracle_keypair(&env);
 
         let mut payments = Vec::new(&env);
         payments.push_back(create_test_payment(&env, &worker));
 
-        let escrow_id = client.initialize_multi_sig_escrow(&manager, &finance, &payments);
+        let escrow_id = client.initialize_multi_sig_escrow(&manager, &finance, &oracle_pubkey, &payments);
 
         // Manager approval twice should panic on second attempt with AlreadyApproved
         client.manager_approve(&escrow_id);
@@ -289,11 +399,12 @@ mod tests {
         let manager = Address::generate(&env);
         let finance = Address::generate(&env);
         let worker = Address::generate(&env);
+        let (_signing_key, oracle_pubkey) = generate_oracle_keypair(&env);
 
         let mut payments = Vec::new(&env);
         payments.push_back(create_test_payment(&env, &worker));
 
-        let escrow_id = client.initialize_multi_sig_escrow(&manager, &finance, &payments);
+        let escrow_id = client.initialize_multi_sig_escrow(&manager, &finance, &oracle_pubkey, &payments);
 
         client.manager_approve(&escrow_id);
         client.finance_approve(&escrow_id);
@@ -314,11 +425,12 @@ mod tests {
         let manager = Address::generate(&env);
         let finance = Address::generate(&env);
         let worker = Address::generate(&env);
+        let (_signing_key, oracle_pubkey) = generate_oracle_keypair(&env);
 
         let mut payments = Vec::new(&env);
         payments.push_back(create_test_payment(&env, &worker));
 
-        let escrow_id = client.initialize_multi_sig_escrow(&manager, &finance, &payments);
+        let escrow_id = client.initialize_multi_sig_escrow(&manager, &finance, &oracle_pubkey, &payments);
         client.cancel_escrow(&escrow_id);
 
         // Trying to approve a cancelled escrow should fail
@@ -336,11 +448,12 @@ mod tests {
         let manager = Address::generate(&env);
         let finance = Address::generate(&env);
         let worker = Address::generate(&env);
+        let (_signing_key, oracle_pubkey) = generate_oracle_keypair(&env);
 
         let mut payments = Vec::new(&env);
         payments.push_back(create_test_payment(&env, &worker));
 
-        let escrow_id = client.initialize_multi_sig_escrow(&manager, &finance, &payments);
+        let escrow_id = client.initialize_multi_sig_escrow(&manager, &finance, &oracle_pubkey, &payments);
 
         client.manager_approve(&escrow_id);
         client.finance_approve(&escrow_id);
@@ -372,10 +485,81 @@ mod tests {
 
         let manager = Address::generate(&env);
         let finance = Address::generate(&env);
+        let (_signing_key, oracle_pubkey) = generate_oracle_keypair(&env);
 
         let payments = Vec::new(&env);
 
         // Should panic with InvalidAmount
-        client.initialize_multi_sig_escrow(&manager, &finance, &payments);
+        client.initialize_multi_sig_escrow(&manager, &finance, &oracle_pubkey, &payments);
+    }
+
+    #[test]
+    #[should_panic(expected = "Error(Contract, #8)")]
+    fn test_submit_hours_cancelled_escrow_fails() {
+        let env = Env::default();
+        env.mock_all_auths();
+
+        let client = CoreFlowContractClient::new(&env, &env.register_contract(None, CoreFlowContract));
+
+        let manager = Address::generate(&env);
+        let finance = Address::generate(&env);
+        let worker = Address::generate(&env);
+        let (signing_key, oracle_pubkey) = generate_oracle_keypair(&env);
+
+        let mut payments = Vec::new(&env);
+        payments.push_back(create_test_payment(&env, &worker));
+
+        let escrow_id = client.initialize_multi_sig_escrow(&manager, &finance, &oracle_pubkey, &payments);
+        client.cancel_escrow(&escrow_id);
+
+        let sig = sign_oracle_proof(&env, &signing_key, escrow_id, 0, 40, 0);
+        // Should fail — escrow is cancelled
+        client.submit_hours_proof(&escrow_id, &0, &40, &0, &sig);
+    }
+
+    #[test]
+    #[should_panic(expected = "Error(Contract, #1)")]
+    fn test_submit_hours_after_approval_fails() {
+        let env = Env::default();
+        env.mock_all_auths();
+
+        let client = CoreFlowContractClient::new(&env, &env.register_contract(None, CoreFlowContract));
+
+        let manager = Address::generate(&env);
+        let finance = Address::generate(&env);
+        let worker = Address::generate(&env);
+        let (signing_key, oracle_pubkey) = generate_oracle_keypair(&env);
+
+        let mut payments = Vec::new(&env);
+        payments.push_back(create_test_payment(&env, &worker));
+
+        let escrow_id = client.initialize_multi_sig_escrow(&manager, &finance, &oracle_pubkey, &payments);
+        
+        client.manager_approve(&escrow_id);
+
+        let sig = sign_oracle_proof(&env, &signing_key, escrow_id, 0, 40, 0);
+        // Should fail — manager already approved, cannot modify hours
+        client.submit_hours_proof(&escrow_id, &0, &40, &0, &sig);
+    }
+
+    #[test]
+    #[should_panic(expected = "Error(Contract, #7)")]
+    fn test_initialize_with_zero_amount_fails() {
+        let env = Env::default();
+        env.mock_all_auths();
+
+        let client = CoreFlowContractClient::new(&env, &env.register_contract(None, CoreFlowContract));
+
+        let manager = Address::generate(&env);
+        let finance = Address::generate(&env);
+        let worker = Address::generate(&env);
+        let (_signing_key, oracle_pubkey) = generate_oracle_keypair(&env);
+
+        let mut payments = Vec::new(&env);
+        let mut p = create_test_payment(&env, &worker);
+        p.amount = 0; // Zero amount should fail
+        payments.push_back(p);
+
+        client.initialize_multi_sig_escrow(&manager, &finance, &oracle_pubkey, &payments);
     }
 }

@@ -131,6 +131,9 @@ jobs:
       - name: Run ESLint
         run: npm run lint
 
+      - name: Run Tests
+        run: npm run test:ci
+
       - name: Build production bundle
         run: npm run build
         env:

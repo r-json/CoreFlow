@@ -9,12 +9,14 @@ interface ImpactStats {
   totalWorkersPaid: number;
 }
 
+const INITIAL_STATS: ImpactStats = {
+  totalPaidUsd: 5600, // Starts with some seed stats from the initialized mock list (e.g. final payment was $2,100)
+  totalSavedUsd: 308,
+  totalWorkersPaid: 3,
+};
+
 export const ImpactTracker = () => {
-  const [stats, setStats] = useState<ImpactStats>({
-    totalPaidUsd: 5600, // Starts with some seed stats from the initialized mock list (e.g. final payment was $2,100)
-    totalSavedUsd: 308,
-    totalWorkersPaid: 3,
-  });
+  const [stats, setStats] = useState<ImpactStats>(INITIAL_STATS);
 
   const USD_TO_PHP = 56.50;
 
@@ -27,10 +29,12 @@ export const ImpactTracker = () => {
           setStats(JSON.parse(stored));
         } catch (e) {
           // Keep default seed stats
+          setStats(INITIAL_STATS);
         }
       } else {
         // Save initial seed stats
-        localStorage.setItem('coreflow_impact_stats', JSON.stringify(stats));
+        localStorage.setItem('coreflow_impact_stats', JSON.stringify(INITIAL_STATS));
+        setStats(INITIAL_STATS);
       }
     };
 
