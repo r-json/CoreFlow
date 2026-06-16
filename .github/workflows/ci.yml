@@ -137,6 +137,11 @@ jobs:
       - name: Build production bundle
         run: npm run build
         env:
+          # The Prisma client is constructed at module import during `next build`,
+          # so these must be present even though no DB connection is opened here.
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci?schema=public
+          DIRECT_URL: postgresql://ci:ci@localhost:5432/ci?schema=public
+          AUTH_SECRET: ci-build-placeholder-secret-not-used-at-runtime-0000
           NEXT_PUBLIC_STELLAR_NETWORK: testnet
           NEXT_PUBLIC_STELLAR_READ_ADDRESS: GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF
           NEXT_PUBLIC_STELLAR_CONTRACT_ID: CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM
