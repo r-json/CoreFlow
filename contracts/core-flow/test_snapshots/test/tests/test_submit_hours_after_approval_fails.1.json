@@ -188,7 +188,7 @@
           "function": {
             "contract_fn": {
               "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
-              "function_name": "cancel_escrow",
+              "function_name": "manager_approve",
               "args": [
                 {
                   "u32": 1
@@ -315,7 +315,7 @@
                         "symbol": "cancelled"
                       },
                       "val": {
-                        "bool": true
+                        "bool": false
                       }
                     },
                     {
@@ -347,7 +347,7 @@
                         "symbol": "manager_approved"
                       },
                       "val": {
-                        "bool": false
+                        "bool": true
                       }
                     },
                     {
@@ -428,7 +428,7 @@
                                   "symbol": "status"
                                 },
                                 "val": {
-                                  "u32": 4
+                                  "u32": 0
                                 }
                               },
                               {
@@ -694,7 +694,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 0
+                          "lo": 10000
                         }
                       }
                     },
@@ -767,7 +767,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 1000000
+                          "lo": 990000
                         }
                       }
                     },
@@ -1427,7 +1427,7 @@
                 "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
               },
               {
-                "symbol": "cancel_escrow"
+                "symbol": "manager_approve"
               }
             ],
             "data": {
@@ -1442,107 +1442,15 @@
       "event": {
         "ext": "v0",
         "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
-        "type_": "diagnostic",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "fn_call"
-              },
-              {
-                "bytes": "04cadb4a570fd2e4652e814101509912cce6c9a2325d6eec8d7100caf859f3e0"
-              },
-              {
-                "symbol": "transfer"
-              }
-            ],
-            "data": {
-              "vec": [
-                {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
-                },
-                {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
-                },
-                {
-                  "i128": {
-                    "hi": 0,
-                    "lo": 10000
-                  }
-                }
-              ]
-            }
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": "04cadb4a570fd2e4652e814101509912cce6c9a2325d6eec8d7100caf859f3e0",
         "type_": "contract",
         "body": {
           "v0": {
             "topics": [
               {
-                "symbol": "transfer"
+                "symbol": "approve"
               },
               {
-                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
-              },
-              {
-                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
-              },
-              {
-                "string": "aaa:GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAANHUF"
-              }
-            ],
-            "data": {
-              "i128": {
-                "hi": 0,
-                "lo": 10000
-              }
-            }
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": "04cadb4a570fd2e4652e814101509912cce6c9a2325d6eec8d7100caf859f3e0",
-        "type_": "diagnostic",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "fn_return"
-              },
-              {
-                "symbol": "transfer"
-              }
-            ],
-            "data": "void"
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
-        "type_": "contract",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "escrow"
-              },
-              {
-                "symbol": "cancel"
+                "symbol": "manager"
               }
             ],
             "data": {
@@ -1565,7 +1473,7 @@
                 "symbol": "fn_return"
               },
               {
-                "symbol": "cancel_escrow"
+                "symbol": "manager_approve"
               }
             ],
             "data": "void"
@@ -1589,11 +1497,30 @@
                 "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
               },
               {
-                "symbol": "manager_approve"
+                "symbol": "submit_hours_proof"
               }
             ],
             "data": {
-              "u32": 1
+              "vec": [
+                {
+                  "u32": 1
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 40
+                  }
+                },
+                {
+                  "u64": 0
+                },
+                {
+                  "bytes": "18b2d8e96e718093ac9417a09ce651296f21324e8f8cdefef2c1d48994e12f55a088fcf42b739934eb8a1dd789ae594e76d68cd784b60c979e10ec5a62ff6b0c"
+                }
+              ]
             }
           }
         }
@@ -1612,12 +1539,12 @@
                 "symbol": "fn_return"
               },
               {
-                "symbol": "manager_approve"
+                "symbol": "submit_hours_proof"
               }
             ],
             "data": {
               "error": {
-                "contract": 8
+                "contract": 1
               }
             }
           }
@@ -1638,7 +1565,7 @@
               },
               {
                 "error": {
-                  "contract": 8
+                  "contract": 1
                 }
               }
             ],
@@ -1663,7 +1590,7 @@
               },
               {
                 "error": {
-                  "contract": 8
+                  "contract": 1
                 }
               }
             ],
@@ -1673,12 +1600,27 @@
                   "string": "contract call failed"
                 },
                 {
-                  "symbol": "manager_approve"
+                  "symbol": "submit_hours_proof"
                 },
                 {
                   "vec": [
                     {
                       "u32": 1
+                    },
+                    {
+                      "u32": 0
+                    },
+                    {
+                      "i128": {
+                        "hi": 0,
+                        "lo": 40
+                      }
+                    },
+                    {
+                      "u64": 0
+                    },
+                    {
+                      "bytes": "18b2d8e96e718093ac9417a09ce651296f21324e8f8cdefef2c1d48994e12f55a088fcf42b739934eb8a1dd789ae594e76d68cd784b60c979e10ec5a62ff6b0c"
                     }
                   ]
                 }
@@ -1702,7 +1644,7 @@
               },
               {
                 "error": {
-                  "contract": 8
+                  "contract": 1
                 }
               }
             ],

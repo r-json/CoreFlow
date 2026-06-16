@@ -21,6 +21,7 @@ model Escrow {
   amountCents     Int
   rateCents       Int
   currency        String    @default("USDC")
+  tokenAddress    String?   // Stellar Asset Contract address used for custody/settlement
   status          String    @default("pending_manager") // pending_manager, pending_finance, ready, paid, cancelled
   managerApproved Boolean   @default(false)
   financeApproved Boolean   @default(false)
