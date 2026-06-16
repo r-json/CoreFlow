@@ -182,6 +182,25 @@ Rollback: all additive. Revert code; the `AuditLog` table can remain unused.
 Local: `npm run typecheck`, `npm run test:coverage`, then
 `npx playwright install chromium && npm run e2e`.
 
+## M8 — Observability & ops
+
+- **Structured logging:** `src/lib/logger.ts` emits one JSON line per event
+  (queryable in any log drain). Prod keeps error/warn (info/debug stripped).
+- **Error tracking seam:** `captureError()` (`src/lib/observability.ts`)
+  normalizes + logs any throwable; wire `@sentry/nextjs` behind `SENTRY_DSN`
+  without touching call sites.
+- **Health probes:** `GET /api/health` (liveness) and `GET /api/health/ready`
+  (DB check → 503 when down). Point uptime monitors / load balancer at these.
+- **Error boundaries:** `app/error.tsx` + `app/global-error.tsx` render a
+  recoverable fallback and POST to `/api/observability/report`
+  (rate-limited) so client crashes surface server-side.
+
+Operational steps:
+1. Configure an uptime check against `/api/health/ready`.
+2. (Optional) set `SENTRY_DSN` and wire the SDK in `observability.ts`.
+
+Rollback: all additive; revert code with no schema impact.
+
 ## Rollback (M1)
 
 - The backend is not yet on `main`/production; M1 ships on the

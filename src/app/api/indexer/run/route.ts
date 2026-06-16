@@ -9,6 +9,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { STELLAR_CONFIG } from '@/lib/config';
 import { runIndexerFromRpc } from '@/lib/indexer/run';
+import { captureError } from '@/lib/observability';
+import { logger } from '@/lib/logger';
 
 function isAuthorized(req: NextRequest): boolean {
   const secret = process.env.INDEXER_SECRET || process.env.CRON_SECRET;
@@ -28,9 +30,10 @@ export async function GET(req: NextRequest) {
 
   try {
     const result = await runIndexerFromRpc();
+    logger.info('indexer_run', { ...result });
     return NextResponse.json({ ok: true, ...result }, { status: 200 });
   } catch (error) {
-    console.error('[indexer/run] failed:', error);
+    captureError(error, { route: 'indexer/run' });
     return NextResponse.json({ error: 'Indexer run failed' }, { status: 500 });
   }
 }
