@@ -131,6 +131,14 @@ export const EscrowCard = ({
               <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-semibold border ${statusConfig.color}`}>
                 {statusConfig.label}
               </span>
+              {escrow.isMock && (
+                <span
+                  className="text-[10px] px-2.5 py-0.5 rounded-full font-semibold border border-amber-500/40 bg-amber-500/10 text-amber-300"
+                  title="Demo data — not an on-chain escrow"
+                >
+                  DEMO
+                </span>
+              )}
             </div>
             <p className="text-xs text-slate-400 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono">
               <span className="text-slate-500">Worker:</span>

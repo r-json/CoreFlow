@@ -56,9 +56,17 @@ export const ImpactTracker = () => {
 
   return (
     <div className="rounded-2xl border border-violet-500/20 bg-gradient-to-br from-slate-900/90 via-violet-950/10 to-slate-900/90 p-5 shadow-xl">
-      <div className="flex items-center gap-2 mb-4">
-        <TrendingUp className="w-5 h-5 text-violet-400" />
-        <h3 className="text-sm font-semibold text-slate-200 tracking-tight">Cumulative Remittance Impact</h3>
+      <div className="flex items-center justify-between gap-2 mb-4">
+        <div className="flex items-center gap-2">
+          <TrendingUp className="w-5 h-5 text-violet-400" aria-hidden="true" />
+          <h3 className="text-sm font-semibold text-slate-200 tracking-tight">Cumulative Remittance Impact</h3>
+        </div>
+        <span
+          className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border border-amber-500/40 bg-amber-500/10 text-amber-300"
+          title="Illustrative figures seeded for demonstration; updates locally as you finalize payments."
+        >
+          Illustrative
+        </span>
       </div>
 
       <div className="space-y-4">
