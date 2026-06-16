@@ -5,8 +5,10 @@ import { test, expect } from '@playwright/test';
  * shell in mock-demo mode (no wallet required). Exercises the real built app.
  */
 
-test('root redirects to the dashboard', async ({ page }) => {
+test('landing renders and links into the app', async ({ page }) => {
   await page.goto('/');
+  await expect(page.getByRole('heading', { name: /Trustless payroll/i })).toBeVisible();
+  await page.getByRole('link', { name: /Launch the app/i }).click();
   await expect(page).toHaveURL(/\/dashboard/);
 });
 

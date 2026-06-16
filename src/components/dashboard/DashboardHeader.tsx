@@ -133,11 +133,13 @@ export function DashboardHeader({
           )}
 
           <button
+            type="button"
             onClick={onRefresh}
+            aria-label="Refresh contract records"
             className="p-2 rounded-lg border border-slate-800 hover:border-slate-700 bg-slate-900/60 text-slate-400 hover:text-slate-200 transition-colors"
             title="Refresh contract records"
           >
-            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} aria-hidden="true" />
           </button>
 
           {/* Auth button — replaces WalletButton */}

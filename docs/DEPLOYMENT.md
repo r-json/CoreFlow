@@ -201,6 +201,19 @@ Operational steps:
 
 Rollback: all additive; revert code with no schema impact.
 
+## M9 — Product/UX polish
+
+- **Real landing page** at `/` (statically prerendered) replaces the bare
+  redirect — hero, feature summary, CTA into the app, contract link, and an
+  explicit "demo mode" note.
+- **Honest demo labeling:** mock escrow cards show a `DEMO` badge; the impact
+  figures are tagged `Illustrative`.
+- **SEO:** richer `metadata` (title template, description, keywords, OG/Twitter).
+- **a11y:** icon-only controls get `aria-label`/`aria-hidden`; landmark roles
+  and heading hierarchy on the landing.
+
+Rollback: revert files; `/dashboard` is unchanged. No schema/contract impact.
+
 ## Rollback (M1)
 
 - The backend is not yet on `main`/production; M1 ships on the
