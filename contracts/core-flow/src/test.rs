@@ -393,6 +393,34 @@ mod tests {
     }
 
     #[test]
+    fn test_get_nonce_tracks_expected_value() {
+        let env = Env::default();
+        env.mock_all_auths();
+
+        let client = CoreFlowContractClient::new(&env, &env.register_contract(None, CoreFlowContract));
+
+        let manager = Address::generate(&env);
+        let finance = Address::generate(&env);
+        let worker = Address::generate(&env);
+        let token = setup_token(&env, &manager);
+        let (signing_key, oracle_pubkey) = generate_oracle_keypair(&env);
+
+        let mut payments = Vec::new(&env);
+        payments.push_back(create_test_payment(&env, &worker));
+
+        let escrow_id = client.initialize_multi_sig_escrow(&manager, &finance, &token, &oracle_pubkey, &payments);
+
+        // Fresh escrow starts at nonce 0.
+        assert_eq!(client.get_nonce(&escrow_id), 0);
+
+        let sig = sign_oracle_proof(&env, &signing_key, escrow_id, 0, 40, 0);
+        client.submit_hours_proof(&escrow_id, &0, &40, &0, &sig);
+
+        // Nonce advances after a successful proof.
+        assert_eq!(client.get_nonce(&escrow_id), 1);
+    }
+
+    #[test]
     #[should_panic(expected = "Error(Contract, #9)")]
     fn test_nonce_replay_rejected() {
         let env = Env::default();

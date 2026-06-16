@@ -69,6 +69,30 @@ Rollback: point `NEXT_PUBLIC_STELLAR_CONTRACT_ID` back to the previous
 per-escrow and never pooled, so no fund migration is required. The
 `tokenAddress` column is nullable and additive — safe to leave in place.
 
+## M3 — Oracle attestation service
+
+Hours proofs are now signed by a server-side oracle instead of a dummy
+signature (which always trapped on-chain).
+
+- `ORACLE_SECRET_KEY` (32-byte hex Ed25519 seed) lives only on the server.
+- `GET /api/oracle/pubkey` exposes the public key; escrow creation stores it as
+  the escrow's `oracle_pubkey`.
+- `POST /api/oracle/attest` (authenticated) signs `(escrow, payment, hours,
+  nonce)` after the client reads the on-chain nonce via `get_nonce`.
+- `OracleAttestation` rows make signing idempotent per `(escrow, payment,
+  nonce)` — a retried submit reuses the same signature.
+
+Operational steps:
+1. Generate and store `ORACLE_SECRET_KEY` as a Vercel secret. Rotate by
+   deploying a new key; existing escrows keep verifying against the
+   `oracle_pubkey` captured at creation, so rotation only affects new escrows.
+2. Apply the `add_oracle_attestation` migration (automatic via `migrate deploy`).
+
+Rollback: the oracle routes are additive. Reverting the frontend to the
+previous build disables the attest flow; no schema rollback needed (table is
+additive). Treat `ORACLE_SECRET_KEY` like any signing key — compromise requires
+rotation + re-creation of affected escrows.
+
 ## Rollback (M1)
 
 - The backend is not yet on `main`/production; M1 ships on the

@@ -225,6 +225,39 @@ export class CoreFlowClient {
   }
 
   /**
+   * Read the next expected oracle nonce for an escrow (read-only simulation).
+   * The oracle must sign a proof using exactly this value.
+   */
+  async getNonce(escrowId: number): Promise<number> {
+    const sdk = await this.loadSDK();
+    const readAddress = STELLAR_CONFIG.addresses.readAddress;
+    if (!readAddress) {
+      throw new Error('NEXT_PUBLIC_STELLAR_READ_ADDRESS not configured');
+    }
+
+    const rpcClient = new sdk.rpc.Server(STELLAR_CONFIG.getRpcUrl());
+    const contract = new sdk.Contract(this.contractAddress);
+    const sourceAccount = await rpcClient.getAccount(readAddress);
+
+    const transaction = new sdk.TransactionBuilder(sourceAccount, {
+      fee: sdk.BASE_FEE,
+      networkPassphrase: this.networkPassphrase,
+    })
+      .addOperation(contract.call('get_nonce', sdk.nativeToScVal(escrowId, { type: 'u32' })))
+      .setTimeout(300)
+      .build();
+
+    const simulated = await rpcClient.simulateTransaction(transaction);
+    if (sdk.rpc.Api.isSimulationError(simulated)) {
+      throw new Error(`Failed to read nonce: ${simulated.error}`);
+    }
+    if (!simulated.result || !simulated.result.retval) {
+      throw new Error('No nonce returned from simulation');
+    }
+    return Number(sdk.scValToNative(simulated.result.retval));
+  }
+
+  /**
    * Initialize a new multi-sig escrow with payments
    */
   async submitInitializeEscrow(

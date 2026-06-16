@@ -18,8 +18,13 @@ const localStorageMock = (() => {
   };
 })();
 
-Object.defineProperty(window, 'localStorage', {
-  value: localStorageMock,
-});
+// Only patch the DOM globals when running under a browser-like environment
+// (jsdom). Server-only test files use `@vitest-environment node`, where
+// `window` is undefined.
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, 'localStorage', {
+    value: localStorageMock,
+  });
+}
 
 

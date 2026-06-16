@@ -429,6 +429,16 @@ impl CoreFlowContract {
         env.storage().persistent().get(&DataKey::Escrow(escrow_id))
             .ok_or(ContractError::InvalidPaymentId)
     }
+
+    /// Return the next expected oracle nonce for an escrow.
+    /// The oracle must sign a proof using this exact value (replay protection).
+    /// Returns 0 for an unknown/uninitialized escrow.
+    pub fn get_nonce(
+        env: Env,
+        escrow_id: u32,
+    ) -> u64 {
+        env.storage().persistent().get(&DataKey::Nonce(escrow_id)).unwrap_or(0u64)
+    }
 }
 
 #[cfg(test)]
