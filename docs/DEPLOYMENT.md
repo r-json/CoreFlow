@@ -166,6 +166,22 @@ Operational steps:
 
 Rollback: all additive. Revert code; the `AuditLog` table can remain unused.
 
+## M7 — Test & quality gates
+
+- **Unit/integration:** vitest covers oracle signing, authz, the indexer,
+  validation/rate-limit, and API route handlers (escrows, admin roles) via
+  mocked auth/prisma. `npm run test:coverage` enforces floors (lines ≥35%,
+  ratchet up over time).
+- **Contract:** `cargo test` includes a deterministic fuzz test asserting the
+  custody sum invariant across randomized scenarios.
+- **E2E:** Playwright smoke specs in `e2e/` run against the built app
+  (`npm run e2e`). CI installs Chromium and runs them as a separate job.
+- **CI gates:** lint → typecheck (`tsc --noEmit`) → coverage → build, plus the
+  Rust build/test/clippy/fmt jobs and the E2E job.
+
+Local: `npm run typecheck`, `npm run test:coverage`, then
+`npx playwright install chromium && npm run e2e`.
+
 ## Rollback (M1)
 
 - The backend is not yet on `main`/production; M1 ships on the
