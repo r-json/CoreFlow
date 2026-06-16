@@ -11,13 +11,13 @@ export const STELLAR_CONFIG = {
   // Network configuration
   network: {
     testnet: {
-      name: 'TESTNET_SDF_TEST_SDF_TEST_SDF_TEST_SDF_TEST_SDF_TEST_SDF_TEST_SDF_TEST_SBUWIMF' as const,
+      name: 'TESTNET' as const,
       rpcUrl: 'https://soroban-testnet.stellar.org',
       networkPassphrase: 'Test SDF Network ; September 2015',
       friendbotUrl: 'https://friendbot.stellar.org',
     },
     public: {
-      name: 'PUBLIC_SDF_NETWORK_SDF_PUBLIC_SDF_NETWORK_SDF_PUBLIC_SDF_NETWORK_SDF_PUBLI_QBULR' as const,
+      name: 'PUBLIC' as const,
       rpcUrl: 'https://mainnet.sorobanrpc.com',
       networkPassphrase: 'Public Global Stellar Network ; September 2015',
       friendbotUrl: null,

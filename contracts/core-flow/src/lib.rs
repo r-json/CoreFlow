@@ -1,5 +1,5 @@
 #![no_std]
-use soroban_sdk::{contract, contractimpl, contracttype, contracterror, Address, Bytes, Env, Vec, symbol_short};
+use soroban_sdk::{contract, contractimpl, contracttype, contracterror, Address, Bytes, BytesN, Env, Vec, symbol_short};
 
 // ========== ENUMS & ERRORS ==========
 
@@ -15,6 +15,7 @@ pub enum ContractError {
     PaymentAlreadyFinalized = 6,
     InvalidAmount = 7,
     EscrowCancelled = 8,
+    InvalidNonce = 9,
 }
 
 #[contracttype]
@@ -48,6 +49,7 @@ pub struct PaymentSchedule {
 pub struct CoreFlowEscrow {
     pub manager: Address,
     pub finance_approver: Address,
+    pub oracle_pubkey: BytesN<32>,
     pub payments: Vec<PaymentSchedule>,
     pub manager_approved: bool,
     pub finance_approved: bool,
@@ -61,12 +63,15 @@ pub struct CoreFlowEscrow {
 pub enum DataKey {
     EscrowCount,
     Escrow(u32),
+    Nonce(u32),
 }
 
 // Storage TTL constants (in ledgers)
 // ~1 ledger ≈ 5 seconds; 17280 ledgers ≈ 1 day
-const INSTANCE_TTL_THRESHOLD: u32 = 17280;    // Extend when below 1 day
-const INSTANCE_TTL_EXTEND: u32 = 17280 * 30;  // Extend to 30 days
+const INSTANCE_TTL_THRESHOLD: u32 = 17280;       // Extend when below 1 day
+const INSTANCE_TTL_EXTEND: u32 = 17280 * 30;     // Extend to 30 days
+const PERSISTENT_TTL_THRESHOLD: u32 = 17280;     // Extend when below 1 day
+const PERSISTENT_TTL_EXTEND: u32 = 17280 * 90;   // Extend to 90 days
 
 // ========== CONTRACT ==========
 
@@ -75,11 +80,13 @@ pub struct CoreFlowContract;
 
 #[contractimpl]
 impl CoreFlowContract {
-    /// Initialize a multi-signature escrow with payment schedules
+    /// Initialize a multi-signature escrow with payment schedules and oracle public key.
+    /// The oracle_pubkey is an Ed25519 public key used to verify work proof signatures.
     pub fn initialize_multi_sig_escrow(
         env: Env,
         manager: Address,
         finance_approver: Address,
+        oracle_pubkey: BytesN<32>,
         payments: Vec<PaymentSchedule>,
     ) -> Result<u32, ContractError> {
         manager.require_auth();
@@ -88,22 +95,46 @@ impl CoreFlowContract {
             return Err(ContractError::InvalidAmount);
         }
 
+        // Guard: prevent negative or zero amounts and rates
+        for i in 0..payments.len() {
+            let p = payments.get(i).unwrap();
+            if p.amount <= 0 || p.rate_per_hour <= 0 {
+                return Err(ContractError::InvalidAmount);
+            }
+        }
+
+        // EscrowCount stays in instance storage (lightweight counter)
         let escrow_id: u32 = env.storage().instance().get(&DataKey::EscrowCount)
             .unwrap_or(0u32) + 1;
 
         let escrow = CoreFlowEscrow {
             manager: manager.clone(),
             finance_approver: finance_approver.clone(),
+            oracle_pubkey,
             payments: payments.clone(),
             manager_approved: false,
             finance_approved: false,
             cancelled: false,
         };
 
-        env.storage().instance().set(&DataKey::Escrow(escrow_id), &escrow);
-        env.storage().instance().set(&DataKey::EscrowCount, &escrow_id);
+        // Store escrow in persistent storage (per-key TTL control)
+        env.storage().persistent().set(&DataKey::Escrow(escrow_id), &escrow);
+        env.storage().persistent().extend_ttl(
+            &DataKey::Escrow(escrow_id),
+            PERSISTENT_TTL_THRESHOLD,
+            PERSISTENT_TTL_EXTEND,
+        );
 
-        // Extend storage TTL for production durability
+        // Initialize nonce for this escrow
+        env.storage().persistent().set(&DataKey::Nonce(escrow_id), &0u64);
+        env.storage().persistent().extend_ttl(
+            &DataKey::Nonce(escrow_id),
+            PERSISTENT_TTL_THRESHOLD,
+            PERSISTENT_TTL_EXTEND,
+        );
+
+        // Counter stays in instance storage
+        env.storage().instance().set(&DataKey::EscrowCount, &escrow_id);
         env.storage().instance().extend_ttl(INSTANCE_TTL_THRESHOLD, INSTANCE_TTL_EXTEND);
 
         // Emit event: escrow_created
@@ -115,16 +146,24 @@ impl CoreFlowContract {
         Ok(escrow_id)
     }
 
-    /// Submit hours proof with Ed25519 signature (simulates oracle integration)
+    /// Submit hours proof verified by Ed25519 oracle signature.
+    ///
+    /// The oracle signs a 32-byte message:
+    ///   escrow_id (4 bytes BE) || payment_id (4 bytes BE) ||
+    ///   hours_logged (16 bytes BE) || nonce (8 bytes BE)
+    ///
+    /// The contract verifies the signature against the escrow's stored oracle public key
+    /// and checks the nonce matches the expected value to prevent replay attacks.
     pub fn submit_hours_proof(
         env: Env,
         escrow_id: u32,
         payment_id: u32,
         hours_logged: i128,
-        signature: Bytes,
+        nonce: u64,
+        signature: BytesN<64>,
     ) -> Result<(), ContractError> {
-        // Validate escrow exists
-        let mut escrow: CoreFlowEscrow = env.storage().instance().get(&DataKey::Escrow(escrow_id))
+        // Validate escrow exists (persistent storage)
+        let mut escrow: CoreFlowEscrow = env.storage().persistent().get(&DataKey::Escrow(escrow_id))
             .ok_or(ContractError::InvalidPaymentId)?;
 
         // Guard: check if escrow is cancelled
@@ -132,22 +171,52 @@ impl CoreFlowContract {
             return Err(ContractError::EscrowCancelled);
         }
 
+        // Guard: do not allow hours submission after manager or finance has approved
+        if escrow.manager_approved || escrow.finance_approved {
+            return Err(ContractError::AlreadyApproved);
+        }
+
         if payment_id >= escrow.payments.len() {
             return Err(ContractError::InvalidPaymentId);
         }
 
-        // Oracle signature validation (in production, use Ed25519 verify)
-        // For this implementation, we verify signature length meets minimum
-        if signature.len() < 64 {
-            return Err(ContractError::InvalidOracleSignature);
+        // Verify nonce matches expected value (replay protection)
+        let expected_nonce: u64 = env.storage().persistent().get(&DataKey::Nonce(escrow_id))
+            .unwrap_or(0u64);
+        if nonce != expected_nonce {
+            return Err(ContractError::InvalidNonce);
         }
+
+        // Construct the 32-byte message the oracle should have signed
+        let mut msg_data = [0u8; 32];
+        msg_data[0..4].copy_from_slice(&escrow_id.to_be_bytes());
+        msg_data[4..8].copy_from_slice(&payment_id.to_be_bytes());
+        msg_data[8..24].copy_from_slice(&hours_logged.to_be_bytes());
+        msg_data[24..32].copy_from_slice(&nonce.to_be_bytes());
+        let message = Bytes::from_slice(&env, &msg_data);
+
+        // Ed25519 signature verification — panics on failure (host-level error)
+        env.crypto().ed25519_verify(&escrow.oracle_pubkey, &message, &signature);
+
+        // Increment nonce after successful verification
+        env.storage().persistent().set(&DataKey::Nonce(escrow_id), &(nonce + 1));
+        env.storage().persistent().extend_ttl(
+            &DataKey::Nonce(escrow_id),
+            PERSISTENT_TTL_THRESHOLD,
+            PERSISTENT_TTL_EXTEND,
+        );
 
         // Update the payment schedule with hours logged
         let mut payment = escrow.payments.get(payment_id).unwrap();
         payment.hours_logged = hours_logged;
 
         escrow.payments.set(payment_id, payment);
-        env.storage().instance().set(&DataKey::Escrow(escrow_id), &escrow);
+        env.storage().persistent().set(&DataKey::Escrow(escrow_id), &escrow);
+        env.storage().persistent().extend_ttl(
+            &DataKey::Escrow(escrow_id),
+            PERSISTENT_TTL_THRESHOLD,
+            PERSISTENT_TTL_EXTEND,
+        );
 
         // Emit event: hours_submitted
         env.events().publish(
@@ -163,7 +232,7 @@ impl CoreFlowContract {
         env: Env,
         escrow_id: u32,
     ) -> Result<(), ContractError> {
-        let mut escrow: CoreFlowEscrow = env.storage().instance().get(&DataKey::Escrow(escrow_id))
+        let mut escrow: CoreFlowEscrow = env.storage().persistent().get(&DataKey::Escrow(escrow_id))
             .ok_or(ContractError::InvalidPaymentId)?;
 
         // Guard: check if escrow is cancelled
@@ -178,7 +247,12 @@ impl CoreFlowContract {
         }
 
         escrow.manager_approved = true;
-        env.storage().instance().set(&DataKey::Escrow(escrow_id), &escrow);
+        env.storage().persistent().set(&DataKey::Escrow(escrow_id), &escrow);
+        env.storage().persistent().extend_ttl(
+            &DataKey::Escrow(escrow_id),
+            PERSISTENT_TTL_THRESHOLD,
+            PERSISTENT_TTL_EXTEND,
+        );
 
         // Emit event: manager_approved
         env.events().publish(
@@ -194,7 +268,7 @@ impl CoreFlowContract {
         env: Env,
         escrow_id: u32,
     ) -> Result<(), ContractError> {
-        let mut escrow: CoreFlowEscrow = env.storage().instance().get(&DataKey::Escrow(escrow_id))
+        let mut escrow: CoreFlowEscrow = env.storage().persistent().get(&DataKey::Escrow(escrow_id))
             .ok_or(ContractError::InvalidPaymentId)?;
 
         // Guard: check if escrow is cancelled
@@ -209,7 +283,12 @@ impl CoreFlowContract {
         }
 
         escrow.finance_approved = true;
-        env.storage().instance().set(&DataKey::Escrow(escrow_id), &escrow);
+        env.storage().persistent().set(&DataKey::Escrow(escrow_id), &escrow);
+        env.storage().persistent().extend_ttl(
+            &DataKey::Escrow(escrow_id),
+            PERSISTENT_TTL_THRESHOLD,
+            PERSISTENT_TTL_EXTEND,
+        );
 
         // Emit event: finance_approved
         env.events().publish(
@@ -225,7 +304,7 @@ impl CoreFlowContract {
         env: Env,
         escrow_id: u32,
     ) -> Result<Vec<PaymentSchedule>, ContractError> {
-        let mut escrow: CoreFlowEscrow = env.storage().instance().get(&DataKey::Escrow(escrow_id))
+        let mut escrow: CoreFlowEscrow = env.storage().persistent().get(&DataKey::Escrow(escrow_id))
             .ok_or(ContractError::InvalidPaymentId)?;
 
         // Guard: check if escrow is cancelled
@@ -258,10 +337,14 @@ impl CoreFlowContract {
         }
 
         escrow.payments = finalized_payments.clone();
-        env.storage().instance().set(&DataKey::Escrow(escrow_id), &escrow);
+        env.storage().persistent().set(&DataKey::Escrow(escrow_id), &escrow);
 
         // Extend storage TTL to preserve finalized records
-        env.storage().instance().extend_ttl(INSTANCE_TTL_THRESHOLD, INSTANCE_TTL_EXTEND);
+        env.storage().persistent().extend_ttl(
+            &DataKey::Escrow(escrow_id),
+            PERSISTENT_TTL_THRESHOLD,
+            PERSISTENT_TTL_EXTEND,
+        );
 
         // Emit event: payment_finalized
         env.events().publish(
@@ -277,7 +360,7 @@ impl CoreFlowContract {
         env: Env,
         escrow_id: u32,
     ) -> Result<(), ContractError> {
-        let mut escrow: CoreFlowEscrow = env.storage().instance().get(&DataKey::Escrow(escrow_id))
+        let mut escrow: CoreFlowEscrow = env.storage().persistent().get(&DataKey::Escrow(escrow_id))
             .ok_or(ContractError::InvalidPaymentId)?;
 
         escrow.manager.require_auth();
@@ -301,7 +384,7 @@ impl CoreFlowContract {
         }
         escrow.payments = cancelled_payments;
 
-        env.storage().instance().set(&DataKey::Escrow(escrow_id), &escrow);
+        env.storage().persistent().set(&DataKey::Escrow(escrow_id), &escrow);
 
         // Emit event: escrow_cancelled
         env.events().publish(
@@ -317,7 +400,7 @@ impl CoreFlowContract {
         env: Env,
         escrow_id: u32,
     ) -> Result<CoreFlowEscrow, ContractError> {
-        env.storage().instance().get(&DataKey::Escrow(escrow_id))
+        env.storage().persistent().get(&DataKey::Escrow(escrow_id))
             .ok_or(ContractError::InvalidPaymentId)
     }
 }

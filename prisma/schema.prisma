@@ -1,0 +1,77 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Escrow {
+  id              Int       @id @default(autoincrement())
+  onChainId       Int?      @unique // The Soroban contract escrow ID (can be null if pending creation)
+  workerPubKey    String
+  amountCents     Int
+  rateCents       Int
+  currency        String    @default("USDC")
+  status          String    @default("pending_manager") // pending_manager, pending_finance, ready, paid, cancelled
+  managerApproved Boolean   @default(false)
+  financeApproved Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  timeLogs        TimeLog[]
+
+  @@index([createdAt])
+}
+
+model TimeLog {
+  id              Int       @id @default(autoincrement())
+  escrowId        Int
+  escrow          Escrow    @relation(fields: [escrowId], references: [id])
+  hoursLogged     Int
+  paymentId       Int       // Represents the schedule index from Soroban
+  txHash          String    @unique // Enforce uniqueness to prevent double-counting hours off-chain
+  createdAt       DateTime  @default(now())
+}
+
+// ─── Authentication Models ────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  walletAddress String    @unique
+  /// manager | finance | worker | viewer
+  role          String    @default("viewer")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Stores the full JWT so the server can revoke it at logout
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model AuthChallenge {
+  id            String   @id @default(cuid())
+  walletAddress String
+  nonce         String   @unique
+  expiresAt     DateTime
+  /// Marked true after first successful verify — prevents replay
+  used          Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  @@index([walletAddress])
+  @@index([expiresAt])
+}

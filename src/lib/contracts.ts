@@ -29,6 +29,7 @@ export interface PaymentSchedule {
 export interface EscrowDetails {
   manager: string;
   finance_approver: string;
+  oracle_pubkey: string;
   payments: PaymentSchedule[];
   manager_approved: boolean;
   finance_approved: boolean;
@@ -201,6 +202,7 @@ export class CoreFlowClient {
       return {
         manager: rawEscrow.manager,
         finance_approver: rawEscrow.finance_approver,
+        oracle_pubkey: rawEscrow.oracle_pubkey,
         manager_approved: rawEscrow.manager_approved,
         finance_approved: rawEscrow.finance_approved,
         cancelled: rawEscrow.cancelled,
@@ -226,6 +228,7 @@ export class CoreFlowClient {
   async submitInitializeEscrow(
     managerAddress: string,
     financeAddress: string,
+    oraclePubkeyHex: string,
     payments: PaymentScheduleInput[]
   ): Promise<SubmitResult> {
     const sdk = await this.loadSDK();
@@ -244,11 +247,15 @@ export class CoreFlowClient {
 
     const managerScVal = sdk.Address.fromString(managerAddress);
     const financeScVal = sdk.Address.fromString(financeAddress);
+    // Convert hex oracle public key to BytesN<32> ScVal
+    const oracleBytes = Buffer.from(oraclePubkeyHex, 'hex');
+    const oraclePubkeyScVal = sdk.xdr.ScVal.scvBytes(oracleBytes);
     const paymentsScVal = sdk.nativeToScVal(mappedPayments);
 
     return this.submitTransaction('initialize_multi_sig_escrow', [
       managerScVal,
       financeScVal,
+      oraclePubkeyScVal,
       paymentsScVal,
     ]);
   }
@@ -260,6 +267,7 @@ export class CoreFlowClient {
     escrowId: number,
     paymentId: number,
     hoursLogged: number,
+    nonce: number,
     signatureBase64: string
   ): Promise<SubmitResult> {
     const sdk = await this.loadSDK();
@@ -267,8 +275,9 @@ export class CoreFlowClient {
     const escrowIdScVal = sdk.nativeToScVal(escrowId, { type: 'u32' });
     const paymentIdScVal = sdk.nativeToScVal(paymentId, { type: 'u32' });
     const hoursScVal = sdk.nativeToScVal(BigInt(hoursLogged), { type: 'i128' });
+    const nonceScVal = sdk.nativeToScVal(BigInt(nonce), { type: 'u64' });
     
-    // Convert signature base64 to Bytes ScVal
+    // Convert signature base64 to BytesN<64> ScVal
     const sigBuffer = Buffer.from(signatureBase64, 'base64');
     const sigBytesScVal = sdk.xdr.ScVal.scvBytes(sigBuffer);
 
@@ -276,6 +285,7 @@ export class CoreFlowClient {
       escrowIdScVal,
       paymentIdScVal,
       hoursScVal,
+      nonceScVal,
       sigBytesScVal,
     ]);
   }
