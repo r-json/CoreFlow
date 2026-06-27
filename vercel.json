@@ -6,7 +6,7 @@
   "crons": [
     {
       "path": "/api/indexer/run",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 0 * * *"
     }
   ]
 }
