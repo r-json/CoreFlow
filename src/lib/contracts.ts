@@ -285,9 +285,14 @@ export class CoreFlowClient {
     const financeScVal = sdk.Address.fromString(financeAddress);
     // Token (Stellar Asset Contract) address used for custody/settlement.
     const tokenScVal = sdk.Address.fromString(tokenAddress);
-    // Convert hex oracle public key to BytesN<32> ScVal
+    // Convert hex oracle public key to BytesN<32> ScVal.
+    // The contract expects a fixed 32-byte value, so we must use the exact
+    // byte-length encoding rather than variable-length scvBytes.
     const oracleBytes = Buffer.from(oraclePubkeyHex, 'hex');
-    const oraclePubkeyScVal = sdk.xdr.ScVal.scvBytes(oracleBytes);
+    if (oracleBytes.length !== 32) {
+      throw new Error(`Oracle public key must be exactly 32 bytes (got ${oracleBytes.length})`);
+    }
+    const oraclePubkeyScVal = sdk.nativeToScVal(oracleBytes, { type: 'bytes' });
     const paymentsScVal = sdk.nativeToScVal(mappedPayments);
 
     return this.submitTransaction('initialize_multi_sig_escrow', [
