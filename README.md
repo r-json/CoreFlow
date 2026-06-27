@@ -43,6 +43,7 @@
 - [The Solution](#-the-solution)
 - [CoreFlow in One Flow](#-coreflow-in-one-flow)
 - [Architecture Deep Dive](#-architecture-deep-dive)
+- [Database Schema & ERD](#-database-schema--erd)
 - [Gas Optimization Case Study](#-gas-optimization-case-study)
 - [Why Stellar?](#-why-stellar)
 - [Market Opportunity](#-market-opportunity)
@@ -108,7 +109,77 @@ The current MVP implements the core approval state machine: escrow creation, pay
 
 ## Architecture Deep Dive
 
-### 1. Smart Contract System
+### 1. Full-Stack System Architecture
+
+CoreFlow is a full-stack application spanning on-chain smart contracts, a Next.js API backend, PostgreSQL data layer, and React dashboard.
+
+```mermaid
+flowchart TB
+    subgraph Client["Frontend (React 18 + Next.js 14)"]
+        Dashboard["Dashboard UI"]
+        AuthHook["useAuth Hook"]
+        DashHook["useDashboard Hook"]
+        Components["EscrowCard / TransactionFeed / Modals"]
+    end
+
+    subgraph Edge["Edge Middleware"]
+        MW["JWT Verification + RBAC Headers"]
+    end
+
+    subgraph API["API Routes (Next.js)"]
+        AuthAPI["auth/challenge, verify, logout, me"]
+        EscrowAPI["escrows/ CRUD + status"]
+        HoursAPI["hours/ submission"]
+        OracleAPI["oracle/attest, pubkey"]
+        AdminAPI["admin/roles"]
+        IndexerAPI["indexer/run"]
+        HealthAPI["health/ready"]
+    end
+
+    subgraph Libs["Shared Libraries"]
+        AuthLib["Auth (Ed25519 challenge-response)"]
+        ValLib["Zod Validation Schemas"]
+        OracleLib["Oracle Ed25519 Signer"]
+        IdxLib["Chain Event Indexer"]
+        RateLib["Rate Limiter"]
+        AuditLib["Audit Logger"]
+        ContractClient["CoreFlowClient (Stellar SDK)"]
+    end
+
+    subgraph DB["PostgreSQL (Prisma ORM)"]
+        Tables["Escrow, TimeLog, User, Session,\nAuditLog, IndexerCursor, ChainEvent,\nOracleAttestation, AuthChallenge"]
+    end
+
+    subgraph Chain["Stellar Soroban Blockchain"]
+        Contract["CoreFlowContract (Rust WASM)"]
+        Token["Stellar Asset Contract / USDC"]
+    end
+
+    Dashboard --> AuthHook
+    Dashboard --> DashHook
+    DashHook --> ContractClient
+    AuthHook --> AuthAPI
+    DashHook --> EscrowAPI
+    DashHook --> HoursAPI
+    DashHook --> OracleAPI
+    MW --> AuthAPI
+    MW --> EscrowAPI
+    MW --> HoursAPI
+    AuthAPI --> AuthLib
+    AuthAPI --> DB
+    EscrowAPI --> DB
+    HoursAPI --> DB
+    OracleAPI --> OracleLib
+    OracleAPI --> DB
+    AdminAPI --> DB
+    IndexerAPI --> IdxLib
+    IdxLib --> DB
+    ContractClient --> Chain
+    Contract --> Token
+    Token --> Worker["Worker Wallets"]
+```
+
+### 2. Smart Contract System
 
 CoreFlow is designed as a modular Soroban contract system.
 
@@ -123,10 +194,10 @@ flowchart TB
     Oracle --> EscrowB
     EscrowA --> SAC[Stellar Asset Contract / USDC]
     EscrowB --> SAC
-    SAC --> Worker[Worker Wallets]
+    SAC --> WorkerW[Worker Wallets]
 ```
 
-### 2. Trustless Multi-Signature Escrow
+### 3. Trustless Multi-Signature Escrow
 
 The escrow contract acts as a neutral payment coordinator. The manager cannot unilaterally release funds after escrow creation. The finance approver cannot bypass work verification. The worker cannot mark payment as ready without a valid work proof. This creates a practical separation of duties for payroll and B2B contractor payments.
 
@@ -141,7 +212,7 @@ The production escrow should enforce four conditions before token transfer:
 
 Only after those checks should the contract call the Stellar Asset Contract token interface to transfer USDC from escrow-controlled funds to the worker.
 
-### 3. Factory Pattern for Scalability
+### 4. Factory Pattern for Scalability
 
 CoreFlow uses a factory pattern to avoid forcing every client, agency, or project into one large shared contract state. A factory contract can deploy or initialize separate payroll escrow contracts from the same audited WASM hash.
 
@@ -169,7 +240,7 @@ pub fn deploy_payroll_contract(
 
 The factory should not process payroll itself. It should deploy escrow instances, store a lightweight registry, and emit events. Payroll execution should stay inside the dedicated escrow contracts.
 
-### 4. Oracle-Verified Time Tracking
+### 5. Oracle-Verified Time Tracking
 
 Blockchains cannot directly read private time-tracking tools such as Clockify, Harvest, Jira, GitHub, or internal HR systems. CoreFlow therefore uses an oracle adapter pattern.
 
@@ -188,6 +259,113 @@ oracle_signature
 ```
 
 A Chainlink-powered adapter can fetch or compute work data off-chain, normalize the result, and sign the proof. The Soroban contract then verifies the signature or authorized oracle address before updating the payment schedule. For the MVP, the current contract validates signature length as a placeholder; production should replace this with full Ed25519 verification, replay protection, nonce tracking, and oracle public-key rotation.
+
+---
+
+## Database Schema & ERD
+
+CoreFlow uses PostgreSQL as its persistence layer to bridge the gap between on-chain data and the web application. The schema is managed via Prisma ORM.
+
+```mermaid
+erDiagram
+    Escrow ||--o{ TimeLog : "has"
+    User ||--o{ Session : "has"
+
+    Escrow {
+        Int id PK
+        Int onChainId "Nullable, Unique"
+        String workerPubKey
+        Int amountCents
+        Int rateCents
+        String currency
+        String tokenAddress "Nullable"
+        String status
+        Boolean managerApproved
+        Boolean financeApproved
+        DateTime createdAt
+        DateTime updatedAt
+    }
+
+    TimeLog {
+        Int id PK
+        Int escrowId FK
+        Int hoursLogged
+        Int paymentId
+        String txHash "Unique"
+        DateTime createdAt
+    }
+
+    User {
+        String id PK
+        String walletAddress "Unique"
+        String role
+        DateTime createdAt
+        DateTime updatedAt
+    }
+
+    Session {
+        String id PK
+        String userId FK
+        String token "Unique"
+        DateTime expiresAt
+        DateTime createdAt
+    }
+
+    AuditLog {
+        String id PK
+        String action
+        String actor "Nullable"
+        String target "Nullable"
+        String metadata "Nullable"
+        DateTime createdAt
+    }
+
+    IndexerCursor {
+        Int id PK
+        Int lastLedger
+        DateTime updatedAt
+    }
+
+    ChainEvent {
+        String id PK
+        String type
+        Int ledger
+        Int escrowOnChainId "Nullable"
+        DateTime processedAt
+    }
+
+    OracleAttestation {
+        String id PK
+        Int escrowOnChainId
+        Int paymentId
+        Int hoursLogged
+        Int nonce
+        String signature
+        String createdBy
+        DateTime createdAt
+    }
+
+    AuthChallenge {
+        String id PK
+        String walletAddress
+        String nonce "Unique"
+        DateTime expiresAt
+        Boolean used
+        DateTime createdAt
+    }
+```
+
+### Table Descriptions
+
+| Table | Purpose |
+|---|---|
+| **Escrow** | Core entity tracking escrow instances. Synced with the on-chain contract state via the indexer. |
+| **TimeLog** | Records of verified hours submitted against an escrow. Maps to on-chain payment schedules. |
+| **User & Session** | Manages RBAC roles (admin, manager, finance, worker) and active JWT sessions for security revocation. |
+| **AuditLog** | Append-only ledger for security-sensitive actions (e.g., role changes, escrow creations, logouts). |
+| **ChainEvent & IndexerCursor** | Tracks the ingestion state of Soroban contract events to provide eventual consistency for the UI. |
+| **OracleAttestation** | Stores server-signed proofs of work hours. Includes nonce-based replay protection matching the contract. |
+| **AuthChallenge** | Short-lived, single-use challenges issued to wallets during the Ed25519 authentication flow. |
 
 ---
 
@@ -404,11 +582,20 @@ If CoreFlow succeeds, Stellar gains a repeatable pattern for verified work-to-pa
 |---|---|---|
 | Smart Contracts | Rust + Soroban SDK | Escrow logic, role authorization, oracle proof handling, payment finalization |
 | Contract Architecture | Factory pattern | Deploy isolated payroll contracts per team, agency, or project |
-| Token Settlement | Stellar Asset Contract / USDC-ready | Production path for asset transfer from escrow to workers |
-| Oracle Layer | Chainlink / external oracle adapter | Verify time-tracking or milestone evidence before payment approval |
-| Frontend | Next.js 14 + TypeScript | Payroll dashboard, escrow cards, approval flow, transaction UX |
+| Token Settlement | Stellar Asset Contract / USDC-ready | Custody and settlement — funds pulled on escrow creation, released on finalize |
+| Oracle Layer | Ed25519 signing service (Chainlink-compatible) | Server-side attestation of verified work hours with replay protection |
+| Backend API | Next.js 14 App Router (TypeScript) | RESTful API routes for auth, escrow CRUD, hours, oracle, admin, indexer |
+| Authentication | Ed25519 challenge-response + JWT (HS256) | Wallet-based sign-in with HttpOnly session cookies and DB-backed revocation |
+| Authorization | RBAC (admin / manager / finance / worker / viewer) | Role-based access control enforced on every protected endpoint |
+| Database | PostgreSQL + Prisma ORM | 9-table schema for escrows, auth, audit logs, chain indexer, oracle attestations |
+| Chain Indexer | Event-driven, idempotent projection | Projects on-chain contract events into PostgreSQL for dashboard reads |
+| Frontend | React 18 + Next.js 14 | Payroll dashboard, escrow cards, approval flow, transaction UX |
 | Wallet | Freighter | Stellar wallet connection and transaction signing |
 | Styling | Tailwind CSS + shadcn/ui | Responsive dashboard interface |
+| Validation | Zod schemas | Input validation on all mutating API endpoints |
+| Observability | Structured JSON logging + error boundaries | Queryable logs, client error reporting, health/readiness probes |
+| Testing | Vitest + Playwright + cargo test | 69 TS unit tests, 29 Rust contract tests (incl. fuzz), E2E framework |
+| Deployment | Vercel + Docker Compose (local) | Serverless production deploy with Vercel Cron for indexer |
 | Network | Stellar Testnet / Public Network | Testing and mainnet deployment |
 
 ---
@@ -420,37 +607,77 @@ coreflow/
 ├── contracts/
 │   └── core-flow/
 │       ├── src/
-│       │   ├── lib.rs              # Core escrow contract
-│       │   └── test.rs             # Unit tests
+│       │   ├── lib.rs                  # Core escrow contract (Soroban)
+│       │   └── test.rs                 # 29 unit tests incl. fuzz
+│       ├── test_snapshots/             # Soroban test snapshots
 │       ├── Cargo.toml
 │       └── Cargo.lock
+├── prisma/
+│   ├── schema.prisma                   # 9-table PostgreSQL schema
+│   └── migrations/                     # Database migration history
 ├── public/
-│   └── logo-readme.png             # README logo
+│   └── logo-readme.png
 ├── src/
 │   ├── app/
-│   │   ├── layout.tsx
-│   │   ├── globals.css
-│   │   └── dashboard/
-│   │       └── page.tsx
+│   │   ├── layout.tsx                  # Root layout
+│   │   ├── page.tsx                    # Landing page
+│   │   ├── globals.css                 # Global styles
+│   │   ├── error.tsx                   # Route error boundary
+│   │   ├── global-error.tsx            # Root error boundary
+│   │   ├── dashboard/
+│   │   │   └── page.tsx                # Dashboard page
+│   │   └── api/
+│   │       ├── auth/                   # challenge, verify, logout, me
+│   │       ├── escrows/                # CRUD + [id]/status PATCH
+│   │       ├── hours/                  # Hours submission
+│   │       ├── oracle/                 # attest (POST), pubkey (GET)
+│   │       ├── admin/                  # roles (GET/POST)
+│   │       ├── indexer/                # run (cron-triggered)
+│   │       ├── health/                 # liveness + readiness probes
+│   │       └── observability/          # Client error reporting sink
 │   ├── components/
-│   │   ├── WalletButton.tsx
-│   │   ├── EscrowCard.tsx
-│   │   ├── TransactionFeed.tsx
-│   │   ├── Button.tsx
-│   │   ├── Card.tsx
-│   │   └── Alert.tsx
-│   └── lib/
-│       ├── config.ts               # Stellar network and wallet config
-│       └── contracts.ts            # CoreFlow client and transaction helpers
-├── .env.example
-├── deploy.sh
-├── deploy.ps1
-├── DESIGN_SYSTEM.md
-├── IMPLEMENTATION_GUIDE.md
-├── package.json
+│   │   ├── EscrowCard.tsx              # Escrow card with approval actions
+│   │   ├── TransactionFeed.tsx         # Live transaction feed
+│   │   ├── EscrowTimeline.tsx          # Escrow status timeline
+│   │   ├── FeeSavings.tsx              # Fee savings calculator
+│   │   ├── ImpactTracker.tsx           # Cumulative impact metrics
+│   │   ├── PaymentReceipt.tsx          # Downloadable payment receipt
+│   │   ├── Button.tsx, Card.tsx, Alert.tsx  # Shared UI primitives
+│   │   ├── modals/                     # CreateEscrow, SubmitHours modals
+│   │   ├── dashboard/                  # Dashboard-specific components
+│   │   └── __tests__/                  # Component tests
+│   ├── hooks/
+│   │   ├── useAuth.ts                  # Wallet-based auth lifecycle
+│   │   ├── useDashboard.ts             # Dashboard state + contract actions
+│   │   └── __tests__/                  # Hook tests
+│   ├── lib/
+│   │   ├── auth/                       # Challenge-response, JWT, RBAC
+│   │   ├── db/                         # Prisma client singleton
+│   │   ├── indexer/                    # Chain event indexer + runner
+│   │   ├── oracle/                     # Ed25519 signing service
+│   │   ├── validation/                 # Zod request schemas
+│   │   ├── config.ts                   # Stellar network + Freighter config
+│   │   ├── contracts.ts                # CoreFlowClient SDK wrapper
+│   │   ├── ratelimit.ts                # In-memory rate limiter
+│   │   ├── audit.ts                    # Append-only audit logger
+│   │   ├── logger.ts                   # Structured JSON logger
+│   │   ├── observability.ts            # Error tracking seam
+│   │   └── __tests__/                  # Library tests
+│   └── middleware.ts                   # Edge JWT guard + RBAC headers
+├── test/                               # Vitest setup
+├── e2e/                                # Playwright E2E tests
+├── .env.example                        # Environment variable template
+├── docker-compose.yml                  # Local PostgreSQL
+├── deploy.sh / deploy.ps1              # Deployment scripts
+├── vitest.config.ts                    # Test configuration
+├── playwright.config.ts                # E2E test configuration
+├── next.config.js                      # Next.js configuration
 ├── tailwind.config.js
 ├── tsconfig.json
-└── next.config.ts
+├── vercel.json                         # Vercel deployment config
+├── DESIGN_SYSTEM.md
+├── IMPLEMENTATION_GUIDE.md
+└── package.json
 ```
 
 ---

@@ -185,10 +185,11 @@ impl CoreFlowContract {
             total_amount += p.amount;
         }
 
-        // EscrowCount stays in instance storage (lightweight counter)
+        // EscrowCount in persistent storage — must survive alongside escrow
+        // data to prevent ID reuse if instance storage expires first.
         let escrow_id: u32 = env
             .storage()
-            .instance()
+            .persistent()
             .get(&DataKey::EscrowCount)
             .unwrap_or(0u32)
             + 1;
@@ -230,13 +231,15 @@ impl CoreFlowContract {
             PERSISTENT_TTL_EXTEND,
         );
 
-        // Counter stays in instance storage
+        // Counter in persistent storage with same TTL as escrow data
         env.storage()
-            .instance()
+            .persistent()
             .set(&DataKey::EscrowCount, &escrow_id);
-        env.storage()
-            .instance()
-            .extend_ttl(INSTANCE_TTL_THRESHOLD, INSTANCE_TTL_EXTEND);
+        env.storage().persistent().extend_ttl(
+            &DataKey::EscrowCount,
+            PERSISTENT_TTL_THRESHOLD,
+            PERSISTENT_TTL_EXTEND,
+        );
 
         // Emit event: escrow_created (escrow_id, manager, total funded amount)
         env.events().publish(
@@ -484,13 +487,20 @@ impl CoreFlowContract {
         Ok(finalized_payments)
     }
 
-    /// Cancel an escrow (dispute resolution — manager only)
+    /// Cancel an escrow (dispute resolution — manager only).
+    /// Allowed even while paused (emergency withdrawal path).
     pub fn cancel_escrow(env: Env, escrow_id: u32) -> Result<(), ContractError> {
         let mut escrow: CoreFlowEscrow = env
             .storage()
             .persistent()
             .get(&DataKey::Escrow(escrow_id))
             .ok_or(ContractError::InvalidPaymentId)?;
+
+        // Guard: prevent double-cancel (would re-execute a zero-amount refund
+        // transfer and emit a duplicate event).
+        if escrow.cancelled {
+            return Err(ContractError::EscrowCancelled);
+        }
 
         escrow.manager.require_auth();
 

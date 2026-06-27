@@ -15,9 +15,10 @@ import { logger } from '@/lib/logger';
 function isAuthorized(req: NextRequest): boolean {
   const secret = process.env.INDEXER_SECRET || process.env.CRON_SECRET;
   if (!secret) return false;
+  // Only accept the secret via Authorization header — never query strings,
+  // which leak into server access logs, proxy caches, and browser history.
   const header = req.headers.get('authorization');
-  if (header === `Bearer ${secret}`) return true;
-  return new URL(req.url).searchParams.get('secret') === secret;
+  return header === `Bearer ${secret}`;
 }
 
 export async function GET(req: NextRequest) {

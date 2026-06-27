@@ -1,7 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
   compiler: {
     // Strip console.* in production but keep error/warn so server-side
     // logging in API routes and auth survives for incident debugging.

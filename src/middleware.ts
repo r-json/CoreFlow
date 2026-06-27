@@ -37,7 +37,14 @@ export async function middleware(request: NextRequest) {
 
   let payload: any;
   try {
-    const secret = new TextEncoder().encode(process.env.AUTH_SECRET ?? '');
+    const rawSecret = process.env.AUTH_SECRET;
+    if (!rawSecret || rawSecret.length < 32) {
+      // Misconfigured — reject all protected requests instead of silently
+      // verifying against an empty/weak key (which would be an auth bypass).
+      console.error('[middleware] AUTH_SECRET is missing or too short (min 32 chars)');
+      return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 });
+    }
+    const secret = new TextEncoder().encode(rawSecret);
     const result = await jwtVerify(token, secret);
     payload = result.payload;
   } catch {

@@ -438,6 +438,37 @@ mod tests {
         );
     }
 
+    #[test]
+    #[should_panic(expected = "Error(Contract, #8)")]
+    fn test_double_cancel_rejected() {
+        let env = Env::default();
+        env.mock_all_auths();
+
+        let client =
+            CoreFlowContractClient::new(&env, &env.register_contract(None, CoreFlowContract));
+
+        let manager = Address::generate(&env);
+        let finance = Address::generate(&env);
+        let worker = Address::generate(&env);
+        let token = setup_token(&env, &manager);
+        let (_signing_key, oracle_pubkey) = generate_oracle_keypair(&env);
+
+        let mut payments = Vec::new(&env);
+        payments.push_back(create_test_payment(&env, &worker));
+
+        let escrow_id = client.initialize_multi_sig_escrow(
+            &manager,
+            &finance,
+            &token,
+            &oracle_pubkey,
+            &payments,
+        );
+        client.cancel_escrow(&escrow_id);
+
+        // Second cancel must fail with EscrowCancelled (#8)
+        client.cancel_escrow(&escrow_id);
+    }
+
     // ========== NONCE / ORACLE SECURITY ==========
 
     #[test]
