@@ -109,7 +109,17 @@ export const STELLAR_CONFIG = {
       if (!result) throw new Error('User declined to sign');
       if (typeof result === 'object' && result.error) throw new Error(result.error);
 
-      return typeof result === 'string' ? result : (result as any).signedMessage || result;
+      const signatureRaw = typeof result === 'string' ? result : (result as any).signedMessage || result;
+
+      // Freighter returns a Buffer/Uint8Array in newer versions. Convert it to a
+      // base64 string so it can be passed via JSON to the backend and validated by Zod.
+      if (signatureRaw && typeof signatureRaw !== 'string') {
+        if (signatureRaw instanceof Uint8Array || Buffer.isBuffer(signatureRaw)) {
+          return Buffer.from(signatureRaw).toString('base64');
+        }
+      }
+
+      return signatureRaw as string;
     },
   },
 };
