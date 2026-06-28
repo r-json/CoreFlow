@@ -1,0 +1,127 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  // Pooled connection (PgBouncer / Neon / Supabase pooler) used by the app at runtime.
+  url       = env("DATABASE_URL")
+  // Direct (unpooled) connection used only for migrations/introspection.
+  // Falls back to DATABASE_URL locally if DIRECT_URL is unset.
+  directUrl = env("DIRECT_URL")
+}
+
+model Escrow {
+  id              Int       @id @default(autoincrement())
+  onChainId       Int?      @unique // The Soroban contract escrow ID (can be null if pending creation)
+  workerPubKey    String
+  amountCents     Int
+  rateCents       Int
+  currency        String    @default("USDC")
+  tokenAddress    String?   // Stellar Asset Contract address used for custody/settlement
+  status          String    @default("pending_manager") // pending_manager, pending_finance, ready, paid, cancelled
+  managerApproved Boolean   @default(false)
+  financeApproved Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  timeLogs        TimeLog[]
+
+  @@index([createdAt])
+}
+
+model TimeLog {
+  id              Int       @id @default(autoincrement())
+  escrowId        Int
+  escrow          Escrow    @relation(fields: [escrowId], references: [id])
+  hoursLogged     Int
+  paymentId       Int       // Represents the schedule index from Soroban
+  txHash          String    @unique // Enforce uniqueness to prevent double-counting hours off-chain
+  createdAt       DateTime  @default(now())
+}
+
+// ─── Authentication Models ────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  walletAddress String    @unique
+  /// manager | finance | worker | viewer
+  role          String    @default("viewer")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Stores the full JWT so the server can revoke it at logout
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String   // e.g. role.grant, escrow.create, auth.logout
+  actor     String?  // wallet address of the actor
+  target    String?  // affected entity (wallet / escrow id)
+  metadata  String?  // JSON blob of extra context
+  createdAt DateTime @default(now())
+
+  @@index([action])
+  @@index([createdAt])
+}
+
+// ─── Chain Indexer ────────────────────────────────────────────────────────────
+
+model IndexerCursor {
+  id         Int      @id @default(1) // single-row table
+  lastLedger Int      @default(0)
+  updatedAt  DateTime @updatedAt
+}
+
+model ChainEvent {
+  id              String   @id // RPC paging token — globally unique, used for idempotency
+  type            String
+  ledger          Int
+  escrowOnChainId Int?
+  processedAt     DateTime @default(now())
+
+  @@index([ledger])
+}
+
+model OracleAttestation {
+  id              String   @id @default(cuid())
+  escrowOnChainId Int      // The Soroban contract escrow ID
+  paymentId       Int      // Payment schedule index
+  hoursLogged     Int
+  nonce           Int      // Must match the on-chain expected nonce
+  signature       String   // base64 Ed25519 signature
+  createdBy       String   // wallet address that requested the attestation
+  createdAt       DateTime @default(now())
+
+  // One attestation per (escrow, payment, nonce) — prevents double-signing a nonce.
+  @@unique([escrowOnChainId, paymentId, nonce])
+  @@index([escrowOnChainId])
+}
+
+model AuthChallenge {
+  id            String   @id @default(cuid())
+  walletAddress String
+  nonce         String   @unique
+  expiresAt     DateTime
+  /// Marked true after first successful verify — prevents replay
+  used          Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  @@index([walletAddress])
+  @@index([expiresAt])
+}

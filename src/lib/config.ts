@@ -11,13 +11,13 @@ export const STELLAR_CONFIG = {
   // Network configuration
   network: {
     testnet: {
-      name: 'TESTNET_SDF_TEST_SDF_TEST_SDF_TEST_SDF_TEST_SDF_TEST_SDF_TEST_SDF_TEST_SBUWIMF' as const,
+      name: 'TESTNET' as const,
       rpcUrl: 'https://soroban-testnet.stellar.org',
       networkPassphrase: 'Test SDF Network ; September 2015',
       friendbotUrl: 'https://friendbot.stellar.org',
     },
     public: {
-      name: 'PUBLIC_SDF_NETWORK_SDF_PUBLIC_SDF_NETWORK_SDF_PUBLIC_SDF_NETWORK_SDF_PUBLI_QBULR' as const,
+      name: 'PUBLIC' as const,
       rpcUrl: 'https://mainnet.sorobanrpc.com',
       networkPassphrase: 'Public Global Stellar Network ; September 2015',
       friendbotUrl: null,
@@ -31,6 +31,12 @@ export const STELLAR_CONFIG = {
 
     // Network selection
     network: (process.env.NEXT_PUBLIC_STELLAR_NETWORK as 'testnet' | 'public') || 'testnet',
+  },
+
+  // Settlement token (Stellar Asset Contract address, e.g. USDC SAC).
+  // Funds are pulled into escrow custody on creation and released on finalize.
+  token: {
+    id: process.env.NEXT_PUBLIC_STELLAR_TOKEN_ID || '',
   },
 
   // Wallet configuration
@@ -103,7 +109,17 @@ export const STELLAR_CONFIG = {
       if (!result) throw new Error('User declined to sign');
       if (typeof result === 'object' && result.error) throw new Error(result.error);
 
-      return typeof result === 'string' ? result : (result as any).signedMessage || result;
+      const signatureRaw = typeof result === 'string' ? result : (result as any).signedMessage || result;
+
+      // Freighter returns a Buffer/Uint8Array in newer versions. Convert it to a
+      // base64 string so it can be passed via JSON to the backend and validated by Zod.
+      if (signatureRaw && typeof signatureRaw !== 'string') {
+        if (signatureRaw instanceof Uint8Array || Buffer.isBuffer(signatureRaw)) {
+          return Buffer.from(signatureRaw).toString('base64');
+        }
+      }
+
+      return signatureRaw as string;
     },
   },
 };

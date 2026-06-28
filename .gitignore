@@ -76,7 +76,22 @@ Cargo.lock
 *.secret
 *.json.bak
 
+# SQLite databases (contain session tokens + wallet data)
+*.db
+*.db-journal
+
 # OS
 .DS_Store
 Thumbs.db
 .vercel
+
+/generated/prisma
+
+# TypeScript incremental build cache
+*.tsbuildinfo
+
+# Playwright
+/playwright-report/
+/test-results/
+/coverage/
+.env*

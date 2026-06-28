@@ -1,0 +1,28 @@
+# Local Postgres for CoreFlow development.
+# Usage:
+#   docker compose up -d
+#   # then set in .env:
+#   #   DATABASE_URL="postgresql://coreflow:coreflow@localhost:5432/coreflow?schema=public"
+#   #   DIRECT_URL="postgresql://coreflow:coreflow@localhost:5432/coreflow?schema=public"
+#   npm run db:migrate
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: coreflow-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: coreflow
+      POSTGRES_PASSWORD: coreflow
+      POSTGRES_DB: coreflow
+    ports:
+      - "5432:5432"
+    volumes:
+      - coreflow_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U coreflow -d coreflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  coreflow_pgdata:

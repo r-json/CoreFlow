@@ -29,6 +29,8 @@ export interface PaymentSchedule {
 export interface EscrowDetails {
   manager: string;
   finance_approver: string;
+  token: string;
+  oracle_pubkey: string;
   payments: PaymentSchedule[];
   manager_approved: boolean;
   finance_approved: boolean;
@@ -201,6 +203,8 @@ export class CoreFlowClient {
       return {
         manager: rawEscrow.manager,
         finance_approver: rawEscrow.finance_approver,
+        token: rawEscrow.token,
+        oracle_pubkey: rawEscrow.oracle_pubkey,
         manager_approved: rawEscrow.manager_approved,
         finance_approved: rawEscrow.finance_approved,
         cancelled: rawEscrow.cancelled,
@@ -221,11 +225,46 @@ export class CoreFlowClient {
   }
 
   /**
+   * Read the next expected oracle nonce for an escrow (read-only simulation).
+   * The oracle must sign a proof using exactly this value.
+   */
+  async getNonce(escrowId: number): Promise<number> {
+    const sdk = await this.loadSDK();
+    const readAddress = STELLAR_CONFIG.addresses.readAddress;
+    if (!readAddress) {
+      throw new Error('NEXT_PUBLIC_STELLAR_READ_ADDRESS not configured');
+    }
+
+    const rpcClient = new sdk.rpc.Server(STELLAR_CONFIG.getRpcUrl());
+    const contract = new sdk.Contract(this.contractAddress);
+    const sourceAccount = await rpcClient.getAccount(readAddress);
+
+    const transaction = new sdk.TransactionBuilder(sourceAccount, {
+      fee: sdk.BASE_FEE,
+      networkPassphrase: this.networkPassphrase,
+    })
+      .addOperation(contract.call('get_nonce', sdk.nativeToScVal(escrowId, { type: 'u32' })))
+      .setTimeout(300)
+      .build();
+
+    const simulated = await rpcClient.simulateTransaction(transaction);
+    if (sdk.rpc.Api.isSimulationError(simulated)) {
+      throw new Error(`Failed to read nonce: ${simulated.error}`);
+    }
+    if (!simulated.result || !simulated.result.retval) {
+      throw new Error('No nonce returned from simulation');
+    }
+    return Number(sdk.scValToNative(simulated.result.retval));
+  }
+
+  /**
    * Initialize a new multi-sig escrow with payments
    */
   async submitInitializeEscrow(
     managerAddress: string,
     financeAddress: string,
+    tokenAddress: string,
+    oraclePubkeyHex: string,
     payments: PaymentScheduleInput[]
   ): Promise<SubmitResult> {
     const sdk = await this.loadSDK();
@@ -244,11 +283,23 @@ export class CoreFlowClient {
 
     const managerScVal = sdk.Address.fromString(managerAddress);
     const financeScVal = sdk.Address.fromString(financeAddress);
+    // Token (Stellar Asset Contract) address used for custody/settlement.
+    const tokenScVal = sdk.Address.fromString(tokenAddress);
+    // Convert hex oracle public key to BytesN<32> ScVal.
+    // The contract expects a fixed 32-byte value, so we must use the exact
+    // byte-length encoding rather than variable-length scvBytes.
+    const oracleBytes = Buffer.from(oraclePubkeyHex, 'hex');
+    if (oracleBytes.length !== 32) {
+      throw new Error(`Oracle public key must be exactly 32 bytes (got ${oracleBytes.length})`);
+    }
+    const oraclePubkeyScVal = sdk.nativeToScVal(oracleBytes, { type: 'bytes' });
     const paymentsScVal = sdk.nativeToScVal(mappedPayments);
 
     return this.submitTransaction('initialize_multi_sig_escrow', [
       managerScVal,
       financeScVal,
+      tokenScVal,
+      oraclePubkeyScVal,
       paymentsScVal,
     ]);
   }
@@ -260,6 +311,7 @@ export class CoreFlowClient {
     escrowId: number,
     paymentId: number,
     hoursLogged: number,
+    nonce: number,
     signatureBase64: string
   ): Promise<SubmitResult> {
     const sdk = await this.loadSDK();
@@ -267,8 +319,9 @@ export class CoreFlowClient {
     const escrowIdScVal = sdk.nativeToScVal(escrowId, { type: 'u32' });
     const paymentIdScVal = sdk.nativeToScVal(paymentId, { type: 'u32' });
     const hoursScVal = sdk.nativeToScVal(BigInt(hoursLogged), { type: 'i128' });
+    const nonceScVal = sdk.nativeToScVal(BigInt(nonce), { type: 'u64' });
     
-    // Convert signature base64 to Bytes ScVal
+    // Convert signature base64 to BytesN<64> ScVal
     const sigBuffer = Buffer.from(signatureBase64, 'base64');
     const sigBytesScVal = sdk.xdr.ScVal.scvBytes(sigBuffer);
 
@@ -276,6 +329,7 @@ export class CoreFlowClient {
       escrowIdScVal,
       paymentIdScVal,
       hoursScVal,
+      nonceScVal,
       sigBytesScVal,
     ]);
   }

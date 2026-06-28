@@ -1,79 +1,61 @@
 #!/bin/bash
-# CoreFlow Deployment Script for Stellar Testnet
-# Deploys the Soroban smart contract to Testnet
-# 
+# CoreFlow contract deploy + admin bootstrap.
+#
+# Builds the WASM, optimizes it, deploys to the chosen network, then (optionally)
+# sets the contract admin so the circuit breaker / upgrade path is usable.
+#
 # Prerequisites:
-# - Stellar CLI installed (https://github.com/stellar/rs-soroban-cli)
-# - Rust toolchain with wasm32 target
-# - Freighter wallet setup with testnet address
+#   - Stellar CLI            (https://github.com/stellar/stellar-cli)
+#   - Rust + wasm32 target   (rustup target add wasm32-unknown-unknown)
+#
+# Usage:
+#   NETWORK=testnet SOURCE=my-key ADMIN=GADMIN... ./deploy.sh
+#     NETWORK : testnet | public        (default: testnet)
+#     SOURCE  : funded stellar CLI identity used to sign (required to deploy)
+#     ADMIN   : address to set as contract admin via init_admin (optional)
+#
+# Without SOURCE the script only builds + optimizes and prints the commands.
 
-set -e
+set -euo pipefail
 
-echo "=========================================="
-echo "CoreFlow Contract Deployment - Testnet"
-echo "=========================================="
-
-# Configuration
-NETWORK="testnet"
+NETWORK="${NETWORK:-testnet}"
+SOURCE="${SOURCE:-}"
+ADMIN="${ADMIN:-}"
 CONTRACT_DIR="./contracts/core-flow"
-WASM_BUILD_DIR="$CONTRACT_DIR/target/wasm32-unknown-unknown/release"
-WASM_FILE="$WASM_BUILD_DIR/core_flow.wasm"
-CONTRACT_NAME="core-flow"
+WASM="$CONTRACT_DIR/target/wasm32-unknown-unknown/release/core_flow.wasm"
 
-# Step 1: Build contract
-echo ""
-echo "[1/4] Building Soroban contract..."
-cd "$CONTRACT_DIR"
-cargo build --target wasm32-unknown-unknown --release
+echo "== CoreFlow deploy (network=$NETWORK) =="
 
-if [ ! -f "$WASM_FILE" ]; then
-  echo "Error: WASM file not found at $WASM_FILE"
-  exit 1
+echo "[1/4] Building contract (release/wasm)…"
+( cd "$CONTRACT_DIR" && cargo build --target wasm32-unknown-unknown --release )
+[ -f "$WASM" ] || { echo "ERROR: WASM not found at $WASM"; exit 1; }
+
+echo "[2/4] Optimizing WASM…"
+if command -v stellar >/dev/null 2>&1; then
+  stellar contract optimize --wasm "$WASM" || echo "  (optimize skipped)"
+else
+  echo "  stellar CLI not found — skipping optimize"
 fi
 
-cd - > /dev/null
+if [ -z "$SOURCE" ]; then
+  echo "[3/4] No SOURCE provided — dry run. To deploy:"
+  echo "  stellar contract deploy --wasm $WASM --source <key> --network $NETWORK"
+  echo "[4/4] Then set admin:"
+  echo "  stellar contract invoke --id <CONTRACT_ID> --source <key> --network $NETWORK -- init_admin --admin <ADMIN>"
+  exit 0
+fi
 
-# Step 2: Optimize WASM (optional but recommended)
-echo ""
-echo "[2/4] Optimizing WASM binary..."
-# wasm-opt -Oz -o "$WASM_FILE".optimized "$WASM_FILE" 2>/dev/null || echo "Note: wasm-opt not installed, skipping optimization"
+echo "[3/4] Deploying…"
+CONTRACT_ID="$(stellar contract deploy --wasm "$WASM" --source "$SOURCE" --network "$NETWORK")"
+echo "  Deployed: $CONTRACT_ID"
 
-# Step 3: Deploy contract
-echo ""
-echo "[3/4] Deploying contract to $NETWORK..."
-echo ""
-echo "Running: stellar contract deploy --network $NETWORK --source SOURCE_ACCOUNT_NAME_HERE --wasm $WASM_FILE"
-echo ""
-echo "IMPORTANT: Replace SOURCE_ACCOUNT_NAME_HERE with your funded Stellar testnet account name"
-echo "Your Freighter wallet public key should be associated with this account"
-echo ""
-echo "Command to deploy:"
-echo "stellar contract deploy \\"
-echo "  --network $NETWORK \\"
-echo "  --source <your-account-name> \\"
-echo "  --wasm $WASM_FILE"
-echo ""
+if [ -n "$ADMIN" ]; then
+  echo "[4/4] Setting admin ($ADMIN)…"
+  stellar contract invoke --id "$CONTRACT_ID" --source "$SOURCE" --network "$NETWORK" \
+    -- init_admin --admin "$ADMIN"
+else
+  echo "[4/4] No ADMIN provided — skipping init_admin (set it before mainnet use)."
+fi
 
-# Uncomment the following and replace <your-account-name> with your actual account
-# stellar contract deploy \
-#   --network "$NETWORK" \
-#   --source <your-account-name> \
-#   --wasm "$WASM_FILE"
-
-# Step 4: Output next steps
 echo ""
-echo "[4/4] Post-deployment steps:"
-echo ""
-echo "1. Copy the returned contract ID from the deployment output above"
-echo "2. Update .env.local:"
-echo "   NEXT_PUBLIC_STELLAR_CONTRACT_ID=<contract-id-from-deployment>"
-echo ""
-echo "3. Use a valid testnet address for NEXT_PUBLIC_STELLAR_READ_ADDRESS"
-echo "   Example: NEXT_PUBLIC_STELLAR_READ_ADDRESS=GBRPYHIL2CI3WHZDTOOQFC6EB4KJJGUJMqtbu7A5VKZXWV7NBVXCIS7"
-echo ""
-echo "4. Start the development server:"
-echo "   npm run dev"
-echo ""
-echo "=========================================="
-echo "Deployment Script Complete"
-echo "=========================================="
+echo "Done. Set NEXT_PUBLIC_STELLAR_CONTRACT_ID=$CONTRACT_ID in your environment."

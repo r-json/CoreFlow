@@ -1,0 +1,93 @@
+import { NextRequest, NextResponse } from 'next/server';
+import prisma from '@/lib/db/prisma';
+import { getUserFromRequest, hasRole } from '@/lib/auth';
+import { parseBody, createEscrowSchema } from '@/lib/validation/schemas';
+import { audit } from '@/lib/audit';
+
+export async function GET(request: NextRequest) {
+  // Auth guard — all authenticated users can list escrows
+  const user = await getUserFromRequest(request);
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const escrows = await prisma.escrow.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: { timeLogs: true },
+    });
+
+    const mappedEscrows = escrows.map((e: any) => {
+      const totalHours = e.timeLogs.reduce((acc: number, log: any) => acc + log.hoursLogged, 0);
+      return {
+        id: e.onChainId || e.id,
+        worker:
+          e.workerPubKey.length >= 10
+            ? `${e.workerPubKey.slice(0, 6)}...${e.workerPubKey.slice(-4)}`
+            : e.workerPubKey,
+        amount: (e.amountCents / 100).toLocaleString(undefined, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }),
+        currency: e.currency,
+        hoursLogged: totalHours.toString(),
+        status: e.status,
+        manager_approved: e.managerApproved,
+        finance_approved: e.financeApproved,
+        hours_verified: totalHours > 0,
+        created_at: e.createdAt.toISOString(),
+        isMock: false,
+      };
+    });
+
+    return NextResponse.json({ escrows: mappedEscrows }, { status: 200 });
+  } catch (error) {
+    console.error('Failed to fetch escrows:', error);
+    return NextResponse.json({ error: 'Failed to fetch escrows' }, { status: 500 });
+  }
+}
+
+export async function POST(request: NextRequest) {
+  // Auth guard — only manager or finance can create escrow records
+  const user = await getUserFromRequest(request);
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  if (!hasRole(user, ['manager', 'finance'])) {
+    return NextResponse.json({ error: 'Forbidden: insufficient role' }, { status: 403 });
+  }
+
+  try {
+    const body = await request.json().catch(() => null);
+    const parsed = parseBody(createEscrowSchema, body);
+    if (!parsed.ok) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
+    }
+    // onChainId is validated as positive-or-absent, so it never collides at 0.
+    const { onChainId, workerPubKey, amountCents, rateCents, tokenAddress } = parsed.data;
+
+    const escrow = await prisma.escrow.create({
+      data: {
+        onChainId: onChainId ?? null,
+        workerPubKey,
+        amountCents,
+        rateCents,
+        tokenAddress: tokenAddress ?? null,
+      },
+    });
+
+    await audit('escrow.create', {
+      actor: user.walletAddress,
+      target: String(escrow.id),
+      metadata: { onChainId: escrow.onChainId },
+    });
+
+    return NextResponse.json({ escrow }, { status: 201 });
+  } catch (error: any) {
+    if (error?.code === 'P2002') {
+      return NextResponse.json({ message: 'Escrow already indexed' }, { status: 200 });
+    }
+    console.error('Failed to create escrow:', error);
+    return NextResponse.json({ error: 'Failed to create escrow' }, { status: 500 });
+  }
+}
