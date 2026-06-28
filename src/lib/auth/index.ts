@@ -4,9 +4,9 @@
  * Challenge-response flow:
  *  1. Client calls POST /api/auth/challenge with { walletAddress }
  *  2. Server stores a 5-minute nonce in AuthChallenge table and returns a challenge string
- *  3. Client signs the challenge string with Freighter (Ed25519)
+ *  3. Client signs the challenge string with Freighter (Ed25519 / SEP-53)
  *  4. Client calls POST /api/auth/verify with { walletAddress, signature }
- *  5. Server verifies Ed25519 signature against stored challenge
+ *  5. Server verifies Ed25519 signature against SEP-53 hashed challenge
  *  6. Server upserts a User row, creates a Session row, issues JWT in HttpOnly cookie
  *
  * Security properties:
@@ -15,13 +15,22 @@
  *  - Challenges are one-time-use (used=true after first verify)
  *  - Sessions are stored in DB — can be revoked server-side at logout
  *  - JWT is HS256 signed with AUTH_SECRET — never in localStorage
+ *  - Signature verification follows SEP-53 (prefixed + SHA-256 hashed)
  */
 
+import { createHash } from 'crypto';
 import { nanoid } from 'nanoid';
 import { Keypair } from '@stellar/stellar-sdk';
 import prisma from '@/lib/db/prisma';
 import { signJwt, verifyJwt, JWT_EXPIRY_SECONDS, type AuthPayload } from './jwt';
 import type { NextRequest } from 'next/server';
+
+/**
+ * SEP-53 message signing prefix.
+ * Freighter's signMessage prepends this to the raw message before
+ * SHA-256 hashing and Ed25519 signing.
+ */
+const SEP53_PREFIX = 'Stellar Signed Message:\n';
 
 export const CHALLENGE_TTL_SECONDS = 60 * 5; // 5 minutes
 export const CHALLENGE_PREFIX = 'CoreFlow:auth';
@@ -108,11 +117,19 @@ export async function verifyChallenge(
   const challengeString = buildChallengeString(walletAddress, challenge.nonce);
 
   try {
-    // Freighter signs the raw UTF-8 bytes of the challenge string
+    // SEP-53: Freighter prefixes the message with "Stellar Signed Message:\n",
+    // concatenates the raw message bytes, SHA-256 hashes the result, and then
+    // Ed25519-signs the 32-byte digest. We must reconstruct the same hash.
     const keypair = Keypair.fromPublicKey(walletAddress);
     const signatureBuffer = Buffer.from(signature, 'base64');
-    const messageBuffer = Buffer.from(challengeString, 'utf-8');
-    return keypair.verify(messageBuffer, signatureBuffer);
+
+    const prefixedMessage = Buffer.concat([
+      Buffer.from(SEP53_PREFIX, 'utf-8'),
+      Buffer.from(challengeString, 'utf-8'),
+    ]);
+    const messageHash = createHash('sha256').update(prefixedMessage).digest();
+
+    return keypair.verify(messageHash, signatureBuffer);
   } catch {
     // Invalid public key format or malformed signature
     return false;
