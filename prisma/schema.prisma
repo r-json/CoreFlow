@@ -9,8 +9,7 @@ datasource db {
   provider  = "postgresql"
   // Pooled connection (PgBouncer / Neon / Supabase pooler) used by the app at runtime.
   url       = env("DATABASE_URL")
-  // Direct (unpooled) connection used only for migrations/introspection.
-  // Falls back to DATABASE_URL locally if DIRECT_URL is unset.
+  // Direct (unpooled) connection used for migrations/introspection.
   directUrl = env("DIRECT_URL")
 }
 

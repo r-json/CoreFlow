@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 const envSchema = z.object({
   DATABASE_URL: z.string().url('DATABASE_URL must be a valid connection URL'),
+  DIRECT_URL: z.string().optional(),
   NEXT_PUBLIC_STELLAR_NETWORK: z.enum(['testnet', 'public', 'futurenet', 'local']).default('testnet'),
   NEXT_PUBLIC_STELLAR_CONTRACT_ID: z.string().min(1, 'NEXT_PUBLIC_STELLAR_CONTRACT_ID is required'),
   ADMIN_WALLETS: z.string().optional().default(''),
@@ -11,6 +12,11 @@ const envSchema = z.object({
 });
 
 const parseEnv = () => {
+  // Guarantee DIRECT_URL defaults to DATABASE_URL if unset for Prisma compatibility
+  if (!process.env.DIRECT_URL && process.env.DATABASE_URL) {
+    process.env.DIRECT_URL = process.env.DATABASE_URL;
+  }
+
   const result = envSchema.safeParse(process.env);
   if (!result.success) {
     console.error('❌ Invalid environment variables configuration:');
