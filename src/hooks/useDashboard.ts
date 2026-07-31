@@ -20,6 +20,7 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
   // Modals state
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showHoursModal, setShowHoursModal] = useState(false);
+  const [selectedEscrowIdForHours, setSelectedEscrowIdForHours] = useState<number | null>(null);
 
   const client = useMemo(() => new CoreFlowClient(), []);
   const isContractConfigured = !!STELLAR_CONFIG.contract.id && STELLAR_CONFIG.contract.id !== '';
@@ -130,7 +131,7 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
     } else {
       setEscrows(mockEscrows);
       if (isContractConfigured) {
-        setInfoMessage('Mock Demo Mode active. Showing mock demo data.');
+        setInfoMessage('Mock Demo Mode active. State changes will be local-only.');
       } else {
         setInfoMessage('Using offline mock demo data. Set contract environment variables to enable live integration.');
       }
@@ -140,7 +141,6 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
   useEffect(() => {
     loadInitialData();
   }, [loadInitialData]);
-
 
   const handleToggleMode = (useMock: boolean) => {
     setIsMockMode(useMock);
@@ -174,15 +174,61 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
     }
   };
 
+  /**
+   * DB-Transaction Reconciliation / Error handling helper.
+   * If a blockchain call fails, logs the error report and rolls back UI state.
+   */
+  const handleBlockchainError = async (escrowId: number, originalStatus: string, err: unknown) => {
+    const errorMsg = err instanceof Error ? err.message : 'Blockchain transaction failed';
+    console.error(`[Reconciliation] Blockchain transaction failed for Escrow #${escrowId}:`, err);
+
+    // Rollback DB status to ensure DB stays synchronized with chain
+    try {
+      await fetch(`/api/escrows/${escrowId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: originalStatus }),
+      });
+    } catch (e) {
+      console.error('Rollback sync failed:', e);
+    }
+
+    // Report error for audit
+    try {
+      await fetch('/api/observability/report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eventType: 'BLOCKCHAIN_FAILURE',
+          message: errorMsg,
+          escrowId,
+          timestamp: new Date().toISOString(),
+        }),
+      });
+    } catch {
+      // Best-effort
+    }
+
+    setError('Blockchain transaction failed. Please retry.');
+  };
+
   const handleManagerApprove = async (escrowId: number) => {
     setIsLoading(true);
     setError(null);
-    try {
-      const isMock = escrows.find((e) => e.id === escrowId)?.isMock || isMockMode;
-      if (isContractConfigured && !isMock) {
-        const result = await client.submitManagerApprove(escrowId);
+    const targetEscrow = escrows.find((e) => e.id === escrowId);
+    const originalStatus = targetEscrow?.status || 'pending_manager';
 
-        // Sync to backend DB - non-blocking
+    try {
+      const isMock = targetEscrow?.isMock || isMockMode;
+      if (isContractConfigured && !isMock) {
+        let result;
+        try {
+          result = await client.submitManagerApprove(escrowId);
+        } catch (err) {
+          await handleBlockchainError(escrowId, originalStatus, err);
+          return;
+        }
+
         try {
           await fetch(`/api/escrows/${escrowId}/status`, {
             method: 'PATCH',
@@ -207,7 +253,7 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
         ]);
         await loadInitialData();
       } else {
-        await new Promise(resolve => setTimeout(resolve, 1200));
+        await new Promise(resolve => setTimeout(resolve, 1000));
         setEscrows((prev) =>
           prev.map((e) =>
             e.id === escrowId
@@ -238,12 +284,20 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
   const handleFinanceApprove = async (escrowId: number) => {
     setIsLoading(true);
     setError(null);
-    try {
-      const isMock = escrows.find((e) => e.id === escrowId)?.isMock || isMockMode;
-      if (isContractConfigured && !isMock) {
-        const result = await client.submitFinanceApprove(escrowId);
+    const targetEscrow = escrows.find((e) => e.id === escrowId);
+    const originalStatus = targetEscrow?.status || 'pending_finance';
 
-        // Sync to backend DB - non-blocking
+    try {
+      const isMock = targetEscrow?.isMock || isMockMode;
+      if (isContractConfigured && !isMock) {
+        let result;
+        try {
+          result = await client.submitFinanceApprove(escrowId);
+        } catch (err) {
+          await handleBlockchainError(escrowId, originalStatus, err);
+          return;
+        }
+
         try {
           await fetch(`/api/escrows/${escrowId}/status`, {
             method: 'PATCH',
@@ -268,7 +322,7 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
         ]);
         await loadInitialData();
       } else {
-        await new Promise(resolve => setTimeout(resolve, 1200));
+        await new Promise(resolve => setTimeout(resolve, 1000));
         setEscrows((prev) =>
           prev.map((e) =>
             e.id === escrowId
@@ -299,15 +353,22 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
   const handleFinalize = async (escrowId: number) => {
     setIsLoading(true);
     setError(null);
+    const targetEscrow = escrows.find((e) => e.id === escrowId);
+    const amountVal = targetEscrow ? parseFloat(targetEscrow.amount.replace(/,/g, '')) : 0;
+    const originalStatus = targetEscrow?.status || 'ready';
+
     try {
-      const targetEscrow = escrows.find(e => e.id === escrowId);
-      const amountVal = targetEscrow ? parseFloat(targetEscrow.amount.replace(/,/g, '')) : 0;
       const isMock = targetEscrow?.isMock || isMockMode;
 
       if (isContractConfigured && !isMock) {
-        const result = await client.submitFinalizePayment(escrowId);
+        let result;
+        try {
+          result = await client.submitFinalizePayment(escrowId);
+        } catch (err) {
+          await handleBlockchainError(escrowId, originalStatus, err);
+          return;
+        }
 
-        // Sync to backend DB - non-blocking
         try {
           await fetch(`/api/escrows/${escrowId}/status`, {
             method: 'PATCH',
@@ -333,7 +394,7 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
         updateCumulativeStats(amountVal);
         await loadInitialData();
       } else {
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        await new Promise(resolve => setTimeout(resolve, 1200));
         setEscrows((prev) =>
           prev.map((e) =>
             e.id === escrowId
@@ -365,12 +426,20 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
   const handleCancelEscrow = async (escrowId: number) => {
     setIsLoading(true);
     setError(null);
-    try {
-      const isMock = escrows.find((e) => e.id === escrowId)?.isMock || isMockMode;
-      if (isContractConfigured && !isMock) {
-        const result = await client.submitCancelEscrow(escrowId);
+    const targetEscrow = escrows.find((e) => e.id === escrowId);
+    const originalStatus = targetEscrow?.status || 'pending_manager';
 
-        // Sync to backend DB - non-blocking
+    try {
+      const isMock = targetEscrow?.isMock || isMockMode;
+      if (isContractConfigured && !isMock) {
+        let result;
+        try {
+          result = await client.submitCancelEscrow(escrowId);
+        } catch (err) {
+          await handleBlockchainError(escrowId, originalStatus, err);
+          return;
+        }
+
         try {
           await fetch(`/api/escrows/${escrowId}/status`, {
             method: 'PATCH',
@@ -423,6 +492,39 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
     }
   };
 
+  /**
+   * Handle Rejection Edge Case (Sad Path).
+   * Updates status to 'rejected' with rejectionReason.
+   */
+  const handleRejectHours = async (escrowId: number, reason: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const isMock = escrows.find((e) => e.id === escrowId)?.isMock || isMockMode;
+      if (isContractConfigured && !isMock) {
+        await fetch(`/api/escrows/${escrowId}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'rejected', rejectionReason: reason }),
+        });
+        await loadInitialData();
+      } else {
+        await new Promise(resolve => setTimeout(resolve, 800));
+        setEscrows((prev) =>
+          prev.map((e) =>
+            e.id === escrowId
+              ? { ...e, status: 'rejected', rejectionReason: reason, manager_approved: false }
+              : e
+          )
+        );
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to reject hours');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleCreateEscrow = async (workerPubKey: string, amountCents: number, rateCents: number) => {
     if (!isConnected) {
       setError('Please connect Freighter wallet first');
@@ -437,7 +539,6 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
       if (!workerPubKey) throw new Error('Worker address is required');
 
       if (isContractConfigured && !isMockMode) {
-        // Validate worker address for live on-chain
         const isStellarAddr = /^[GC][A-Z2-7]{55}$/.test(workerPubKey);
         if (!isStellarAddr) {
           throw new Error(
@@ -445,8 +546,6 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
           );
         }
 
-        // The settlement token (USDC SAC) must be configured for on-chain
-        // custody — the contract pulls funds from the manager on creation.
         const tokenAddress = STELLAR_CONFIG.token.id;
         if (!tokenAddress) {
           throw new Error(
@@ -464,8 +563,6 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
           }
         ];
 
-        // Fetch the oracle's public key so the escrow only accepts hours
-        // proofs signed by our attestation service.
         const pubkeyRes = await fetch('/api/oracle/pubkey');
         if (!pubkeyRes.ok) {
           throw new Error('Oracle is not configured; cannot create a verifiable escrow.');
@@ -473,7 +570,6 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
         const { pubkey: oraclePubkey } = await pubkeyRes.json();
         const txResult = await client.submitInitializeEscrow(walletAddress, walletAddress, tokenAddress, oraclePubkey, payload);
         
-        // Sync to backend DB - non-blocking
         try {
           await fetch('/api/escrows', {
             method: 'POST',
@@ -504,7 +600,6 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
         ]);
         await loadInitialData();
       } else {
-        // Mock creation
         await new Promise(resolve => setTimeout(resolve, 1000));
         const newId = escrows.length + 1;
         const newEsc: EscrowData = {
@@ -551,11 +646,8 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
       const isMock = escrows.find((e) => e.id === hoursEscrowId)?.isMock || isMockMode;
       if (isContractConfigured && !isMock) {
         const hours = parseInt(hoursValue);
-
-        // 1) Read the on-chain expected nonce (replay protection).
         const nonce = await client.getNonce(hoursEscrowId);
 
-        // 2) Ask the oracle to attest these hours at that nonce.
         const attestRes = await fetch('/api/oracle/attest', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -572,7 +664,6 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
         }
         const { signature } = await attestRes.json();
 
-        // 3) Submit the oracle-signed proof on-chain.
         const result = await client.submitHoursProof(
           hoursEscrowId,
           hoursPaymentId,
@@ -581,7 +672,6 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
           signature
         );
 
-        // Sync to backend DB - non-blocking
         try {
           await fetch('/api/hours', {
             method: 'POST',
@@ -611,7 +701,6 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
         ]);
         await loadInitialData();
       } else {
-        // Mock hours log
         await new Promise(resolve => setTimeout(resolve, 1000));
         setEscrows(prev =>
           prev.map(esc => {
@@ -623,6 +712,7 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
                 hoursLogged: hoursValue,
                 hours_verified: true,
                 status: 'pending_manager',
+                rejectionReason: null,
                 amount: parseFloat(newAmountVal).toLocaleString(),
               };
             }
@@ -649,11 +739,34 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
     }
   };
 
+  const handleOpenResubmit = (escrowId: number) => {
+    setSelectedEscrowIdForHours(escrowId);
+    setShowHoursModal(true);
+  };
+
+  // Real-time KPI calculations
+  const totalPayrollProcessedUsdc = useMemo(() => {
+    return escrows
+      .filter((e) => e.status === 'paid')
+      .reduce((sum, e) => sum + (parseFloat(e.amount.replace(/,/g, '')) || 0), 0);
+  }, [escrows]);
+
+  const pendingApprovalsCount = useMemo(() => {
+    return escrows.filter((e) => e.status === 'pending_manager' || e.status === 'pending_finance').length;
+  }, [escrows]);
+
+  const activeEmployeesCount = useMemo(() => {
+    const workers = new Set(escrows.map((e) => e.worker));
+    return Math.max(workers.size, 1);
+  }, [escrows]);
+
   const stats = {
     total: escrows.length,
-    pending: escrows.filter((e) => e.status !== 'paid' && e.status !== 'cancelled').length,
+    pending: pendingApprovalsCount,
     approved: escrows.filter((e) => e.status === 'ready').length,
     released: escrows.filter((e) => e.status === 'paid').length,
+    totalPayrollProcessedUsdc,
+    activeEmployeesCount,
   };
 
   return {
@@ -667,6 +780,7 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
       infoMessage,
       showCreateModal,
       showHoursModal,
+      selectedEscrowIdForHours,
       isMockMode,
       isContractConfigured,
       stats,
@@ -675,12 +789,15 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
     actions: {
       setShowCreateModal,
       setShowHoursModal,
+      setSelectedEscrowIdForHours,
       handleToggleMode,
       loadInitialData,
       handleManagerApprove,
       handleFinanceApprove,
       handleFinalize,
       handleCancelEscrow,
+      handleRejectHours,
+      handleOpenResubmit,
       handleCreateEscrow,
       handleSubmitHours,
       setError,

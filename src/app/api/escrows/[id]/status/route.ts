@@ -1,16 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db/prisma';
-import { getUserFromRequest, hasRole } from '@/lib/auth';
+import { getUserFromRequest, isAdmin } from '@/lib/auth';
 import { parseBody, statusPatchSchema } from '@/lib/validation/schemas';
+import { audit } from '@/lib/audit';
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
-  // Role guard — only manager or finance can update escrow status
+  // Role guard — only ADMIN can update escrow status (approve/reject/finalize/cancel)
   const user = await getUserFromRequest(request);
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  if (!hasRole(user, ['manager', 'finance'])) {
-    return NextResponse.json({ error: 'Forbidden: insufficient role' }, { status: 403 });
+  if (!isAdmin(user)) {
+    return NextResponse.json(
+      { error: 'Forbidden: only ADMIN can update escrow status' },
+      { status: 403 }
+    );
   }
 
   try {
@@ -24,21 +28,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     if (!parsed.ok) {
       return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
-    const { status, managerApproved, financeApproved } = parsed.data;
-
-    // Prevent finance from doing manager actions and vice versa (admin may do both)
-    if (managerApproved !== undefined && !hasRole(user, ['manager'])) {
-      return NextResponse.json(
-        { error: 'Forbidden: only managers can set managerApproved' },
-        { status: 403 }
-      );
-    }
-    if (financeApproved !== undefined && !hasRole(user, ['finance'])) {
-      return NextResponse.json(
-        { error: 'Forbidden: only finance can set financeApproved' },
-        { status: 403 }
-      );
-    }
+    const { status, managerApproved, financeApproved, rejectionReason } = parsed.data;
 
     const updated = await prisma.escrow.update({
       where: { onChainId },
@@ -46,7 +36,14 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         ...(status && { status }),
         ...(managerApproved !== undefined && { managerApproved }),
         ...(financeApproved !== undefined && { financeApproved }),
+        ...(rejectionReason !== undefined && { rejectionReason }),
       },
+    });
+
+    await audit(status === 'rejected' ? 'escrow.reject' : 'escrow.status_update', {
+      actor: user.walletAddress,
+      target: String(onChainId),
+      metadata: { status, managerApproved, financeApproved, rejectionReason },
     });
 
     return NextResponse.json({ escrow: updated }, { status: 200 });

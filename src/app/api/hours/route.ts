@@ -1,13 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db/prisma';
-import { getUserFromRequest } from '@/lib/auth';
+import { getUserFromRequest, isEmployee } from '@/lib/auth';
 import { parseBody, hoursSchema } from '@/lib/validation/schemas';
+import { audit } from '@/lib/audit';
 
 export async function POST(request: NextRequest) {
-  // Auth guard — any authenticated user can submit hours (worker, manager, finance)
+  // Auth guard — EMPLOYEE (and ADMIN) can submit hours
   const user = await getUserFromRequest(request);
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  // isEmployee returns true for both EMPLOYEE and ADMIN roles
+  if (!isEmployee(user)) {
+    return NextResponse.json(
+      { error: 'Forbidden: insufficient role' },
+      { status: 403 }
+    );
   }
 
   try {
@@ -31,6 +40,12 @@ export async function POST(request: NextRequest) {
     await prisma.escrow.update({
       where: { id: escrow.id },
       data: { status: 'pending_manager' },
+    });
+
+    await audit('hours.submit', {
+      actor: user.walletAddress,
+      target: String(escrow.id),
+      metadata: { onChainId, hoursLogged, paymentId, txHash },
     });
 
     return NextResponse.json({ timeLog }, { status: 201 });

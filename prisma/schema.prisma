@@ -14,6 +14,12 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+/// Two-role access control: ADMIN (full access) and EMPLOYEE (restricted).
+enum Role {
+  ADMIN
+  EMPLOYEE
+}
+
 model Escrow {
   id              Int       @id @default(autoincrement())
   onChainId       Int?      @unique // The Soroban contract escrow ID (can be null if pending creation)
@@ -22,9 +28,10 @@ model Escrow {
   rateCents       Int
   currency        String    @default("USDC")
   tokenAddress    String?   // Stellar Asset Contract address used for custody/settlement
-  status          String    @default("pending_manager") // pending_manager, pending_finance, ready, paid, cancelled
+  status          String    @default("pending_manager") // pending_manager, pending_finance, ready, paid, cancelled, rejected
   managerApproved Boolean   @default(false)
   financeApproved Boolean   @default(false)
+  rejectionReason String?   // Reason provided by Admin if hours/escrow rejected
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -48,8 +55,8 @@ model TimeLog {
 model User {
   id            String    @id @default(cuid())
   walletAddress String    @unique
-  /// manager | finance | worker | viewer
-  role          String    @default("viewer")
+  /// ADMIN or EMPLOYEE — stored as a Prisma enum for type safety
+  role          Role      @default(EMPLOYEE)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   sessions      Session[]
@@ -68,11 +75,24 @@ model Session {
   @@index([expiresAt])
 }
 
+model Invitation {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  role      Role      @default(EMPLOYEE)
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([token])
+  @@index([email])
+}
+
 model AuditLog {
   id        String   @id @default(cuid())
-  action    String   // e.g. role.grant, escrow.create, auth.logout
+  action    String   // e.g. role.grant, escrow.create, auth.logout, escrow.reject, invitation.create
   actor     String?  // wallet address of the actor
-  target    String?  // affected entity (wallet / escrow id)
+  target    String?  // affected entity (wallet / escrow id / email)
   metadata  String?  // JSON blob of extra context
   createdAt DateTime @default(now())
 

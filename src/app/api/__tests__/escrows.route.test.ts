@@ -40,7 +40,7 @@ describe('GET /api/escrows', () => {
   });
 
   it('returns mapped escrows for an authenticated user', async () => {
-    mockGetUser.mockResolvedValue({ walletAddress: 'GU', role: 'viewer' });
+    mockGetUser.mockResolvedValue({ walletAddress: 'GU', role: 'EMPLOYEE' });
     mockPrisma.escrow.findMany.mockResolvedValue([
       {
         id: 1, onChainId: 7, workerPubKey: 'GWORKERADDRESSLONG', amountCents: 420000,
@@ -66,31 +66,24 @@ describe('POST /api/escrows', () => {
     expect(res.status).toBe(401);
   });
 
-  it('403 for a viewer (insufficient role)', async () => {
-    mockGetUser.mockResolvedValue({ walletAddress: 'GU', role: 'viewer' });
+  it('403 for an employee (insufficient role)', async () => {
+    mockGetUser.mockResolvedValue({ walletAddress: 'GU', role: 'EMPLOYEE' });
     const res = await POST(jsonReq({ workerPubKey: 'G', amountCents: 100, rateCents: 10 }));
     expect(res.status).toBe(403);
   });
 
   it('400 on invalid body (negative amount)', async () => {
-    mockGetUser.mockResolvedValue({ walletAddress: 'GM', role: 'manager' });
+    mockGetUser.mockResolvedValue({ walletAddress: 'GA', role: 'ADMIN' });
     const res = await POST(jsonReq({ workerPubKey: 'G', amountCents: -5, rateCents: 10 }));
     expect(res.status).toBe(400);
   });
 
-  it('201 for a manager with a valid body (and writes an audit log)', async () => {
-    mockGetUser.mockResolvedValue({ walletAddress: 'GM', role: 'manager' });
+  it('201 for an admin with a valid body (and writes an audit log)', async () => {
+    mockGetUser.mockResolvedValue({ walletAddress: 'GA', role: 'ADMIN' });
     mockPrisma.escrow.create.mockResolvedValue({ id: 1, onChainId: null });
     const res = await POST(jsonReq({ workerPubKey: 'GWORKER', amountCents: 4200, rateCents: 250 }));
     expect(res.status).toBe(201);
     expect(mockPrisma.escrow.create).toHaveBeenCalled();
     expect(mockPrisma.auditLog.create).toHaveBeenCalled();
-  });
-
-  it('admin is allowed (role short-circuit)', async () => {
-    mockGetUser.mockResolvedValue({ walletAddress: 'GA', role: 'admin' });
-    mockPrisma.escrow.create.mockResolvedValue({ id: 2, onChainId: 9 });
-    const res = await POST(jsonReq({ workerPubKey: 'GWORKER', amountCents: 4200, rateCents: 250 }));
-    expect(res.status).toBe(201);
   });
 });

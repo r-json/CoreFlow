@@ -32,10 +32,18 @@ export const statusPatchSchema = z
     status: z.string().min(1).optional(),
     managerApproved: z.boolean().optional(),
     financeApproved: z.boolean().optional(),
+    rejectionReason: z.string().optional(),
   })
-  .refine((v) => v.status !== undefined || v.managerApproved !== undefined || v.financeApproved !== undefined, {
-    message: 'at least one of status, managerApproved, financeApproved is required',
-  });
+  .refine(
+    (v) =>
+      v.status !== undefined ||
+      v.managerApproved !== undefined ||
+      v.financeApproved !== undefined ||
+      v.rejectionReason !== undefined,
+    {
+      message: 'at least one of status, managerApproved, financeApproved, rejectionReason is required',
+    }
+  );
 
 export const hoursSchema = z.object({
   onChainId: z.number().int().min(0),
@@ -54,7 +62,7 @@ export const attestSchema = z.object({
 
 export const roleGrantSchema = z.object({
   walletAddress: stellarAddress,
-  role: z.enum(['admin', 'manager', 'finance', 'worker', 'viewer']),
+  role: z.enum(['ADMIN', 'EMPLOYEE']),
 });
 
 export type ParseResult<T> = { ok: true; data: T } | { ok: false; error: string };

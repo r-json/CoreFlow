@@ -1,22 +1,5 @@
 <div align="center">
 
-# CoreFlow
-
-### Trustless Payroll and B2B Escrow on Stellar Soroban
-
-[![Built on Stellar](https://img.shields.io/badge/Built%20on-Stellar-7C3AED?style=for-the-badge&logo=stellar&logoColor=white)](https://stellar.org)
-[![Soroban Smart Contract](https://img.shields.io/badge/Soroban-Smart%20Contract-10B981?style=for-the-badge)](https://developers.stellar.org/docs)
-[![Rust](https://img.shields.io/badge/Rust-Smart%20Contracts-orange?style=for-the-badge&logo=rust&logoColor=white)](https://www.rust-lang.org/)
-[![Next.js 14](https://img.shields.io/badge/Next.js-14-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org)
-[![License: MIT](https://img.shields.io/badge/License-MIT-F59E0B?style=for-the-badge)](LICENSE)
-[![CI/CD](https://github.com/r-json/CoreFlow/actions/workflows/ci.yml/badge.svg)](https://github.com/r-json/CoreFlow/actions/workflows/ci.yml)
-
-**CoreFlow** is an on-chain accounts payable and payroll escrow system for remote teams. It combines **Soroban smart contracts**, **multi-signature payment approvals**, **oracle-verified work records**, and **USDC-ready settlement** to help companies pay distributed workers with stronger transparency, auditability, and cost predictability.
-
-[Problem](#-the-problem) · [Solution](#-the-solution) · [Architecture](#-architecture-deep-dive) · [Gas Optimization](#-gas-optimization-case-study) · [Why Stellar](#-why-stellar) · [Market](#-market-opportunity) · [Getting Started](#-getting-started)
-
-</div>
-
 ---
 
 ## 🔗 Deployed Contract
@@ -43,7 +26,7 @@
 - [The Solution](#-the-solution)
 - [CoreFlow in One Flow](#-coreflow-in-one-flow)
 - [Architecture Deep Dive](#-architecture-deep-dive)
-- [Database Schema & ERD](#-database-schema--erd)
+- [Database Schema &amp; ERD](#-database-schema--erd)
 - [Gas Optimization Case Study](#-gas-optimization-case-study)
 - [Why Stellar?](#-why-stellar)
 - [Market Opportunity](#-market-opportunity)
@@ -55,6 +38,9 @@
 - [Smart Contract API](#-smart-contract-api)
 - [Development](#-development)
 - [Security and Production Checklist](#-security-and-production-checklist)
+- [Users &amp; Testimonials](#-users--testimonials)
+- [Presentations](#-presentations)
+- [Demo Video](#-demo-video)
 - [References](#-references)
 
 ---
@@ -65,11 +51,11 @@ Remote work has made talent global, but payroll and accounts payable infrastruct
 
 For teams paying international contractors, the pain is concentrated in three areas:
 
-| Pain Point | What Happens Today | Why It Matters |
-|---|---|---|
-| **Slow settlement** | Payments may pass through several intermediaries before reaching the worker. | Contractors have limited visibility and finance teams cannot guarantee predictable payout timing. |
-| **Manual verification** | Hours, milestones, approvals, and invoices are checked through spreadsheets, emails, or screenshots. | Manual AP workflows are difficult to audit and prone to disputes or duplicate work. |
-| **Weak trust layer** | Workers must trust the client to pay, while clients must trust submitted work records. | Neither side has a neutral escrow and verification layer that enforces the payout rules. |
+| Pain Point                    | What Happens Today                                                                                   | Why It Matters                                                                                    |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| **Slow settlement**     | Payments may pass through several intermediaries before reaching the worker.                         | Contractors have limited visibility and finance teams cannot guarantee predictable payout timing. |
+| **Manual verification** | Hours, milestones, approvals, and invoices are checked through spreadsheets, emails, or screenshots. | Manual AP workflows are difficult to audit and prone to disputes or duplicate work.               |
+| **Weak trust layer**    | Workers must trust the client to pay, while clients must trust submitted work records.               | Neither side has a neutral escrow and verification layer that enforces the payout rules.          |
 
 CoreFlow focuses on this gap: **verified work should trigger transparent, programmable, and low-cost payment release without requiring either side to blindly trust the other.**
 
@@ -79,12 +65,12 @@ CoreFlow focuses on this gap: **verified work should trigger transparent, progra
 
 CoreFlow replaces the traditional remote payroll workflow with a **trustless multi-signature escrow system** on Stellar Soroban.
 
-| Legacy Workflow | CoreFlow Workflow |
-|---|---|
-| Email-based approvals | On-chain manager and finance approvals |
-| Manual time-tracking evidence | Oracle-verified hours proof |
-| Spreadsheet status tracking | Immutable contract state and event logs |
-| Bank-wire settlement delays | USDC-ready settlement through Stellar assets |
+| Legacy Workflow                      | CoreFlow Workflow                                               |
+| ------------------------------------ | --------------------------------------------------------------- |
+| Email-based approvals                | On-chain manager and finance approvals                          |
+| Manual time-tracking evidence        | Oracle-verified hours proof                                     |
+| Spreadsheet status tracking          | Immutable contract state and event logs                         |
+| Bank-wire settlement delays          | USDC-ready settlement through Stellar assets                    |
 | One-off payment processes per client | Factory-deployed payroll contracts per team, project, or agency |
 
 In CoreFlow, a team creates an escrow, assigns workers and payment schedules, verifies work through an oracle proof, requires both manager and finance approval, then finalizes payment once all conditions are satisfied.
@@ -218,13 +204,13 @@ CoreFlow uses a factory pattern to avoid forcing every client, agency, or projec
 
 The factory pattern improves scalability in five ways:
 
-| Benefit | Why It Matters |
-|---|---|
-| **Isolated contract state** | Each organization or project can have its own escrow contract instead of sharing a global storage map. |
-| **Lower blast radius** | A disputed or paused payroll instance does not block other client payroll contracts. |
-| **Deterministic deployment** | Soroban supports contract deployment through the SDK deployer API with deterministic addresses derived from deployer and salt. |
-| **Reusable audited template** | The factory deploys new instances from the same uploaded WASM hash, reducing repeated engineering effort. |
-| **Indexable registry** | The factory can emit `payroll_created` events and maintain a registry of organization-to-contract mappings for dashboards and analytics. |
+| Benefit                             | Why It Matters                                                                                                                            |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| **Isolated contract state**   | Each organization or project can have its own escrow contract instead of sharing a global storage map.                                    |
+| **Lower blast radius**        | A disputed or paused payroll instance does not block other client payroll contracts.                                                      |
+| **Deterministic deployment**  | Soroban supports contract deployment through the SDK deployer API with deterministic addresses derived from deployer and salt.            |
+| **Reusable audited template** | The factory deploys new instances from the same uploaded WASM hash, reducing repeated engineering effort.                                 |
+| **Indexable registry**        | The factory can emit`payroll_created` events and maintain a registry of organization-to-contract mappings for dashboards and analytics. |
 
 Recommended factory responsibilities:
 
@@ -357,15 +343,15 @@ erDiagram
 
 ### Table Descriptions
 
-| Table | Purpose |
-|---|---|
-| **Escrow** | Core entity tracking escrow instances. Synced with the on-chain contract state via the indexer. |
-| **TimeLog** | Records of verified hours submitted against an escrow. Maps to on-chain payment schedules. |
-| **User & Session** | Manages RBAC roles (admin, manager, finance, worker) and active JWT sessions for security revocation. |
-| **AuditLog** | Append-only ledger for security-sensitive actions (e.g., role changes, escrow creations, logouts). |
-| **ChainEvent & IndexerCursor** | Tracks the ingestion state of Soroban contract events to provide eventual consistency for the UI. |
-| **OracleAttestation** | Stores server-signed proofs of work hours. Includes nonce-based replay protection matching the contract. |
-| **AuthChallenge** | Short-lived, single-use challenges issued to wallets during the Ed25519 authentication flow. |
+| Table                                | Purpose                                                                                                  |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| **Escrow**                     | Core entity tracking escrow instances. Synced with the on-chain contract state via the indexer.          |
+| **TimeLog**                    | Records of verified hours submitted against an escrow. Maps to on-chain payment schedules.               |
+| **User & Session**             | Manages RBAC roles (admin, manager, finance, worker) and active JWT sessions for security revocation.    |
+| **AuditLog**                   | Append-only ledger for security-sensitive actions (e.g., role changes, escrow creations, logouts).       |
+| **ChainEvent & IndexerCursor** | Tracks the ingestion state of Soroban contract events to provide eventual consistency for the UI.        |
+| **OracleAttestation**          | Stores server-signed proofs of work hours. Includes nonce-based replay protection matching the contract. |
+| **AuthChallenge**              | Short-lived, single-use challenges issued to wallets during the Ed25519 authentication flow.             |
 
 ---
 
@@ -445,16 +431,16 @@ pub fn pay_batch(
 
 ### Optimization Strategies
 
-| Strategy | Implementation Detail | Gas / Cost Benefit |
-|---|---|---|
-| **Batch operations** | Pay many schedules in one invocation instead of one transaction per worker. | Reduces repeated transaction overhead and repeated authorization calls. |
-| **Single escrow read** | Load the escrow once before the loop. | Avoids repeated storage reads per payment. |
-| **Single escrow write** | Update all selected schedules in memory, then write escrow state once after the loop. | Reduces storage write frequency, which is usually more expensive than memory operations. |
-| **Compact identifiers** | Use `u32` payment IDs and escrow IDs instead of large strings. | Reduces serialized data size. |
-| **Short event topics** | Use `symbol_short!` event labels such as `pay` and `batch`. | Keeps emitted event payload compact. |
-| **Minimal return data** | Return only `paid_count`, not the full payment vector. | Avoids returning large serialized objects to the caller. |
-| **Factory-isolated state** | Store only one client or project payroll per child contract. | Keeps state lookup smaller and improves operational separation. |
-| **TTL-aware storage** | Extend TTL only when necessary and use the right storage class for the data lifecycle. | Controls long-term storage rent and archival risk. |
+| Strategy                         | Implementation Detail                                                                  | Gas / Cost Benefit                                                                       |
+| -------------------------------- | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| **Batch operations**       | Pay many schedules in one invocation instead of one transaction per worker.            | Reduces repeated transaction overhead and repeated authorization calls.                  |
+| **Single escrow read**     | Load the escrow once before the loop.                                                  | Avoids repeated storage reads per payment.                                               |
+| **Single escrow write**    | Update all selected schedules in memory, then write escrow state once after the loop.  | Reduces storage write frequency, which is usually more expensive than memory operations. |
+| **Compact identifiers**    | Use`u32` payment IDs and escrow IDs instead of large strings.                        | Reduces serialized data size.                                                            |
+| **Short event topics**     | Use`symbol_short!` event labels such as `pay` and `batch`.                       | Keeps emitted event payload compact.                                                     |
+| **Minimal return data**    | Return only`paid_count`, not the full payment vector.                                | Avoids returning large serialized objects to the caller.                                 |
+| **Factory-isolated state** | Store only one client or project payroll per child contract.                           | Keeps state lookup smaller and improves operational separation.                          |
+| **TTL-aware storage**      | Extend TTL only when necessary and use the right storage class for the data lifecycle. | Controls long-term storage rent and archival risk.                                       |
 
 ### MVP vs. Production Note
 
@@ -466,13 +452,13 @@ The current MVP `finalize_payment` function finalizes payment schedules and emit
 
 CoreFlow is built on Stellar because the project is a B2B payments and payroll product first, not a generic DeFi application.
 
-| Requirement | Why Stellar Fits |
-|---|---|
-| **Low-cost payroll transactions** | Stellar is designed for rapid payments and low-cost transactions, making small contractor payouts and batch payroll economically practical. |
+| Requirement                                   | Why Stellar Fits                                                                                                                                                                                          |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Low-cost payroll transactions**       | Stellar is designed for rapid payments and low-cost transactions, making small contractor payouts and batch payroll economically practical.                                                               |
 | **Stablecoin and fiat-asset workflows** | Stellar assets can be represented through trustlines and used by smart contracts through the Stellar Asset Contract, allowing CoreFlow to support USDC-style settlement without deploying a custom token. |
-| **Compliance-aware rails** | Stellar’s anchor standards support KYC, deposit/withdrawal, quotes, and cross-border payment workflows, which are important for real B2B payroll and off-ramp use cases. |
-| **Smart contracts with strong auth** | Soroban’s authorization model allows contracts to enforce role-based approvals using account-level authorization instead of relying on ad hoc signature parsing for every role. |
-| **Predictable user experience** | Payroll users need predictable fees, wallet signing, auditable status, and reliable settlement more than speculative throughput. Stellar’s payments-first design matches this requirement. |
+| **Compliance-aware rails**              | Stellar’s anchor standards support KYC, deposit/withdrawal, quotes, and cross-border payment workflows, which are important for real B2B payroll and off-ramp use cases.                                 |
+| **Smart contracts with strong auth**    | Soroban’s authorization model allows contracts to enforce role-based approvals using account-level authorization instead of relying on ad hoc signature parsing for every role.                          |
+| **Predictable user experience**         | Payroll users need predictable fees, wallet signing, auditable status, and reliable settlement more than speculative throughput. Stellar’s payments-first design matches this requirement.               |
 
 Compared with many EVM chains, Stellar gives CoreFlow a more payment-native asset model and a lower-cost UX target. Compared with high-throughput chains such as Solana, Stellar is better aligned with regulated assets, on/off-ramp standards, and enterprise payment interoperability for this specific payroll use case.
 
@@ -482,14 +468,14 @@ Compared with many EVM chains, Stellar gives CoreFlow a more payment-native asse
 
 CoreFlow begins with the Philippines because it has a dense market of remote workers, online freelancers, agencies, and outsourcing businesses that already serve international clients.
 
-| Market Signal | Why It Matters for CoreFlow |
-|---|---|
-| **~1.5M estimated Filipino online freelancers** | A large freelancer base creates demand for transparent, low-cost international payment workflows. |
-| **Philippine IT-BPM employment projected at 1.82M jobs and $38B revenue in 2024** | The country already exports remote and back-office services at scale. |
-| **Philippines B2B payments market: $5.8B in 2025, projected $12.9B by 2034** | The local B2B payment opportunity is large enough for a focused Philippine wedge. |
-| **SEA B2B payments market: $49.0B in 2025, projected $112.5B by 2034** | Regional expansion can move CoreFlow from freelancer payroll into broader supplier and contractor payments. |
-| **SEA digital economy GMV: $263B in 2024** | Digital-first commerce and services create more demand for programmable payment infrastructure. |
-| **Global B2B payments market: $11.69T in 2024, projected $15.88T by 2030** | The long-term opportunity extends beyond freelancers into global AP automation. |
+| Market Signal                                                                           | Why It Matters for CoreFlow                                                                                 |
+| --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **~1.5M estimated Filipino online freelancers**                                   | A large freelancer base creates demand for transparent, low-cost international payment workflows.           |
+| **Philippine IT-BPM employment projected at 1.82M jobs and $38B revenue in 2024** | The country already exports remote and back-office services at scale.                                       |
+| **Philippines B2B payments market: $5.8B in 2025, projected $12.9B by 2034**      | The local B2B payment opportunity is large enough for a focused Philippine wedge.                           |
+| **SEA B2B payments market: $49.0B in 2025, projected $112.5B by 2034**            | Regional expansion can move CoreFlow from freelancer payroll into broader supplier and contractor payments. |
+| **SEA digital economy GMV: $263B in 2024**                                        | Digital-first commerce and services create more demand for programmable payment infrastructure.             |
+| **Global B2B payments market: $11.69T in 2024, projected $15.88T by 2030**        | The long-term opportunity extends beyond freelancers into global AP automation.                             |
 
 CoreFlow’s wedge is narrow but expandable: start with verified freelancer and agency payouts, then expand into recurring contractor payroll, supplier payments, DAO treasury operations, and full-stack B2B payment orchestration.
 
@@ -563,14 +549,14 @@ Success metric:
 
 CoreFlow can grow the Stellar ecosystem in ways that go beyond transaction volume.
 
-| Growth Area | Ecosystem Impact |
-|---|---|
-| **More real payment volume** | Recurring payroll and contractor payouts create practical, non-speculative Stellar usage. |
-| **More stablecoin utility** | USDC-ready payroll gives workers and agencies a reason to hold, receive, and off-ramp Stellar assets. |
-| **More Soroban developers** | The project demonstrates factory deployment, auth-based approvals, oracle verification, and token payment patterns in Rust. |
-| **More anchor demand** | Freelancer and agency users need fiat on/off-ramps, creating demand for local anchor integrations. |
-| **More enterprise use cases** | CoreFlow frames Stellar as infrastructure for AP automation, not only remittances or consumer transfers. |
-| **More wallet adoption** | Workers, managers, and finance approvers interact with Stellar wallets through a real payroll workflow. |
+| Growth Area                         | Ecosystem Impact                                                                                                            |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| **More real payment volume**  | Recurring payroll and contractor payouts create practical, non-speculative Stellar usage.                                   |
+| **More stablecoin utility**   | USDC-ready payroll gives workers and agencies a reason to hold, receive, and off-ramp Stellar assets.                       |
+| **More Soroban developers**   | The project demonstrates factory deployment, auth-based approvals, oracle verification, and token payment patterns in Rust. |
+| **More anchor demand**        | Freelancer and agency users need fiat on/off-ramps, creating demand for local anchor integrations.                          |
+| **More enterprise use cases** | CoreFlow frames Stellar as infrastructure for AP automation, not only remittances or consumer transfers.                    |
+| **More wallet adoption**      | Workers, managers, and finance approvers interact with Stellar wallets through a real payroll workflow.                     |
 
 If CoreFlow succeeds, Stellar gains a repeatable pattern for verified work-to-payment automation: escrow, proof, approval, settlement, and receipt.
 
@@ -578,25 +564,25 @@ If CoreFlow succeeds, Stellar gains a repeatable pattern for verified work-to-pa
 
 ## Tech Stack
 
-| Layer | Technology | Purpose |
-|---|---|---|
-| Smart Contracts | Rust + Soroban SDK | Escrow logic, role authorization, oracle proof handling, payment finalization |
-| Contract Architecture | Factory pattern | Deploy isolated payroll contracts per team, agency, or project |
-| Token Settlement | Stellar Asset Contract / USDC-ready | Custody and settlement — funds pulled on escrow creation, released on finalize |
-| Oracle Layer | Ed25519 signing service (Chainlink-compatible) | Server-side attestation of verified work hours with replay protection |
-| Backend API | Next.js 14 App Router (TypeScript) | RESTful API routes for auth, escrow CRUD, hours, oracle, admin, indexer |
-| Authentication | Ed25519 challenge-response + JWT (HS256) | Wallet-based sign-in with HttpOnly session cookies and DB-backed revocation |
-| Authorization | RBAC (admin / manager / finance / worker / viewer) | Role-based access control enforced on every protected endpoint |
-| Database | PostgreSQL + Prisma ORM | 9-table schema for escrows, auth, audit logs, chain indexer, oracle attestations |
-| Chain Indexer | Event-driven, idempotent projection | Projects on-chain contract events into PostgreSQL for dashboard reads |
-| Frontend | React 18 + Next.js 14 | Payroll dashboard, escrow cards, approval flow, transaction UX |
-| Wallet | Freighter | Stellar wallet connection and transaction signing |
-| Styling | Tailwind CSS + shadcn/ui | Responsive dashboard interface |
-| Validation | Zod schemas | Input validation on all mutating API endpoints |
-| Observability | Structured JSON logging + error boundaries | Queryable logs, client error reporting, health/readiness probes |
-| Testing | Vitest + Playwright + cargo test | 69 TS unit tests, 29 Rust contract tests (incl. fuzz), E2E framework |
-| Deployment | Vercel + Docker Compose (local) | Serverless production deploy with Vercel Cron for indexer |
-| Network | Stellar Testnet / Public Network | Testing and mainnet deployment |
+| Layer                 | Technology                                         | Purpose                                                                          |
+| --------------------- | -------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Smart Contracts       | Rust + Soroban SDK                                 | Escrow logic, role authorization, oracle proof handling, payment finalization    |
+| Contract Architecture | Factory pattern                                    | Deploy isolated payroll contracts per team, agency, or project                   |
+| Token Settlement      | Stellar Asset Contract / USDC-ready                | Custody and settlement — funds pulled on escrow creation, released on finalize  |
+| Oracle Layer          | Ed25519 signing service (Chainlink-compatible)     | Server-side attestation of verified work hours with replay protection            |
+| Backend API           | Next.js 14 App Router (TypeScript)                 | RESTful API routes for auth, escrow CRUD, hours, oracle, admin, indexer          |
+| Authentication        | Ed25519 challenge-response + JWT (HS256)           | Wallet-based sign-in with HttpOnly session cookies and DB-backed revocation      |
+| Authorization         | RBAC (admin / manager / finance / worker / viewer) | Role-based access control enforced on every protected endpoint                   |
+| Database              | PostgreSQL + Prisma ORM                            | 9-table schema for escrows, auth, audit logs, chain indexer, oracle attestations |
+| Chain Indexer         | Event-driven, idempotent projection                | Projects on-chain contract events into PostgreSQL for dashboard reads            |
+| Frontend              | React 18 + Next.js 14                              | Payroll dashboard, escrow cards, approval flow, transaction UX                   |
+| Wallet                | Freighter                                          | Stellar wallet connection and transaction signing                                |
+| Styling               | Tailwind CSS + shadcn/ui                           | Responsive dashboard interface                                                   |
+| Validation            | Zod schemas                                        | Input validation on all mutating API endpoints                                   |
+| Observability         | Structured JSON logging + error boundaries         | Queryable logs, client error reporting, health/readiness probes                  |
+| Testing               | Vitest + Playwright + cargo test                   | 69 TS unit tests, 29 Rust contract tests (incl. fuzz), E2E framework             |
+| Deployment            | Vercel + Docker Compose (local)                    | Serverless production deploy with Vercel Cron for indexer                        |
+| Network               | Stellar Testnet / Public Network                   | Testing and mainnet deployment                                                   |
 
 ---
 
@@ -686,13 +672,13 @@ coreflow/
 
 ### Prerequisites
 
-| Tool | Version |
-|---|---|
-| Node.js | 18+ |
-| Rust | Latest stable |
-| wasm32 target | `wasm32-unknown-unknown` |
-| Stellar CLI | Latest |
-| Freighter Wallet | Latest |
+| Tool             | Version                    |
+| ---------------- | -------------------------- |
+| Node.js          | 18+                        |
+| Rust             | Latest stable              |
+| wasm32 target    | `wasm32-unknown-unknown` |
+| Stellar CLI      | Latest                     |
+| Freighter Wallet | Latest                     |
 
 ### Install Dependencies
 
@@ -795,14 +781,14 @@ Supports dispute cancellation and read-only escrow lookup.
 
 ## Development
 
-| Command | Description |
-|---|---|
-| `npm run dev` | Start the Next.js development server |
-| `npm run build` | Build the production frontend |
-| `npm run start` | Start production server |
-| `npm run lint` | Run ESLint |
-| `npm run contract:build` | Compile Soroban contract to WASM |
-| `npm run contract:test` | Run Rust contract tests |
+| Command                    | Description                          |
+| -------------------------- | ------------------------------------ |
+| `npm run dev`            | Start the Next.js development server |
+| `npm run build`          | Build the production frontend        |
+| `npm run start`          | Start production server              |
+| `npm run lint`           | Run ESLint                           |
+| `npm run contract:build` | Compile Soroban contract to WASM     |
+| `npm run contract:test`  | Run Rust contract tests              |
 
 Recommended engineering checklist before judging:
 
@@ -830,6 +816,58 @@ Before production funds are processed, CoreFlow should complete the following:
 - Add storage TTL renewal strategy for long-lived payroll records.
 - Add integration tests for Freighter transaction signing and Stellar RPC simulation.
 - Complete an independent smart contract security review before handling real payroll volume.
+
+---
+
+## Users & Testimonials
+
+CoreFlow has been tested and validated by early adopters across the Philippine freelancer and remote work ecosystem.
+
+| Name                        | Organization                         | Testimonial                                                                                                                                      |
+| --------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Evangeline T.**     | Nextel Industrial Sales and Services | _"CoreFlow gave our team real transparency into payroll. We no longer chase emails for payment approvals — it's all on-chain and auditable."_ |
+| **Lucky R.**          | Office Assistant                     | _"The multi-sig escrow system is a game-changer. Our finance and project leads can independently approve payments without bottlenecks."_       |
+| **Patric Villanueva** | Worker                               | _"As a worker, I finally feel secure knowing my payment is locked in escrow the moment work is verified. No more chasing invoices."_           |
+| **Imelda H. Mariano** | HR                                   | _"The oracle-verified hours feature eliminated our manual reconciliation work."_                                                               |
+| **Joly Ann Delima**   | Finance                              | _"CoreFlow could help us spin up separate payroll contracts for each project team — clean isolation and full audit trails."_                 |
+
+> [!TIP]
+> Interested in piloting CoreFlow for your team or agency? Reach out to learn about our early adopter program.
+
+---
+
+## 🎤 Presentations
+
+Our project presentation deck covers the full CoreFlow vision — from problem statement and architecture to live demo walkthrough and go-to-market strategy.
+
+📊 **[View CoreFlow Presentation Deck (Google Drive)](https://drive.google.com/file/d/1orKdCyjF-lVfLFo435NlOkiyDcxT1sKo/view?usp=drive_link)**
+
+> [!NOTE]
+> This presentation was prepared for the **Stellar Philippines Bootcamp 2026** and covers:
+>
+> - Problem analysis for remote payroll in the Philippines
+> - CoreFlow's on-chain escrow architecture and multi-sig approval flow
+> - Smart contract design and gas optimization strategies
+> - Live demo of the dashboard and wallet integration
+> - Market opportunity and go-to-market roadmap
+
+---
+
+## 🎬 Demo Video
+
+Watch a full walkthrough of the CoreFlow platform in action — from wallet connection and escrow creation to oracle verification, dual-approval signing, and payment finalization.
+
+🎥 **[Watch CoreFlow Demo Video (Google Drive)](https://drive.google.com/file/d/1Jz7Pejnie-S4X3VD2YeF_d9EDV-hgQKb/view?usp=drive_link)**
+
+> [!IMPORTANT]
+> The demo showcases the following features:
+>
+> - **Freighter wallet** sign-in via Ed25519 challenge-response
+> - **Escrow creation** with payment schedules and worker assignment
+> - **Oracle attestation** of verified work hours
+> - **Manager and finance approval** flow with on-chain authorization
+> - **Payment finalization** and downloadable on-chain receipt
+> - **Dashboard analytics** with real-time transaction feed
 
 ---
 
@@ -863,9 +901,3 @@ Before production funds are processed, CoreFlow should complete the following:
 ---
 
 <div align="center">
-
-**CoreFlow — verified work, approved on-chain, paid through Stellar.**
-
-Built for Stellar Philippines Bootcamp 2026.
-
-</div>

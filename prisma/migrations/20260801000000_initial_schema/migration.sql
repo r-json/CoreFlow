@@ -1,3 +1,6 @@
+-- CreateEnum
+CREATE TYPE "Role" AS ENUM ('ADMIN', 'EMPLOYEE');
+
 -- CreateTable
 CREATE TABLE "Escrow" (
     "id" SERIAL NOT NULL,
@@ -6,9 +9,11 @@ CREATE TABLE "Escrow" (
     "amountCents" INTEGER NOT NULL,
     "rateCents" INTEGER NOT NULL,
     "currency" TEXT NOT NULL DEFAULT 'USDC',
+    "tokenAddress" TEXT,
     "status" TEXT NOT NULL DEFAULT 'pending_manager',
     "managerApproved" BOOLEAN NOT NULL DEFAULT false,
     "financeApproved" BOOLEAN NOT NULL DEFAULT false,
+    "rejectionReason" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -31,7 +36,7 @@ CREATE TABLE "TimeLog" (
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
     "walletAddress" TEXT NOT NULL,
-    "role" TEXT NOT NULL DEFAULT 'viewer',
+    "role" "Role" NOT NULL DEFAULT 'EMPLOYEE',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -47,6 +52,65 @@ CREATE TABLE "Session" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Session_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Invitation" (
+    "id" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "role" "Role" NOT NULL DEFAULT 'EMPLOYEE',
+    "token" TEXT NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "usedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Invitation_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "AuditLog" (
+    "id" TEXT NOT NULL,
+    "action" TEXT NOT NULL,
+    "actor" TEXT,
+    "target" TEXT,
+    "metadata" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "AuditLog_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "IndexerCursor" (
+    "id" INTEGER NOT NULL DEFAULT 1,
+    "lastLedger" INTEGER NOT NULL DEFAULT 0,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "IndexerCursor_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ChainEvent" (
+    "id" TEXT NOT NULL,
+    "type" TEXT NOT NULL,
+    "ledger" INTEGER NOT NULL,
+    "escrowOnChainId" INTEGER,
+    "processedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "ChainEvent_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "OracleAttestation" (
+    "id" TEXT NOT NULL,
+    "escrowOnChainId" INTEGER NOT NULL,
+    "paymentId" INTEGER NOT NULL,
+    "hoursLogged" INTEGER NOT NULL,
+    "nonce" INTEGER NOT NULL,
+    "signature" TEXT NOT NULL,
+    "createdBy" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "OracleAttestation_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -83,6 +147,33 @@ CREATE INDEX "Session_userId_idx" ON "Session"("userId");
 CREATE INDEX "Session_expiresAt_idx" ON "Session"("expiresAt");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Invitation_email_key" ON "Invitation"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Invitation_token_key" ON "Invitation"("token");
+
+-- CreateIndex
+CREATE INDEX "Invitation_token_idx" ON "Invitation"("token");
+
+-- CreateIndex
+CREATE INDEX "Invitation_email_idx" ON "Invitation"("email");
+
+-- CreateIndex
+CREATE INDEX "AuditLog_action_idx" ON "AuditLog"("action");
+
+-- CreateIndex
+CREATE INDEX "AuditLog_createdAt_idx" ON "AuditLog"("createdAt");
+
+-- CreateIndex
+CREATE INDEX "ChainEvent_ledger_idx" ON "ChainEvent"("ledger");
+
+-- CreateIndex
+CREATE INDEX "OracleAttestation_escrowOnChainId_idx" ON "OracleAttestation"("escrowOnChainId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "OracleAttestation_escrowOnChainId_paymentId_nonce_key" ON "OracleAttestation"("escrowOnChainId", "paymentId", "nonce");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "AuthChallenge_nonce_key" ON "AuthChallenge"("nonce");
 
 -- CreateIndex
@@ -96,3 +187,4 @@ ALTER TABLE "TimeLog" ADD CONSTRAINT "TimeLog_escrowId_fkey" FOREIGN KEY ("escro
 
 -- AddForeignKey
 ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+

@@ -18,6 +18,7 @@
     "jsx": "preserve",
     "strict": true,
     "strictNullChecks": true,
+    "noImplicitAny": true,
     "noUnusedLocals": true,
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
