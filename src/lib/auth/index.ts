@@ -16,6 +16,10 @@
  *  - Sessions are stored in DB — can be revoked server-side at logout
  *  - JWT is HS256 signed with AUTH_SECRET — never in localStorage
  *  - Signature verification follows SEP-53 (prefixed + SHA-256 hashed)
+ *
+ * RBAC: Two roles — ADMIN (full access) and EMPLOYEE (view + submit hours only).
+ * Roles are stored in PostgreSQL via a Prisma enum, not on the blockchain.
+ * The wallet only proves identity; the database determines permissions.
  */
 
 import { createHash } from 'crypto';
@@ -24,6 +28,7 @@ import { Keypair } from '@stellar/stellar-sdk';
 import prisma from '@/lib/db/prisma';
 import { signJwt, verifyJwt, JWT_EXPIRY_SECONDS, type AuthPayload } from './jwt';
 import type { NextRequest } from 'next/server';
+import { Role } from '@prisma/client';
 
 /**
  * SEP-53 message signing prefix.
@@ -34,6 +39,11 @@ const SEP53_PREFIX = 'Stellar Signed Message:\n';
 
 export const CHALLENGE_TTL_SECONDS = 60 * 5; // 5 minutes
 export const CHALLENGE_PREFIX = 'CoreFlow:auth';
+
+/**
+ * Re-export the Prisma Role enum for convenience throughout the codebase.
+ */
+export { Role };
 
 /**
  * Builds the deterministic challenge string the client must sign.
@@ -136,10 +146,7 @@ export async function verifyChallenge(
   }
 }
 
-export const ROLES = ['admin', 'manager', 'finance', 'worker', 'viewer'] as const;
-export type Role = (typeof ROLES)[number];
-
-/** Wallet addresses (comma-separated) that are bootstrapped to `admin` on login. */
+/** Wallet addresses (comma-separated) that are bootstrapped to ADMIN on login. */
 function adminAllowlist(): string[] {
   return (process.env.ADMIN_WALLETS || '')
     .split(',')
@@ -147,28 +154,71 @@ function adminAllowlist(): string[] {
     .filter(Boolean);
 }
 
-/** True if the payload's role is in the allowed set. `admin` is allowed everywhere. */
-export function hasRole(payload: { role: string } | null | undefined, allowed: Role[]): boolean {
+/**
+ * True if the user has ADMIN role.
+ * ADMIN can do everything; EMPLOYEE is restricted.
+ */
+export function isAdmin(payload: { role: string } | null | undefined): boolean {
   if (!payload) return false;
-  if (payload.role === 'admin') return true;
-  return (allowed as string[]).includes(payload.role);
+  return payload.role === Role.ADMIN;
+}
+
+/**
+ * True if the user has EMPLOYEE role (or ADMIN, who can also do employee things).
+ */
+export function isEmployee(payload: { role: string } | null | undefined): boolean {
+  if (!payload) return false;
+  return payload.role === Role.EMPLOYEE || payload.role === Role.ADMIN;
+}
+
+/**
+ * Backward-compatible role check. `admin` always passes.
+ * For the simplified ADMIN/EMPLOYEE model, the `allowed` array is checked
+ * against the user's Prisma Role enum value.
+ */
+export function hasRole(payload: { role: string } | null | undefined, allowed: string[]): boolean {
+  if (!payload) return false;
+  if (payload.role === Role.ADMIN) return true;
+  return allowed.includes(payload.role);
+}
+
+/**
+ * Requires that the user has the ADMIN role. Returns a 403 response if not.
+ * Use this as a guard in API route handlers.
+ */
+export function requireAdmin(user: { role: string } | null | undefined): Response | null {
+  if (!user) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  if (!isAdmin(user)) {
+    return Response.json(
+      { error: 'Forbidden: this action requires the ADMIN role' },
+      { status: 403 }
+    );
+  }
+  return null; // Passes — caller proceeds
 }
 
 /**
  * Upserts a User in the database (creates on first login, no-op on repeat),
- * then bootstraps configured admin wallets to the `admin` role. This is the
+ * then bootstraps configured admin wallets to the ADMIN role. This is the
  * only zero-touch path to a privileged role; all other grants go through the
  * admin role-management endpoint.
+ *
+ * When a user connects their Freighter wallet, after the challenge-response
+ * passes, the User table is checked for that public key. If no user exists,
+ * one is created as EMPLOYEE by default. If the public key matches a seed
+ * admin key (ADMIN_WALLETS env var), the role is set to ADMIN.
  */
 export async function upsertUser(walletAddress: string) {
   const user = await prisma.user.upsert({
     where: { walletAddress },
-    create: { walletAddress, role: 'viewer' },
+    create: { walletAddress, role: Role.EMPLOYEE },
     update: {}, // Never downgrade an existing role on login
   });
 
-  if (adminAllowlist().includes(walletAddress) && user.role !== 'admin') {
-    return prisma.user.update({ where: { walletAddress }, data: { role: 'admin' } });
+  if (adminAllowlist().includes(walletAddress) && user.role !== Role.ADMIN) {
+    return prisma.user.update({ where: { walletAddress }, data: { role: Role.ADMIN } });
   }
   return user;
 }
@@ -177,7 +227,7 @@ export async function upsertUser(walletAddress: string) {
  * Creates a JWT and persists the session to the database.
  * The database row enables server-side revocation at logout.
  */
-export async function createSession(user: { id: string; walletAddress: string; role: string }) {
+export async function createSession(user: { id: string; walletAddress: string; role: Role }) {
   const token = await signJwt({
     userId: user.id,
     walletAddress: user.walletAddress,

@@ -1,5 +1,7 @@
-import { RefreshCw, LogOut, LogIn, ShieldCheck } from 'lucide-react';
+import { RefreshCw, LogOut, LogIn, ShieldCheck, Crown, Users, Mail } from 'lucide-react';
 import type { UserRole } from '@/hooks/useAuth';
+import { STELLAR_CONFIG } from '@/lib/config';
+import Link from 'next/link';
 
 interface DashboardHeaderProps {
   isContractConfigured: boolean;
@@ -7,7 +9,6 @@ interface DashboardHeaderProps {
   isLoading: boolean;
   onToggleMode: (useMock: boolean) => void;
   onRefresh: () => void;
-  // Auth props — owned by useAuth, passed down for display
   isAuthenticated: boolean;
   walletAddress: string;
   role: UserRole;
@@ -16,19 +17,18 @@ interface DashboardHeaderProps {
 }
 
 const ROLE_LABELS: Record<UserRole, string> = {
-  admin: 'Admin',
-  manager: 'Manager',
-  finance: 'Finance',
-  worker: 'Worker',
-  viewer: 'Viewer',
+  ADMIN: 'Admin',
+  EMPLOYEE: 'Employee',
 };
 
 const ROLE_COLORS: Record<UserRole, string> = {
-  admin: 'text-amber-400 border-amber-500/30 bg-amber-500/10',
-  manager: 'text-violet-400 border-violet-500/30 bg-violet-500/10',
-  finance: 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10',
-  worker: 'text-sky-400 border-sky-500/30 bg-sky-500/10',
-  viewer: 'text-slate-400 border-slate-500/30 bg-slate-500/10',
+  ADMIN: 'text-amber-400 border-amber-500/30 bg-amber-500/10',
+  EMPLOYEE: 'text-sky-400 border-sky-500/30 bg-sky-500/10',
+};
+
+const ROLE_ICONS: Record<UserRole, typeof ShieldCheck> = {
+  ADMIN: Crown,
+  EMPLOYEE: ShieldCheck,
 };
 
 export function DashboardHeader({
@@ -43,16 +43,20 @@ export function DashboardHeader({
   onSignIn,
   onSignOut,
 }: DashboardHeaderProps) {
+  const companyName = process.env.NEXT_PUBLIC_COMPANY_NAME || 'CoreFlow';
+  const networkName = (STELLAR_CONFIG.contract.network || 'public').toUpperCase();
+
   const truncatedAddress = walletAddress
     ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
     : '';
+
+  const RoleIcon = ROLE_ICONS[role];
 
   return (
     <header className="sticky top-0 z-40 border-b border-violet-500/10 bg-slate-950/85 backdrop-blur-xl shadow-md shadow-black/10">
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="relative w-9 h-9 flex items-center justify-center">
-            {/* Glowing aura background */}
             <div className="absolute inset-0 bg-violet-600/20 blur-md rounded-full animate-pulse-glow" />
             <svg
               className="w-9 h-9 text-violet-500 relative z-10 animate-float"
@@ -70,9 +74,7 @@ export function DashboardHeader({
                   <stop offset="100%" stopColor="#06b6d4" />
                 </linearGradient>
               </defs>
-              {/* Background base ring */}
               <circle cx="16" cy="16" r="13" className="stroke-slate-800/80 fill-slate-900/60" strokeWidth="1.5" />
-              {/* Flow line 1 */}
               <path
                 d="M10 12C12 9 17 9 20 12C23 15 23 17 20 20C17 23 12 23 10 20"
                 stroke="url(#logo-grad-1)"
@@ -80,7 +82,6 @@ export function DashboardHeader({
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
-              {/* Flow line 2 */}
               <path
                 d="M22 20C20 23 15 23 12 20C9 17 9 15 12 12C15 9 20 9 22 12"
                 stroke="url(#logo-grad-2)"
@@ -89,22 +90,47 @@ export function DashboardHeader({
                 strokeLinejoin="round"
                 strokeDasharray="4 2"
               />
-              {/* Core active node */}
               <circle cx="16" cy="16" r="3" className="fill-violet-400 animate-pulse" />
             </svg>
           </div>
           <div>
             <h1 className="text-lg font-extrabold tracking-tight text-white flex items-center gap-1.5">
-              CoreFlow
+              {companyName}
               <span className="text-[9px] bg-violet-500/10 border border-violet-500/20 text-violet-400 font-bold px-1.5 py-0.5 rounded uppercase tracking-wide">
                 Soroban Escrow
               </span>
+              {/* Network Indicator */}
+              <span className="text-[9px] bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono font-bold px-1.5 py-0.5 rounded">
+                Network: {networkName}
+              </span>
             </h1>
-            <p className="text-[10px] text-slate-400">On-Chain Accounts Payable & Remittance</p>
+            <p className="text-[10px] text-slate-400">On-Chain Accounts Payable &amp; Remittance</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          {/* Admin Links */}
+          {isAuthenticated && role === 'ADMIN' && (
+            <div className="flex items-center gap-2">
+              <Link
+                href="/dashboard/admin/invitations"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-violet-500/30 bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 transition-colors shadow-sm"
+                title="Send Employee Invitations"
+              >
+                <Mail className="w-3.5 h-3.5 text-violet-400" />
+                Invite Team
+              </Link>
+              <Link
+                href="/dashboard/admin/users"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 transition-colors shadow-sm"
+                title="Admin User Management Panel"
+              >
+                <Users className="w-3.5 h-3.5 text-amber-400" />
+                User Directory
+              </Link>
+            </div>
+          )}
+
           {isContractConfigured && (
             <div className="flex items-center gap-1 bg-slate-900/80 border border-slate-800 rounded-xl p-1 text-xs">
               <button
@@ -142,19 +168,15 @@ export function DashboardHeader({
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} aria-hidden="true" />
           </button>
 
-          {/* Auth button — replaces WalletButton */}
           {isAuthenticated ? (
             <div className="flex items-center gap-2">
-              {/* Role badge */}
               <span className={`text-[10px] font-bold px-2 py-1 rounded-lg border ${ROLE_COLORS[role]}`}>
-                <ShieldCheck className="w-3 h-3 inline mr-1" />
+                <RoleIcon className="w-3 h-3 inline mr-1" />
                 {ROLE_LABELS[role]}
               </span>
-              {/* Wallet address pill */}
               <span className="text-xs font-mono text-slate-400 bg-slate-900/80 border border-slate-700 px-2.5 py-1.5 rounded-lg">
                 {truncatedAddress}
               </span>
-              {/* Sign out */}
               <button
                 onClick={onSignOut}
                 disabled={isLoading}

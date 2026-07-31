@@ -1,16 +1,19 @@
 'use client';
 
+import { useState } from 'react';
 import { EscrowCard } from '@/components/EscrowCard';
 import { TransactionFeed } from '@/components/TransactionFeed';
 import { Alert } from '@/components/Alert';
 import { ImpactTracker } from '@/components/ImpactTracker';
-import { PlusCircle, FileText, AlertCircle } from 'lucide-react';
+import { PlusCircle, FileText, AlertCircle, Users, AlertOctagon, Code2 } from 'lucide-react';
 import { useDashboard } from '@/hooks/useDashboard';
 import { useAuth } from '@/hooks/useAuth';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { DashboardStats } from '@/components/dashboard/DashboardStats';
 import { CreateEscrowModal } from '@/components/modals/CreateEscrowModal';
 import { SubmitHoursModal } from '@/components/modals/SubmitHoursModal';
+import { EmergencyPauseModal } from '@/components/dashboard/EmergencyPauseModal';
+import Link from 'next/link';
 
 export default function DashboardPage() {
   const auth = useAuth();
@@ -18,6 +21,8 @@ export default function DashboardPage() {
     isAuthenticated: auth.isAuthenticated,
     walletAddress: auth.walletAddress,
   });
+
+  const [showEmergencyModal, setShowEmergencyModal] = useState(false);
 
   const {
     escrows,
@@ -33,11 +38,9 @@ export default function DashboardPage() {
     stats,
   } = state;
 
-  // Role-based gating applies only to live on-chain/DB writes. In mock demo
-  // mode every action stays available for showcase purposes.
   const gateActions = isContractConfigured && !isMockMode;
-  const canManage = !gateActions || auth.role === 'manager' || auth.role === 'admin';
-  const canFinance = !gateActions || auth.role === 'finance' || auth.role === 'admin';
+  const userIsAdmin = !gateActions || auth.isAdmin;
+  const canSubmitHours = !gateActions || auth.isAuthenticated;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950/60 to-slate-950 text-slate-100 flex flex-col font-sans">
@@ -49,7 +52,6 @@ export default function DashboardPage() {
         isLoading={isLoading || auth.isLoading}
         onToggleMode={actions.handleToggleMode}
         onRefresh={() => actions.loadInitialData()}
-        // Auth props — now handled by useAuth
         isAuthenticated={auth.isAuthenticated}
         walletAddress={auth.walletAddress}
         role={auth.role}
@@ -68,6 +70,22 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* Role-specific welcome banner */}
+        {auth.isAuthenticated && gateActions && (
+          <div className={`mb-6 p-3 rounded-xl border flex items-center gap-2 ${
+            auth.isAdmin 
+              ? 'border-amber-500/20 bg-amber-950/10'
+              : 'border-sky-500/20 bg-sky-950/10'
+          }`}>
+            <Users className={`w-4 h-4 shrink-0 ${auth.isAdmin ? 'text-amber-400' : 'text-sky-400'}`} />
+            <p className={`text-xs font-medium ${auth.isAdmin ? 'text-amber-300' : 'text-sky-300'}`}>
+              {auth.isAdmin
+                ? '🔑 Admin Panel — You have full operational control: user role delegation, escrow creation, approvals, payouts, and rejection overrides.'
+                : '👤 Employee View — You can view your escrows, resubmit rejected hours, and submit work logs. Administrative actions are restricted.'}
+            </p>
+          </div>
+        )}
+
         {/* Info alerts */}
         {infoMessage && (
           <div className="mb-6 p-3 rounded-xl border border-violet-500/20 bg-violet-950/10 flex items-center gap-2">
@@ -82,7 +100,7 @@ export default function DashboardPage() {
           </Alert>
         )}
 
-        {/* Stats Grid */}
+        {/* Analytics Stats Grid */}
         <DashboardStats stats={stats} />
 
         {/* Action Header bar */}
@@ -91,28 +109,29 @@ export default function DashboardPage() {
             Escrow Registers
           </h2>
           <div className="flex gap-2">
-            <button
-              onClick={() => actions.setShowHoursModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-white/10 bg-slate-900/80 hover:bg-slate-800 hover:border-white/20 text-slate-300 transition-colors shadow-sm"
-            >
-              <FileText className="w-3.5 h-3.5 text-violet-400" />
-              Submit Hours
-            </button>
-            <button
-              onClick={() => actions.setShowCreateModal(true)}
-              disabled={!canManage}
-              title={!canManage ? 'Requires the manager role' : undefined}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white transition-colors shadow-md shadow-violet-500/15 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <PlusCircle className="w-3.5 h-3.5" />
-              New Escrow
-            </button>
+            {canSubmitHours && (
+              <button
+                onClick={() => actions.setShowHoursModal(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-white/10 bg-slate-900/80 hover:bg-slate-800 hover:border-white/20 text-slate-300 transition-colors shadow-sm"
+              >
+                <FileText className="w-3.5 h-3.5 text-violet-400" />
+                Submit Hours
+              </button>
+            )}
+            {userIsAdmin && (
+              <button
+                onClick={() => actions.setShowCreateModal(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white transition-colors shadow-md shadow-violet-500/15"
+              >
+                <PlusCircle className="w-3.5 h-3.5" />
+                New Escrow
+              </button>
+            )}
           </div>
         </div>
 
         {/* Main Grid: Escrows + Activity */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Escrow Cards */}
           <div className="lg:col-span-2 space-y-5">
             {isLoading && escrows.length === 0 ? (
               <div className="space-y-4">
@@ -123,8 +142,11 @@ export default function DashboardPage() {
             ) : escrows.length === 0 ? (
               <div className="text-center py-16 border border-dashed border-white/10 rounded-2xl bg-slate-900/20">
                 <AlertCircle className="w-8 h-8 text-slate-500 mx-auto mb-2" />
-                <p className="text-sm font-semibold text-slate-400">No active escrows registered.</p>
-                <p className="text-xs text-slate-500 mt-1">Deploy contract and sign in with Freighter to initialize.</p>
+                <p className="text-sm font-semibold text-slate-400">
+                  {auth.isEmployee && gateActions
+                    ? 'No escrows assigned to your wallet yet.'
+                    : 'No active escrows registered.'}
+                </p>
               </div>
             ) : (
               escrows.map((escrow) => (
@@ -135,9 +157,11 @@ export default function DashboardPage() {
                   onFinanceApprove={actions.handleFinanceApprove}
                   onFinalize={actions.handleFinalize}
                   onCancel={actions.handleCancelEscrow}
+                  onReject={actions.handleRejectHours}
+                  onResubmitHours={actions.handleOpenResubmit}
                   isConnected={isConnected}
-                  canManage={canManage}
-                  canFinance={canFinance}
+                  canManage={userIsAdmin}
+                  canFinance={userIsAdmin}
                 />
               ))
             )}
@@ -153,21 +177,42 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Footer Info */}
+        {/* Footer Info & Admin Circuit Breaker */}
         <footer className="mt-16 p-6 rounded-2xl border border-white/5 bg-slate-900/20 backdrop-blur-md">
-          <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">💡 Decentralized B2B Payroll & Remittance Architecture</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4 text-xs text-slate-400">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4 mb-4">
+            <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">💡 Decentralized B2B Payroll &amp; Remittance Architecture</h3>
+            <div className="flex items-center gap-3">
+              <Link
+                href="/api/docs"
+                className="flex items-center gap-1.5 text-xs font-semibold text-violet-400 hover:text-violet-300 transition-colors bg-violet-500/10 border border-violet-500/20 px-3 py-1.5 rounded-lg"
+              >
+                <Code2 className="w-3.5 h-3.5" />
+                OpenAPI Docs
+              </Link>
+              {auth.isAdmin && (
+                <button
+                  onClick={() => setShowEmergencyModal(true)}
+                  className="flex items-center gap-1.5 text-xs font-bold text-rose-400 hover:text-rose-300 transition-colors bg-rose-500/10 border border-rose-500/20 px-3 py-1.5 rounded-lg"
+                >
+                  <AlertOctagon className="w-3.5 h-3.5 text-rose-500 animate-pulse" />
+                  🚨 Emergency Pause
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-slate-400">
             <div className="p-3 rounded-xl bg-slate-950/40 border border-white/5">
               <p className="font-semibold text-slate-200 mb-1">1. Oracle-Verified Time Tracking</p>
               <p className="leading-relaxed">Work logs verified by oracles are submitted to Soroban contract alongside cryptographic signatures. Limits trust requirements and prevents false claims.</p>
             </div>
             <div className="p-3 rounded-xl bg-slate-950/40 border border-white/5">
-              <p className="font-semibold text-slate-200 mb-1">2. Multi-Sig Approval Guards</p>
-              <p className="leading-relaxed">Payments are locked securely in escrow. Independent manager and financial approver authorities must provide on-chain approvals before funds release.</p>
+              <p className="font-semibold text-slate-200 mb-1">2. Operational Rejection Controls</p>
+              <p className="leading-relaxed">Admins can reject incorrect hours with logged justification, prompting worker resubmission before blockchain release.</p>
             </div>
             <div className="p-3 rounded-xl bg-slate-950/40 border border-white/5">
               <p className="font-semibold text-slate-200 mb-1">3. Philippine Remittance Savings</p>
-              <p className="leading-relaxed">Workers receive USDC instantly via Stellar, avoiding traditional bank wires that cost 5.5%+ in intermediate fees. Integratable with Stellar anchors for local fiat out.</p>
+              <p className="leading-relaxed">Workers receive USDC instantly via Stellar, avoiding traditional bank wires that cost 5.5%+ in intermediate fees.</p>
             </div>
           </div>
         </footer>
@@ -185,6 +230,11 @@ export default function DashboardPage() {
         isOpen={showHoursModal}
         onClose={() => actions.setShowHoursModal(false)}
         onSubmit={actions.handleSubmitHours}
+      />
+
+      <EmergencyPauseModal
+        isOpen={showEmergencyModal}
+        onClose={() => setShowEmergencyModal(false)}
       />
     </div>
   );

@@ -38,7 +38,7 @@ describe('parseBody / schemas', () => {
   it('validates role enum', () => {
     const good = parseBody(roleGrantSchema, {
       walletAddress: 'G' + 'A'.repeat(55),
-      role: 'manager',
+      role: 'ADMIN',
     });
     expect(good.ok).toBe(true);
 

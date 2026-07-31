@@ -1,27 +1,26 @@
 /**
  * Admin role management.
  *
- *   GET  /api/admin/roles  → list users + roles (admin only)
- *   POST /api/admin/roles  → set a user's role (admin only)
+ *   GET  /api/admin/roles  → list users + roles (ADMIN only)
+ *   POST /api/admin/roles  → set a user's role (ADMIN only)
  *
- * This is the managed path to privileged roles. The very first admin is
+ * This is the managed path to the ADMIN role. The very first admin is
  * bootstrapped via the ADMIN_WALLETS allowlist (see upsertUser); from there an
- * admin grants manager/finance/worker roles here. Role is read from the DB on
- * every request (see getSession), so a grant takes effect immediately.
+ * admin grants/revokes roles here. Role is read from the DB on every request
+ * (see getSession), so a grant takes effect immediately.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db/prisma';
-import { getUserFromRequest, hasRole, type Role } from '@/lib/auth';
+import { getUserFromRequest, isAdmin, Role } from '@/lib/auth';
 import { parseBody, roleGrantSchema } from '@/lib/validation/schemas';
 import { audit } from '@/lib/audit';
 
 export async function GET(request: NextRequest) {
   const user = await getUserFromRequest(request);
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if (!hasRole(user, [])) {
-    // hasRole(user, []) is true only for admin (admin short-circuits).
-    return NextResponse.json({ error: 'Forbidden: admin only' }, { status: 403 });
+  if (!isAdmin(user)) {
+    return NextResponse.json({ error: 'Forbidden: ADMIN only' }, { status: 403 });
   }
 
   const users = await prisma.user.findMany({
@@ -35,8 +34,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const user = await getUserFromRequest(request);
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if (!hasRole(user, [])) {
-    return NextResponse.json({ error: 'Forbidden: admin only' }, { status: 403 });
+  if (!isAdmin(user)) {
+    return NextResponse.json({ error: 'Forbidden: ADMIN only' }, { status: 403 });
   }
 
   try {

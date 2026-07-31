@@ -1,23 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db/prisma';
-import { getUserFromRequest, hasRole } from '@/lib/auth';
+import { getUserFromRequest, isAdmin } from '@/lib/auth';
 import { parseBody, createEscrowSchema } from '@/lib/validation/schemas';
 import { audit } from '@/lib/audit';
 
 export async function GET(request: NextRequest) {
-  // Auth guard — all authenticated users can list escrows
+  // Auth guard — all authenticated users can list escrows.
+  // EMPLOYEES see only their own escrows (filtered by workerPubKey).
+  // ADMINS see all escrows.
   const user = await getUserFromRequest(request);
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
+    const { searchParams } = new URL(request.url);
+    const limit = Math.min(parseInt(searchParams.get('limit') || '10', 10), 50);
+    const cursor = searchParams.get('cursor');
+
+    const whereClause: any = isAdmin(user)
+      ? {} // Admin sees everything
+      : { workerPubKey: user.walletAddress }; // Employee sees only their own
+
+    if (cursor) {
+      whereClause.id = { lt: parseInt(cursor, 10) };
+    }
+
     const escrows = await prisma.escrow.findMany({
-      orderBy: { createdAt: 'desc' },
+      where: whereClause,
+      take: limit + 1, // Fetch limit + 1 to check if there is a next page
+      orderBy: { id: 'desc' },
       include: { timeLogs: true },
     });
 
-    const mappedEscrows = escrows.map((e: any) => {
+    const hasNextPage = escrows.length > limit;
+    const items = hasNextPage ? escrows.slice(0, limit) : escrows;
+    const nextCursor = hasNextPage ? items[items.length - 1].id : null;
+
+    const mappedEscrows = items.map((e: any) => {
       const totalHours = e.timeLogs.reduce((acc: number, log: any) => acc + log.hoursLogged, 0);
       return {
         id: e.onChainId || e.id,
@@ -35,12 +55,22 @@ export async function GET(request: NextRequest) {
         manager_approved: e.managerApproved,
         finance_approved: e.financeApproved,
         hours_verified: totalHours > 0,
+        rejectionReason: e.rejectionReason,
         created_at: e.createdAt.toISOString(),
         isMock: false,
       };
     });
 
-    return NextResponse.json({ escrows: mappedEscrows }, { status: 200 });
+    return NextResponse.json(
+      {
+        escrows: mappedEscrows,
+        pagination: {
+          hasNextPage,
+          nextCursor,
+        },
+      },
+      { status: 200 }
+    );
   } catch (error) {
     console.error('Failed to fetch escrows:', error);
     return NextResponse.json({ error: 'Failed to fetch escrows' }, { status: 500 });
@@ -48,13 +78,16 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  // Auth guard — only manager or finance can create escrow records
+  // Auth guard — only ADMIN can create escrow records
   const user = await getUserFromRequest(request);
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  if (!hasRole(user, ['manager', 'finance'])) {
-    return NextResponse.json({ error: 'Forbidden: insufficient role' }, { status: 403 });
+  if (!isAdmin(user)) {
+    return NextResponse.json(
+      { error: 'Forbidden: only ADMIN can create escrows' },
+      { status: 403 }
+    );
   }
 
   try {
@@ -63,7 +96,6 @@ export async function POST(request: NextRequest) {
     if (!parsed.ok) {
       return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
-    // onChainId is validated as positive-or-absent, so it never collides at 0.
     const { onChainId, workerPubKey, amountCents, rateCents, tokenAddress } = parsed.data;
 
     const escrow = await prisma.escrow.create({

@@ -8,14 +8,18 @@
  *  2. signIn(): challenge → Freighter sign → verify → session cookie
  *  3. signOut(): logout endpoint → cookie cleared → local state reset
  *
+ * RBAC: After authentication, the user's role (ADMIN or EMPLOYEE) is fetched
+ * from the database and stored in state. The wallet only proves identity;
+ * the database determines permissions.
+ *
  * Usage:
- *   const { isAuthenticated, walletAddress, role, signIn, signOut, isLoading } = useAuth();
+ *   const { isAuthenticated, walletAddress, role, isAdmin, signIn, signOut, isLoading } = useAuth();
  */
 
 import { useState, useEffect, useCallback } from 'react';
 import { STELLAR_CONFIG } from '@/lib/config';
 
-export type UserRole = 'admin' | 'manager' | 'finance' | 'worker' | 'viewer';
+export type UserRole = 'ADMIN' | 'EMPLOYEE';
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -28,7 +32,7 @@ interface AuthState {
 const INITIAL_STATE: AuthState = {
   isAuthenticated: false,
   walletAddress: '',
-  role: 'viewer',
+  role: 'EMPLOYEE',
   isLoading: true, // true on mount while we check the session
   error: null,
 };
@@ -156,6 +160,10 @@ export function useAuth() {
 
   return {
     ...state,
+    /** Convenience boolean: true when the authenticated user has the ADMIN role. */
+    isAdmin: state.role === 'ADMIN',
+    /** Convenience boolean: true when the authenticated user has the EMPLOYEE role. */
+    isEmployee: state.role === 'EMPLOYEE',
     signIn,
     signOut,
   };

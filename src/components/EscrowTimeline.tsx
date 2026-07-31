@@ -1,12 +1,13 @@
 'use client';
 
-import { Clock, Check } from 'lucide-react';
+import { Clock, Check, XCircle } from 'lucide-react';
 
 interface EscrowTimelineProps {
-  status: 'pending_hours' | 'pending_manager' | 'pending_finance' | 'ready' | 'paid' | 'cancelled';
+  status: 'pending_hours' | 'pending_manager' | 'pending_finance' | 'ready' | 'paid' | 'cancelled' | 'rejected' | string;
   managerApproved: boolean;
   financeApproved: boolean;
   hoursVerified: boolean;
+  rejectionReason?: string | null;
 }
 
 export const EscrowTimeline = ({
@@ -14,10 +15,11 @@ export const EscrowTimeline = ({
   managerApproved,
   financeApproved,
   hoursVerified,
+  rejectionReason,
 }: EscrowTimelineProps) => {
   const steps = [
-    { label: 'Created', completed: true, active: status !== 'cancelled', color: 'text-slate-400' },
-    { label: 'Hours', completed: hoursVerified, active: status === 'pending_hours', color: 'text-fuchsia-400' },
+    { label: 'Created', completed: true, active: status !== 'cancelled' && status !== 'rejected', color: 'text-slate-400' },
+    { label: 'Hours', completed: hoursVerified && status !== 'rejected', active: status === 'pending_hours', color: 'text-fuchsia-400' },
     { label: 'Manager', completed: managerApproved, active: status === 'pending_manager', color: 'text-purple-400' },
     { label: 'Finance', completed: financeApproved, active: status === 'pending_finance', color: 'text-indigo-400' },
     { label: 'Released', completed: status === 'paid', active: status === 'ready', color: 'text-emerald-400' },
@@ -27,6 +29,25 @@ export const EscrowTimeline = ({
     return (
       <div className="mt-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-center">
         <p className="text-xs font-semibold text-rose-400">Escrow Contract Cancelled</p>
+      </div>
+    );
+  }
+
+  if (status === 'rejected') {
+    return (
+      <div className="mt-4 p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-left">
+        <div className="flex items-center gap-2 mb-1">
+          <XCircle className="w-4 h-4 text-rose-400 shrink-0" />
+          <p className="text-xs font-bold text-rose-300 uppercase tracking-wide">Hours Log Rejected by Admin</p>
+        </div>
+        {rejectionReason && (
+          <p className="text-xs text-rose-200/90 pl-6 font-mono">
+            Reason: &quot;{rejectionReason}&quot;
+          </p>
+        )}
+        <p className="text-[10px] text-rose-400/80 pl-6 mt-1">
+          Click &quot;Resubmit Hours&quot; below to log corrected time proof.
+        </p>
       </div>
     );
   }
