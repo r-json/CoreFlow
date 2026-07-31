@@ -6,6 +6,8 @@ const envSchema = z.object({
   NEXT_PUBLIC_STELLAR_NETWORK: z.enum(['testnet', 'public', 'futurenet', 'local']).default('testnet'),
   NEXT_PUBLIC_STELLAR_CONTRACT_ID: z.string().min(1, 'NEXT_PUBLIC_STELLAR_CONTRACT_ID is required'),
   ADMIN_WALLETS: z.string().optional().default(''),
+  ADMIN_WALLET_ADDRESS: z.string().optional().default(''),
+  BOOTSTRAP_SECRET: z.string().optional().default(''),
   NEXT_PUBLIC_COMPANY_NAME: z.string().default('CoreFlow'),
   AUTH_SECRET: z.string().min(16, 'AUTH_SECRET must be at least 16 characters').optional().default('default_super_secret_coreflow_jwt_key_32bytes'),
   NEXT_PUBLIC_SENTRY_DSN: z.string().optional().default(''),

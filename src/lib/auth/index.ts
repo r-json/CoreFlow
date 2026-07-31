@@ -148,7 +148,12 @@ export async function verifyChallenge(
 
 /** Wallet addresses (comma-separated) that are bootstrapped to ADMIN on login. */
 function adminAllowlist(): string[] {
-  return (process.env.ADMIN_WALLETS || '')
+  const envWallets = [
+    process.env.ADMIN_WALLETS || '',
+    process.env.ADMIN_WALLET_ADDRESS || '',
+  ].join(',');
+
+  return envWallets
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean);
@@ -211,13 +216,24 @@ export function requireAdmin(user: { role: string } | null | undefined): Respons
  * admin key (ADMIN_WALLETS env var), the role is set to ADMIN.
  */
 export async function upsertUser(walletAddress: string) {
+  const allowlist = adminAllowlist();
+  const shouldBeAdmin = allowlist.includes(walletAddress);
+
+  console.log(`[Auth] Upserting user for wallet: ${walletAddress}`);
+  console.log(`[Auth] Configured Admin Allowlist: [${allowlist.join(', ')}]`);
+  console.log(`[Auth] Admin Match Result: ${shouldBeAdmin}`);
+
   const user = await prisma.user.upsert({
     where: { walletAddress },
-    create: { walletAddress, role: Role.EMPLOYEE },
+    create: {
+      walletAddress,
+      role: shouldBeAdmin ? Role.ADMIN : Role.EMPLOYEE,
+    },
     update: {}, // Never downgrade an existing role on login
   });
 
-  if (adminAllowlist().includes(walletAddress) && user.role !== Role.ADMIN) {
+  if (shouldBeAdmin && user.role !== Role.ADMIN) {
+    console.log(`[Auth] Promoting existing user ${walletAddress} to ADMIN role based on allowlist.`);
     return prisma.user.update({ where: { walletAddress }, data: { role: Role.ADMIN } });
   }
   return user;
