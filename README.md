@@ -1,5 +1,3 @@
----
-
 ## 🔗 Deployed Contract
 
 > **Live on Stellar Mainnet** — View and verify the deployed CoreFlow smart contract on Stellar Expert:
