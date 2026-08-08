@@ -37,7 +37,9 @@
 - [Getting Started](#-getting-started)
 - [Smart Contract API](#-smart-contract-api)
 - [Development](#-development)
+- [50-User Validation](#-50-user-validation)
 - [Security and Production Checklist](#-security-and-production-checklist)
+- [User Feedback](#-user-feedback)
 - [Users &amp; Testimonials](#-users--testimonials)
 - [Presentations](#-presentations)
 - [Demo Video](#-demo-video)
@@ -732,6 +734,8 @@ Open `http://localhost:3000/dashboard`.
 initialize_multi_sig_escrow(
     manager: Address,
     finance_approver: Address,
+    token: Address,
+    oracle_pubkey: BytesN<32>,
     payments: Vec<PaymentSchedule>,
 ) -> Result<u32, ContractError>
 ```
@@ -743,7 +747,8 @@ submit_hours_proof(
     escrow_id: u32,
     payment_id: u32,
     hours_logged: i128,
-    signature: Bytes,
+    nonce: u64,
+    signature: BytesN<64>,
 ) -> Result<(), ContractError>
 ```
 
@@ -799,6 +804,44 @@ Recommended engineering checklist before judging:
 - Show one failed transaction path, such as finalize before finance approval.
 - Explain how `pay_batch` reduces repeated transaction overhead.
 - Explain how the factory pattern creates isolated client payroll contracts.
+
+---
+
+## 50-User Validation
+
+The repository includes a deterministic 50-user Soroban simulation covering the complete CoreFlow lifecycle for 50 unique workers: escrow creation, Ed25519 hours proof, manager approval, finance approval, and finalization. It verifies that each worker receives the expected amount and that contract custody returns to zero.
+
+Run the contract test:
+
+```bash
+cargo test --manifest-path contracts/core-flow/Cargo.toml test_fifty_user_end_to_end_simulation
+```
+
+Generate the reporting files:
+
+```bash
+node scripts/generate-50-user-report.mjs
+```
+
+Report artifacts:
+
+- [Simulation runbook](docs/LOAD_SIMULATION.md)
+- [Machine-readable report](docs/evidence/50-user-simulation.json)
+- [Spreadsheet export](docs/evidence/50-user-simulation.tsv)
+- [Analytics evidence graphic](docs/evidence/50-user-analytics.svg)
+- [Transaction activity graphic](docs/evidence/50-user-transaction-activity.svg)
+
+The committed graphics are deterministic local-test evidence, not live Stellar transaction screenshots. A live testnet report must include verified transaction hashes and Stellar Expert links; see the runbook for the required capture fields.
+
+---
+
+## User Feedback
+
+The participant feedback form specification is in [docs/USER_FEEDBACK_FORM.md](docs/USER_FEEDBACK_FORM.md). It includes required fields for full name, email address, Stellar wallet address, workflow completion, product rating, escrow-flow rating, and improvement feedback.
+
+Do not commit participant names, email addresses, wallet addresses, private keys, or raw form responses. Publish only consented, anonymized aggregate results.
+
+The repository contains the form specification, but not a live Google Form URL. Create the form under the project owner's Google account and replace the TODO URL in the specification before sharing it.
 
 ---
 
