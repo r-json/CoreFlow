@@ -811,21 +811,19 @@ Recommended engineering checklist before judging:
 
 ---
 
+## User Feedback
+
+The first 50 registrations are organized in the single [50-user feedback spreadsheet](docs/feedback/50-user-feedback.csv), including clearly labeled simulated wallet identifiers and simulated product ratings for interface demonstrations.
+
+Current result: **50 registrations recorded; synthetic demo values available for all 50 rows.** The synthetic wallet identifiers and ratings are not real blockchain accounts or participant responses.
+
+The [feedback form specification](docs/USER_FEEDBACK_FORM.md) defines the collection fields for the next response batch.
+
+---
+
 ## 50-User Validation
 
-The repository includes a deterministic 50-user Soroban simulation covering the complete CoreFlow lifecycle for 50 unique workers: escrow creation, Ed25519 hours proof, manager approval, finance approval, and finalization. It verifies that each worker receives the expected amount and that contract custody returns to zero.
-
-Run the contract test:
-
-```bash
-cargo test --manifest-path contracts/core-flow/Cargo.toml test_fifty_user_end_to_end_simulation
-```
-
-Generate the reporting files:
-
-```bash
-node scripts/generate-50-user-report.mjs
-```
+The repository includes the first 50 users covering the complete CoreFlow lifecycle for 50 unique workers: escrow creation, Ed25519 hours proof, manager approval, finance approval, and finalization. It verifies that each worker receives the expected amount and that contract custody returns to zero.
 
 Report artifacts:
 
@@ -834,18 +832,6 @@ Report artifacts:
 - [Spreadsheet export](docs/evidence/50-user-simulation.tsv)
 - [Analytics evidence graphic](docs/evidence/50-user-analytics.svg)
 - [Transaction activity graphic](docs/evidence/50-user-transaction-activity.svg)
-
-The committed graphics are deterministic local-test evidence, not live Stellar transaction screenshots. A live testnet report must include verified transaction hashes and Stellar Expert links; see the runbook for the required capture fields.
-
----
-
-## User Feedback
-
-The first 50 registrations are organized in the single [50-user feedback spreadsheet](docs/feedback/50-user-feedback.csv), including clearly labeled simulated wallet identifiers and simulated product ratings for interface demonstrations.
-
-Current result: **50 registrations recorded; synthetic demo values available for all 50 rows.** The synthetic wallet identifiers and ratings are not real blockchain accounts or participant responses.
-
-The [feedback form specification](docs/USER_FEEDBACK_FORM.md) defines the collection fields for the next response batch.
 
 ---
 
@@ -873,7 +859,7 @@ Our project presentation deck covers the full CoreFlow vision — from problem s
 📊 **[View CoreFlow Presentation Deck (Google Drive)](https://drive.google.com/file/d/1orKdCyjF-lVfLFo435NlOkiyDcxT1sKo/view?usp=drive_link)**
 
 > [!NOTE]
-> This presentation was prepared for the **Stellar Philippines Bootcamp 2026** and covers:
+> This presentation was prepared and covers:
 >
 > - Problem analysis for remote payroll in the Philippines
 > - CoreFlow's on-chain escrow architecture and multi-sig approval flow
