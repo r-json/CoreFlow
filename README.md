@@ -843,11 +843,11 @@ The committed graphics are deterministic local-test evidence, not live Stellar t
 
 ## User Feedback
 
-The participant feedback form specification is in [docs/USER_FEEDBACK_FORM.md](docs/USER_FEEDBACK_FORM.md). It includes required fields for full name, email address, Stellar wallet address, workflow completion, product rating, escrow-flow rating, and improvement feedback.
+The first 50 registrations are organized in the single [50-user feedback spreadsheet](docs/feedback/50-user-feedback.csv), including clearly labeled simulated wallet identifiers and simulated product ratings for interface demonstrations.
 
-Do not commit participant names, email addresses, wallet addresses, private keys, or raw form responses. Publish only consented, anonymized aggregate results.
+Current result: **50 registrations recorded; synthetic demo values available for all 50 rows.** The synthetic wallet identifiers and ratings are not real blockchain accounts or participant responses.
 
-The repository contains the form specification, but not a live Google Form URL. Create the form under the project owner's Google account and replace the TODO URL in the specification before sharing it.
+The [feedback form specification](docs/USER_FEEDBACK_FORM.md) defines the collection fields for the next response batch.
 
 ---
 
