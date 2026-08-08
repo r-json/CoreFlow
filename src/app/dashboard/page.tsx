@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { ShieldAlert, ArrowLeft, Crown, Users, LogIn, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 
-export default function DashboardPage() {
+function DashboardContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const auth = useAuth();
@@ -160,5 +160,22 @@ export default function DashboardPage() {
         <p className="text-sm text-slate-400 font-medium">Redirecting to dashboard...</p>
       </div>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950/60 to-slate-950 text-slate-100 flex items-center justify-center">
+          <div className="text-center">
+            <RefreshCw className="w-8 h-8 animate-spin text-violet-400 mx-auto mb-3" />
+            <p className="text-sm text-slate-400 font-medium">Loading dashboard...</p>
+          </div>
+        </div>
+      }
+    >
+      <DashboardContent />
+    </Suspense>
   );
 }

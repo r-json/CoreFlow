@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import {
   ScrollText,
@@ -61,7 +61,7 @@ export default function AdminAuditLogsPage() {
   const [error, setError] = useState<string | null>(null);
   const [actionFilter, setActionFilter] = useState('all');
 
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -78,13 +78,13 @@ export default function AdminAuditLogsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [actionFilter]);
 
   useEffect(() => {
     if (auth.isAuthenticated && auth.isAdmin) {
       fetchLogs();
     }
-  }, [auth.isAuthenticated, auth.isAdmin, actionFilter]);
+  }, [auth.isAuthenticated, auth.isAdmin, fetchLogs]);
 
   const formatTime = (isoString: string) => {
     const date = new Date(isoString);
