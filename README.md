@@ -596,7 +596,7 @@ coreflow/
 │   └── core-flow/
 │       ├── src/
 │       │   ├── lib.rs                  # Core escrow contract (Soroban)
-│       │   └── test.rs                 # 29 unit tests incl. fuzz
+│       │   └── test.rs                 # 31 unit tests incl. fuzz
 │       ├── test_snapshots/             # Soroban test snapshots
 │       ├── Cargo.toml
 │       └── Cargo.lock

@@ -12,6 +12,8 @@ CoreFlow uses a multi-signature payroll escrow lifecycle. The repository simulat
 
 The test also verifies that every worker receives the expected amount and that the contract custody balance returns to zero after all 50 payouts.
 
+The 50 users run in five isolated batches of 10. This keeps each Soroban test environment below the host resource budget while preserving the full lifecycle and custody assertions for every user.
+
 ## Run the contract simulation
 
 From the repository root:
@@ -55,6 +57,6 @@ Before publishing live results, record for every worker:
 
 The live report should replace the local evidence section with verified explorer links and screenshots captured from the testnet account and contract activity pages.
 
-## Current execution note
+## Execution result
 
-The repository implementation is ready for the 50-user test. The current development machine must first configure Rust, for example with `rustup default stable`, before the contract test can run.
+The deterministic simulation passes with 50 completed users, 250 contract invocations, and zero remaining contract custody. A live Stellar testnet run remains a separate operational exercise and must publish real transaction hashes and explorer links.

@@ -1091,72 +1091,73 @@ mod tests {
 
     #[test]
     fn test_fifty_user_end_to_end_simulation() {
-        // Simulate 50 unique workers completing the full escrow lifecycle.
-        let env = Env::default();
-        env.mock_all_auths();
-        let contract_id = env.register_contract(None, CoreFlowContract);
-        let client = CoreFlowContractClient::new(&env, &contract_id);
-
-        let manager = Address::generate(&env);
-        let finance = Address::generate(&env);
-        let token = setup_token(&env, &manager);
-        let (signing_key, oracle_pubkey) = generate_oracle_keypair(&env);
+        // Simulate 50 unique workers in five batches of 10. Isolated Env values
+        // keep the test below the Soroban host budget while preserving the
+        // complete lifecycle and custody checks for every worker.
         let mut total_funded: i128 = 0;
 
-        for user_index in 0..50u32 {
-            let worker = Address::generate(&env);
-            let amount = 1_000 + user_index as i128;
-            let hours = 40 + user_index as i128;
-            let mut payments = Vec::new(&env);
-            payments.push_back(PaymentSchedule {
-                id: 1,
-                worker: worker.clone(),
-                amount,
-                start_date: 1,
-                end_date: 2,
-                hours_logged: 0,
-                rate_per_hour: 25,
-                status: PaymentStatus::Pending,
-            });
+        for batch in 0..5u32 {
+            let env = Env::default();
+            env.mock_all_auths();
+            let contract_id = env.register_contract(None, CoreFlowContract);
+            let client = CoreFlowContractClient::new(&env, &contract_id);
+            let manager = Address::generate(&env);
+            let finance = Address::generate(&env);
+            let token = setup_token(&env, &manager);
+            let (signing_key, oracle_pubkey) = generate_oracle_keypair(&env);
+            let mut batch_funded: i128 = 0;
 
-            let escrow_id = client.initialize_multi_sig_escrow(
-                &manager,
-                &finance,
-                &token,
-                &oracle_pubkey,
-                &payments,
-            );
-            let signature = sign_oracle_proof(
-                &env,
-                &signing_key,
-                escrow_id,
-                0,
-                hours,
-                0,
-            );
+            for offset in 0..10u32 {
+                let user_index = batch * 10 + offset;
+                let worker = Address::generate(&env);
+                let amount = 1_000 + user_index as i128;
+                let hours = 40 + user_index as i128;
+                let mut payments = Vec::new(&env);
+                payments.push_back(PaymentSchedule {
+                    id: 1,
+                    worker: worker.clone(),
+                    amount,
+                    start_date: 1,
+                    end_date: 2,
+                    hours_logged: 0,
+                    rate_per_hour: 25,
+                    status: PaymentStatus::Pending,
+                });
 
-            client.submit_hours_proof(&escrow_id, &0, &hours, &0, &signature);
-            client.manager_approve(&escrow_id);
-            client.finance_approve(&escrow_id);
-            let finalized = client.finalize_payment(&escrow_id);
+                let escrow_id = client.initialize_multi_sig_escrow(
+                    &manager,
+                    &finance,
+                    &token,
+                    &oracle_pubkey,
+                    &payments,
+                );
+                let signature = sign_oracle_proof(&env, &signing_key, escrow_id, 0, hours, 0);
 
-            assert_eq!(finalized.len(), 1);
-            assert_eq!(finalized.get(0).unwrap().worker, worker);
-            assert_eq!(finalized.get(0).unwrap().amount, amount);
-            assert_eq!(finalized.get(0).unwrap().hours_logged, hours);
+                client.submit_hours_proof(&escrow_id, &0, &hours, &0, &signature);
+                client.manager_approve(&escrow_id);
+                client.finance_approve(&escrow_id);
+                let finalized = client.finalize_payment(&escrow_id);
+
+                assert_eq!(finalized.len(), 1);
+                assert_eq!(finalized.get(0).unwrap().worker, worker);
+                assert_eq!(finalized.get(0).unwrap().amount, amount);
+                assert_eq!(finalized.get(0).unwrap().hours_logged, hours);
+                assert_eq!(
+                    balance_of(&env, &token, &worker),
+                    amount,
+                    "worker {user_index} should receive its finalized amount"
+                );
+                batch_funded += amount;
+            }
+
+            assert_eq!(balance_of(&env, &token, &contract_id), 0);
             assert_eq!(
-                balance_of(&env, &token, &worker),
-                amount,
-                "worker {user_index} should receive its finalized amount"
+                balance_of(&env, &token, &manager),
+                MINT_AMOUNT - batch_funded
             );
-            total_funded += amount;
+            total_funded += batch_funded;
         }
 
-        assert_eq!(balance_of(&env, &token, &contract_id), 0);
-        assert_eq!(
-            balance_of(&env, &token, &manager),
-            MINT_AMOUNT - total_funded
-        );
         assert_eq!(total_funded, 50 * 1_000 + (50 * 49) / 2);
     }
 }
