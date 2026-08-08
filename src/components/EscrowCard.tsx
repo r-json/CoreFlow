@@ -3,7 +3,18 @@
 import { useState } from 'react';
 import { Button } from './Button';
 import { Alert } from './Alert';
-import { CheckCircle2, ShieldCheck, DollarSign, XCircle, RotateCcw } from 'lucide-react';
+import {
+  CheckCircle2,
+  ShieldCheck,
+  DollarSign,
+  XCircle,
+  RotateCcw,
+  FileText,
+  Landmark,
+  KeyRound,
+  Globe,
+  Fingerprint,
+} from 'lucide-react';
 import { EscrowTimeline } from './EscrowTimeline';
 import { FeeSavings } from './FeeSavings';
 import { PaymentReceipt } from './PaymentReceipt';
@@ -32,6 +43,7 @@ interface EscrowCardProps {
   onCancel?: (escrowId: number) => Promise<void>;
   onReject?: (escrowId: number, reason: string) => Promise<void>;
   onResubmitHours?: (escrowId: number) => void;
+  onSubmitHours?: (escrowId: number) => void;
   isConnected?: boolean;
   canManage?: boolean;
   canFinance?: boolean;
@@ -45,6 +57,7 @@ export const EscrowCard = ({
   onCancel,
   onReject,
   onResubmitHours,
+  onSubmitHours,
   isConnected = false,
   canManage = true,
   canFinance = true,
@@ -62,6 +75,8 @@ export const EscrowCard = ({
 
   const getStatusConfig = () => {
     switch (escrow.status) {
+      case 'pending_hours':
+        return { label: 'Awaiting Hours Log', color: 'bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/20' };
       case 'pending_manager':
         return { label: 'Awaiting Manager', color: 'bg-purple-500/10 text-purple-400 border-purple-500/20' };
       case 'pending_finance':
@@ -171,6 +186,33 @@ export const EscrowCard = ({
         {escrow.status !== 'paid' && escrow.status !== 'cancelled' && (
           <div className="mb-5">
             <FeeSavings amountUsdc={numericAmount} />
+          </div>
+        )}
+
+        {/* Contract Parties & Settlement Details */}
+        {escrow.status !== 'cancelled' && (
+          <div className="mb-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <SettlementDetail
+              icon={<Landmark className="w-3.5 h-3.5 text-slate-400" />}
+              label="Settlement Network"
+              value="Stellar Network"
+            />
+            <SettlementDetail
+              icon={<Globe className="w-3.5 h-3.5 text-slate-400" />}
+              label="Settlement Token"
+              value={`${escrow.currency} (USDC)`}
+            />
+            <SettlementDetail
+              icon={<Fingerprint className="w-3.5 h-3.5 text-slate-400" />}
+              label="Oracle Verification"
+              value={escrow.hours_verified ? 'Verified' : 'Pending'}
+              highlight={escrow.hours_verified ? 'text-emerald-400' : 'text-amber-400'}
+            />
+            <SettlementDetail
+              icon={<KeyRound className="w-3.5 h-3.5 text-slate-400" />}
+              label="Custody"
+              value="Soroban Escrow Contract"
+            />
           </div>
         )}
 
@@ -331,6 +373,17 @@ export const EscrowCard = ({
               </Button>
             )}
 
+            {escrow.status === 'pending_hours' && onSubmitHours && (
+              <Button
+                onClick={() => onSubmitHours(escrow.id)}
+                disabled={!isConnected || isLoading}
+                className="bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 text-white font-semibold text-xs py-2 px-4 shadow-lg shadow-fuchsia-500/20 active:scale-95 transition-transform"
+              >
+                <FileText className="w-4 h-4 mr-1.5" />
+                Submit Work Hours
+              </Button>
+            )}
+
             {escrow.status === 'paid' && (
               <span className="inline-flex items-center text-xs font-semibold text-slate-500 border border-slate-800 bg-slate-900 px-3 py-1.5 rounded-lg cursor-default">
                 ✓ Completed
@@ -359,3 +412,29 @@ export const EscrowCard = ({
     </div>
   );
 };
+
+function SettlementDetail({
+  icon,
+  label,
+  value,
+  highlight,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  highlight?: string;
+}) {
+  return (
+    <div className="p-2.5 rounded-lg border border-white/5 bg-slate-950/50">
+      <div className="flex items-center gap-1.5 mb-1">
+        {icon}
+        <p className="text-[8px] text-slate-500 uppercase tracking-wider font-bold">
+          {label}
+        </p>
+      </div>
+      <p className={`text-[10px] font-semibold font-mono ${highlight || 'text-slate-300'}`}>
+        {value}
+      </p>
+    </div>
+  );
+}

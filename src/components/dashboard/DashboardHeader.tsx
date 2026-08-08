@@ -1,4 +1,4 @@
-import { RefreshCw, LogOut, LogIn, ShieldCheck, Crown, Users, Mail } from 'lucide-react';
+import { RefreshCw, LogOut, LogIn, ShieldCheck, Crown, Users, Mail, ScrollText } from 'lucide-react';
 import type { UserRole } from '@/hooks/useAuth';
 import { STELLAR_CONFIG } from '@/lib/config';
 import Link from 'next/link';
@@ -127,6 +127,14 @@ export function DashboardHeader({
               >
                 <Users className="w-3.5 h-3.5 text-amber-400" />
                 User Directory
+              </Link>
+              <Link
+                href="/dashboard/admin/audit-logs"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-600/30 bg-slate-700/10 hover:bg-slate-700/20 text-slate-300 transition-colors shadow-sm"
+                title="View Audit Logs"
+              >
+                <ScrollText className="w-3.5 h-3.5 text-slate-400" />
+                Audit Logs
               </Link>
             </div>
           )}

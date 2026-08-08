@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Outfit } from 'next/font/google';
 import './globals.css';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { ToastProvider } from '@/components/ui/Toast';
 
 const outfit = Outfit({
   subsets: ['latin'],
@@ -40,7 +41,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={outfit.variable}>
       <body className={outfit.className}>
-        <ErrorBoundary>{children}</ErrorBoundary>
+        <ErrorBoundary>
+          <ToastProvider>{children}</ToastProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );

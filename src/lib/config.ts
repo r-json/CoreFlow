@@ -68,7 +68,7 @@ export const STELLAR_CONFIG = {
     return STELLAR_CONFIG.network[network].networkPassphrase;
   },
 
-  // Freighter interaction helpers
+  // Freighter interaction helpers (v6 API — all functions return structured objects)
   freighter: {
     isConnected: async (): Promise<boolean> => {
       try {
@@ -80,14 +80,18 @@ export const STELLAR_CONFIG = {
     },
 
     connect: async (): Promise<string> => {
-      const { isConnected: connected } = await isConnected();
-      if (!connected) throw new Error('Freighter wallet not found');
+      const connResult = await isConnected();
+      if (!connResult.isConnected) throw new Error('Freighter wallet not found');
 
       const result = await requestAccess();
-      if (!result) throw new Error('User declined access');
-      if (typeof result === 'object' && result.error) throw new Error(result.error);
+      if (result.error) {
+        throw new Error(
+          typeof result.error === 'string' ? result.error : result.error.message || 'User declined access'
+        );
+      }
+      if (!result.address) throw new Error('Freighter did not return a wallet address');
 
-      return typeof result === 'string' ? result : (result as any).address || (result as any).publicKey || String(result);
+      return result.address;
     },
 
     signTransaction: async (transactionXDR: string): Promise<string> => {
@@ -95,10 +99,14 @@ export const STELLAR_CONFIG = {
         networkPassphrase: STELLAR_CONFIG.getNetworkPassphrase(),
       });
 
-      if (!result) throw new Error('User declined to sign');
-      if (typeof result === 'object' && result.error) throw new Error(result.error);
+      if (result.error) {
+        throw new Error(
+          typeof result.error === 'string' ? result.error : result.error.message || 'User declined to sign'
+        );
+      }
+      if (!result.signedTxXdr) throw new Error('Freighter did not return a signed transaction');
 
-      return typeof result === 'string' ? result : (result as any).signedXDR || result;
+      return result.signedTxXdr;
     },
 
     signMessage: async (message: string): Promise<string> => {
@@ -106,14 +114,18 @@ export const STELLAR_CONFIG = {
         networkPassphrase: STELLAR_CONFIG.getNetworkPassphrase(),
       });
 
-      if (!result) throw new Error('User declined to sign');
-      if (typeof result === 'object' && result.error) throw new Error(result.error);
+      if (result.error) {
+        throw new Error(
+          typeof result.error === 'string' ? result.error : result.error.message || 'User declined to sign'
+        );
+      }
 
-      const signatureRaw = typeof result === 'string' ? result : (result as any).signedMessage || result;
+      const signatureRaw = result.signedMessage;
+      if (!signatureRaw) throw new Error('Freighter did not return a signature');
 
-      // Freighter returns a Buffer/Uint8Array in newer versions. Convert it to a
-      // base64 string so it can be passed via JSON to the backend and validated by Zod.
-      if (signatureRaw && typeof signatureRaw !== 'string') {
+      // Freighter v6 may return a Buffer (v3-style) or base64 string (v4-style).
+      // Normalize to a base64 string for JSON transport to the backend.
+      if (typeof signatureRaw !== 'string') {
         if (signatureRaw instanceof Uint8Array || Buffer.isBuffer(signatureRaw)) {
           return Buffer.from(signatureRaw).toString('base64');
         }

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ShieldCheck, Coins, FileCheck2, ArrowRight } from 'lucide-react';
+import { ShieldCheck, Coins, FileCheck2, Crown, Users, ArrowRight, Lock } from 'lucide-react';
 
 const FEATURES = [
   {
@@ -34,35 +34,95 @@ export default function LandingPage() {
               for distributed teams
             </span>
           </h1>
-          <p className="max-w-2xl mx-auto text-base md:text-lg text-slate-400 mb-8">
+          <p className="max-w-2xl mx-auto text-base md:text-lg text-slate-400 mb-12">
             CoreFlow settles work payments on-chain with multi-signature approvals and
             oracle-verified hours — stronger transparency, auditability, and predictable
             cost than traditional cross-border payouts.
           </p>
-          <div className="flex items-center justify-center gap-3">
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl font-semibold bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white transition-colors shadow-lg shadow-violet-500/20"
-            >
-              Launch the app
-              <ArrowRight className="w-4 h-4" aria-hidden="true" />
-            </Link>
-            <a
-              href="https://stellar.expert/explorer/public/contract/CCTF5WBOQR7JP2KPLQT372X7JCGCINHDFRSAPF4YTYRKZXZ3J2XPRFFW"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl font-semibold border border-white/10 bg-slate-900/60 hover:bg-slate-800 text-slate-200 transition-colors"
-            >
-              View contract
-            </a>
-          </div>
-          <p className="mt-4 text-xs text-slate-500">
-            The dashboard opens in interactive <strong>demo mode</strong> — no wallet required to explore.
-          </p>
         </section>
 
+        {/* Role Access Cards */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto mb-16" aria-label="Access portal">
+          {/* Employee Access Card */}
+          <Link
+            href="/dashboard/employee"
+            id="employee-access-btn"
+            className="group relative rounded-2xl border border-sky-500/20 bg-slate-900/60 backdrop-blur-xl p-8 transition-all duration-300 hover:border-sky-400/40 hover:bg-slate-900/80 hover:shadow-2xl hover:shadow-sky-500/10 hover:-translate-y-1"
+          >
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-sky-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="relative z-10">
+              <div className="w-14 h-14 rounded-2xl bg-sky-500/10 border border-sky-500/30 text-sky-400 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
+                <Users className="w-7 h-7" aria-hidden="true" />
+              </div>
+              <h2 className="text-xl font-extrabold text-white mb-2 flex items-center gap-2">
+                Employee Access
+                <ArrowRight className="w-4 h-4 text-sky-400 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
+              </h2>
+              <p className="text-sm text-slate-400 leading-relaxed mb-4">
+                View your assigned escrows, submit oracle-verified work hours, and track payment status in real-time.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <span className="text-[10px] font-bold px-2 py-1 rounded-lg border bg-sky-500/10 border-sky-500/20 text-sky-400">
+                  View Escrows
+                </span>
+                <span className="text-[10px] font-bold px-2 py-1 rounded-lg border bg-sky-500/10 border-sky-500/20 text-sky-400">
+                  Submit Hours
+                </span>
+                <span className="text-[10px] font-bold px-2 py-1 rounded-lg border bg-sky-500/10 border-sky-500/20 text-sky-400">
+                  Track Payments
+                </span>
+              </div>
+            </div>
+          </Link>
+
+          {/* Admin Access Card */}
+          <Link
+            href="/dashboard/admin"
+            id="admin-access-btn"
+            className="group relative rounded-2xl border border-amber-500/20 bg-slate-900/60 backdrop-blur-xl p-8 transition-all duration-300 hover:border-amber-400/40 hover:bg-slate-900/80 hover:shadow-2xl hover:shadow-amber-500/10 hover:-translate-y-1"
+          >
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="relative z-10">
+              <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
+                <Crown className="w-7 h-7" aria-hidden="true" />
+              </div>
+              <h2 className="text-xl font-extrabold text-white mb-2 flex items-center gap-2">
+                Admin Access
+                <Lock className="w-3.5 h-3.5 text-amber-400/60" />
+                <ArrowRight className="w-4 h-4 text-amber-400 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
+              </h2>
+              <p className="text-sm text-slate-400 leading-relaxed mb-4">
+                Full operational control — create escrows, manage approvals, assign roles, oversee payouts, and monitor the team.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <span className="text-[10px] font-bold px-2 py-1 rounded-lg border bg-amber-500/10 border-amber-500/20 text-amber-400">
+                  Create Escrows
+                </span>
+                <span className="text-[10px] font-bold px-2 py-1 rounded-lg border bg-amber-500/10 border-amber-500/20 text-amber-400">
+                  Manage Roles
+                </span>
+                <span className="text-[10px] font-bold px-2 py-1 rounded-lg border bg-amber-500/10 border-amber-500/20 text-amber-400">
+                  Approve Payments
+                </span>
+              </div>
+            </div>
+          </Link>
+        </section>
+
+        {/* Contract Link */}
+        <div className="text-center mb-16">
+          <a
+            href="https://stellar.expert/explorer/public/contract/CCTF5WBOQR7JP2KPLQT372X7JCGCINHDFRSAPF4YTYRKZXZ3J2XPRFFW"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl font-semibold border border-white/10 bg-slate-900/60 hover:bg-slate-800 text-slate-200 transition-colors text-sm"
+          >
+            View Smart Contract on Stellar Expert
+          </a>
+        </div>
+
         {/* Features */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-20" aria-label="Key features">
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-5" aria-label="Key features">
           {FEATURES.map(({ icon: Icon, title, body }) => (
             <div
               key={title}

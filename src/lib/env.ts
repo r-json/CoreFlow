@@ -9,7 +9,7 @@ const envSchema = z.object({
   ADMIN_WALLET_ADDRESS: z.string().optional().default(''),
   BOOTSTRAP_SECRET: z.string().optional().default(''),
   NEXT_PUBLIC_COMPANY_NAME: z.string().default('CoreFlow'),
-  AUTH_SECRET: z.string().min(16, 'AUTH_SECRET must be at least 16 characters').optional().default('default_super_secret_coreflow_jwt_key_32bytes'),
+  AUTH_SECRET: z.string().min(32, 'AUTH_SECRET must be at least 32 characters').optional().default('default_super_secret_coreflow_jwt_key_32bytes'),
   NEXT_PUBLIC_SENTRY_DSN: z.string().optional().default(''),
 });
 

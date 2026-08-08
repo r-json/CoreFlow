@@ -1,241 +1,164 @@
 'use client';
 
-import { useState } from 'react';
-import { EscrowCard } from '@/components/EscrowCard';
-import { TransactionFeed } from '@/components/TransactionFeed';
-import { Alert } from '@/components/Alert';
-import { ImpactTracker } from '@/components/ImpactTracker';
-import { PlusCircle, FileText, AlertCircle, Users, AlertOctagon, Code2 } from 'lucide-react';
-import { useDashboard } from '@/hooks/useDashboard';
+import { useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
-import { DashboardStats } from '@/components/dashboard/DashboardStats';
-import { CreateEscrowModal } from '@/components/modals/CreateEscrowModal';
-import { SubmitHoursModal } from '@/components/modals/SubmitHoursModal';
-import { EmergencyPauseModal } from '@/components/dashboard/EmergencyPauseModal';
+import { ShieldAlert, ArrowLeft, Crown, Users, LogIn, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 
 export default function DashboardPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const auth = useAuth();
-  const { state, actions } = useDashboard({
-    isAuthenticated: auth.isAuthenticated,
-    walletAddress: auth.walletAddress,
-  });
 
-  const [showEmergencyModal, setShowEmergencyModal] = useState(false);
+  const accessParam = searchParams.get('access');
 
-  const {
-    escrows,
-    transactions,
-    isConnected,
-    isLoading,
-    error,
-    infoMessage,
-    showCreateModal,
-    showHoursModal,
-    isMockMode,
-    isContractConfigured,
-    stats,
-  } = state;
+  // Once authenticated, redirect to role-specific dashboard
+  useEffect(() => {
+    if (!auth.isLoading && auth.isAuthenticated) {
+      if (accessParam === 'admin' && auth.isAdmin) {
+        router.replace('/dashboard/admin');
+      } else if (accessParam === 'admin' && !auth.isAdmin) {
+        // Role mismatch — stay on this page to show the mismatch screen
+        return;
+      } else {
+        // Employee access or default
+        router.replace('/dashboard/employee');
+      }
+    }
+  }, [auth.isLoading, auth.isAuthenticated, auth.isAdmin, accessParam, router]);
 
-  const gateActions = isContractConfigured && !isMockMode;
-  const userIsAdmin = !gateActions || auth.isAdmin;
-  const canSubmitHours = !gateActions || auth.isAuthenticated;
+  // No access param and not authenticated → redirect to landing
+  if (!accessParam && !auth.isAuthenticated && !auth.isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950/60 to-slate-950 text-slate-100 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-6">
+          <ShieldAlert className="w-12 h-12 text-violet-400 mx-auto mb-4" />
+          <h1 className="text-xl font-extrabold text-white mb-2">Select Access Mode</h1>
+          <p className="text-sm text-slate-400 mb-6">Please choose your access type from the landing page.</p>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl font-semibold bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white transition-colors shadow-lg shadow-violet-500/20"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Go to Landing Page
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950/60 to-slate-950 text-slate-100 flex flex-col font-sans">
-      
-      {/* Header */}
-      <DashboardHeader
-        isContractConfigured={isContractConfigured}
-        isMockMode={isMockMode}
-        isLoading={isLoading || auth.isLoading}
-        onToggleMode={actions.handleToggleMode}
-        onRefresh={() => actions.loadInitialData()}
-        isAuthenticated={auth.isAuthenticated}
-        walletAddress={auth.walletAddress}
-        role={auth.role}
-        onSignIn={auth.signIn}
-        onSignOut={auth.signOut}
-      />
+  // Sign-in gate
+  if (!auth.isAuthenticated && !auth.isLoading) {
+    const isAdminMode = accessParam === 'admin';
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950/60 to-slate-950 text-slate-100 flex items-center justify-center">
+        <div className="max-w-md w-full mx-auto px-6">
+          <div className="rounded-2xl border border-white/10 bg-slate-900/60 backdrop-blur-2xl p-8 shadow-2xl shadow-black/40 text-center">
+            {/* Role icon */}
+            <div className={`w-16 h-16 rounded-2xl border flex items-center justify-center mx-auto mb-5 ${
+              isAdminMode
+                ? 'bg-amber-500/10 border-amber-500/30 text-amber-400'
+                : 'bg-sky-500/10 border-sky-500/30 text-sky-400'
+            }`}>
+              {isAdminMode ? <Crown className="w-8 h-8" /> : <Users className="w-8 h-8" />}
+            </div>
 
-      {/* Main Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-8">
-        
-        {/* Auth error */}
-        {auth.error && (
-          <div className="mb-6 p-3 rounded-xl border border-rose-500/20 bg-rose-950/10 flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
-            <p className="text-xs text-rose-300 font-medium">{auth.error}</p>
-          </div>
-        )}
-
-        {/* Role-specific welcome banner */}
-        {auth.isAuthenticated && gateActions && (
-          <div className={`mb-6 p-3 rounded-xl border flex items-center gap-2 ${
-            auth.isAdmin 
-              ? 'border-amber-500/20 bg-amber-950/10'
-              : 'border-sky-500/20 bg-sky-950/10'
-          }`}>
-            <Users className={`w-4 h-4 shrink-0 ${auth.isAdmin ? 'text-amber-400' : 'text-sky-400'}`} />
-            <p className={`text-xs font-medium ${auth.isAdmin ? 'text-amber-300' : 'text-sky-300'}`}>
-              {auth.isAdmin
-                ? '🔑 Admin Panel — You have full operational control: user role delegation, escrow creation, approvals, payouts, and rejection overrides.'
-                : '👤 Employee View — You can view your escrows, resubmit rejected hours, and submit work logs. Administrative actions are restricted.'}
+            <h1 className="text-2xl font-black text-white mb-2">
+              {isAdminMode ? 'Admin Access' : 'Employee Access'}
+            </h1>
+            <p className="text-sm text-slate-400 mb-6">
+              {isAdminMode
+                ? 'Connect your admin wallet to access full operational controls — escrow creation, role management, approvals, and payouts.'
+                : 'Connect your employee wallet to view escrows, submit work hours, and track your payment status.'}
             </p>
-          </div>
-        )}
 
-        {/* Info alerts */}
-        {infoMessage && (
-          <div className="mb-6 p-3 rounded-xl border border-violet-500/20 bg-violet-950/10 flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-violet-400 shrink-0" />
-            <p className="text-xs text-violet-300 font-medium">{infoMessage}</p>
-          </div>
-        )}
-
-        {error && (
-          <Alert variant="destructive" className="mb-6 border-rose-500/20 bg-rose-950/10 text-rose-300">
-            <p className="text-xs font-mono">{error}</p>
-          </Alert>
-        )}
-
-        {/* Analytics Stats Grid */}
-        <DashboardStats stats={stats} />
-
-        {/* Action Header bar */}
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-base font-extrabold tracking-tight text-white uppercase tracking-wider">
-            Escrow Registers
-          </h2>
-          <div className="flex gap-2">
-            {canSubmitHours && (
-              <button
-                onClick={() => actions.setShowHoursModal(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-white/10 bg-slate-900/80 hover:bg-slate-800 hover:border-white/20 text-slate-300 transition-colors shadow-sm"
-              >
-                <FileText className="w-3.5 h-3.5 text-violet-400" />
-                Submit Hours
-              </button>
+            {auth.error && (
+              <div className="mb-4 p-3 rounded-xl border border-rose-500/20 bg-rose-950/20">
+                <p className="text-xs text-rose-300 font-medium">{auth.error}</p>
+              </div>
             )}
-            {userIsAdmin && (
-              <button
-                onClick={() => actions.setShowCreateModal(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white transition-colors shadow-md shadow-violet-500/15"
-              >
-                <PlusCircle className="w-3.5 h-3.5" />
-                New Escrow
-              </button>
-            )}
+
+            <button
+              onClick={auth.signIn}
+              disabled={auth.isLoading}
+              className={`w-full py-3.5 px-4 rounded-xl text-sm font-bold transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 ${
+                isAdminMode
+                  ? 'bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white shadow-amber-500/20'
+                  : 'bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white shadow-sky-500/20'
+              }`}
+            >
+              <LogIn className="w-4 h-4" />
+              {auth.isLoading ? 'Connecting...' : 'Connect Freighter Wallet & Sign In'}
+            </button>
+
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 mt-4 text-xs text-slate-500 hover:text-slate-300 transition-colors"
+            >
+              <ArrowLeft className="w-3 h-3" />
+              Back to role selection
+            </Link>
           </div>
         </div>
+      </div>
+    );
+  }
 
-        {/* Main Grid: Escrows + Activity */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-5">
-            {isLoading && escrows.length === 0 ? (
-              <div className="space-y-4">
-                {[1, 2].map((i) => (
-                  <div key={i} className="h-56 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-900/60 animate-pulse border border-white/5" />
-                ))}
-              </div>
-            ) : escrows.length === 0 ? (
-              <div className="text-center py-16 border border-dashed border-white/10 rounded-2xl bg-slate-900/20">
-                <AlertCircle className="w-8 h-8 text-slate-500 mx-auto mb-2" />
-                <p className="text-sm font-semibold text-slate-400">
-                  {auth.isEmployee && gateActions
-                    ? 'No escrows assigned to your wallet yet.'
-                    : 'No active escrows registered.'}
-                </p>
-              </div>
-            ) : (
-              escrows.map((escrow) => (
-                <EscrowCard
-                  key={escrow.id}
-                  escrow={escrow}
-                  onManagerApprove={actions.handleManagerApprove}
-                  onFinanceApprove={actions.handleFinanceApprove}
-                  onFinalize={actions.handleFinalize}
-                  onCancel={actions.handleCancelEscrow}
-                  onReject={actions.handleRejectHours}
-                  onResubmitHours={actions.handleOpenResubmit}
-                  isConnected={isConnected}
-                  canManage={userIsAdmin}
-                  canFinance={userIsAdmin}
-                />
-              ))
-            )}
-          </div>
-
-          {/* Activity / Stats Sidebar */}
-          <div className="space-y-6">
-            <ImpactTracker />
-            <div>
-              <h3 className="text-xs font-extrabold tracking-wider uppercase text-slate-400 mb-3">On-Chain Activity</h3>
-              <TransactionFeed transactions={transactions} />
-            </div>
-          </div>
+  // Loading state
+  if (auth.isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950/60 to-slate-950 text-slate-100 flex items-center justify-center">
+        <div className="text-center">
+          <RefreshCw className="w-8 h-8 animate-spin text-violet-400 mx-auto mb-3" />
+          <p className="text-sm text-slate-400 font-medium">Verifying session...</p>
         </div>
+      </div>
+    );
+  }
 
-        {/* Footer Info & Admin Circuit Breaker */}
-        <footer className="mt-16 p-6 rounded-2xl border border-white/5 bg-slate-900/20 backdrop-blur-md">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4 mb-4">
-            <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">💡 Decentralized B2B Payroll &amp; Remittance Architecture</h3>
-            <div className="flex items-center gap-3">
+  // Role mismatch: user requested admin but wallet is EMPLOYEE
+  if (auth.isAuthenticated && accessParam === 'admin' && !auth.isAdmin) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950/60 to-slate-950 text-slate-100 flex items-center justify-center">
+        <div className="max-w-md w-full mx-auto px-6">
+          <div className="rounded-2xl border border-rose-500/20 bg-slate-900/60 backdrop-blur-2xl p-8 shadow-2xl text-center">
+            <ShieldAlert className="w-12 h-12 text-rose-400 mx-auto mb-4" />
+            <h1 className="text-xl font-extrabold text-white mb-2">Access Denied</h1>
+            <p className="text-sm text-slate-400 mb-2">
+              Your wallet <span className="font-mono text-white">{auth.walletAddress.slice(0, 8)}...{auth.walletAddress.slice(-4)}</span> is registered as <span className="font-bold text-sky-400">EMPLOYEE</span>.
+            </p>
+            <p className="text-sm text-slate-400 mb-6">
+              Admin privileges are required to access this panel. Contact your organization&apos;s admin for role elevation.
+            </p>
+            <div className="flex flex-col gap-3">
               <Link
-                href="/api/docs"
-                className="flex items-center gap-1.5 text-xs font-semibold text-violet-400 hover:text-violet-300 transition-colors bg-violet-500/10 border border-violet-500/20 px-3 py-1.5 rounded-lg"
+                href="/dashboard/employee"
+                className="w-full py-3 px-4 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-sky-500/20 flex items-center justify-center gap-2"
               >
-                <Code2 className="w-3.5 h-3.5" />
-                OpenAPI Docs
+                <Users className="w-4 h-4" />
+                Continue as Employee
               </Link>
-              {auth.isAdmin && (
-                <button
-                  onClick={() => setShowEmergencyModal(true)}
-                  className="flex items-center gap-1.5 text-xs font-bold text-rose-400 hover:text-rose-300 transition-colors bg-rose-500/10 border border-rose-500/20 px-3 py-1.5 rounded-lg"
-                >
-                  <AlertOctagon className="w-3.5 h-3.5 text-rose-500 animate-pulse" />
-                  🚨 Emergency Pause
-                </button>
-              )}
+              <Link
+                href="/"
+                className="text-xs text-slate-500 hover:text-slate-300 transition-colors"
+              >
+                ← Back to landing page
+              </Link>
             </div>
           </div>
+        </div>
+      </div>
+    );
+  }
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-slate-400">
-            <div className="p-3 rounded-xl bg-slate-950/40 border border-white/5">
-              <p className="font-semibold text-slate-200 mb-1">1. Oracle-Verified Time Tracking</p>
-              <p className="leading-relaxed">Work logs verified by oracles are submitted to Soroban contract alongside cryptographic signatures. Limits trust requirements and prevents false claims.</p>
-            </div>
-            <div className="p-3 rounded-xl bg-slate-950/40 border border-white/5">
-              <p className="font-semibold text-slate-200 mb-1">2. Operational Rejection Controls</p>
-              <p className="leading-relaxed">Admins can reject incorrect hours with logged justification, prompting worker resubmission before blockchain release.</p>
-            </div>
-            <div className="p-3 rounded-xl bg-slate-950/40 border border-white/5">
-              <p className="font-semibold text-slate-200 mb-1">3. Philippine Remittance Savings</p>
-              <p className="leading-relaxed">Workers receive USDC instantly via Stellar, avoiding traditional bank wires that cost 5.5%+ in intermediate fees.</p>
-            </div>
-          </div>
-        </footer>
-      </main>
-
-      {/* MODALS */}
-      <CreateEscrowModal 
-        isOpen={showCreateModal}
-        onClose={() => actions.setShowCreateModal(false)}
-        onSubmit={actions.handleCreateEscrow}
-        isMockMode={isMockMode}
-      />
-      
-      <SubmitHoursModal
-        isOpen={showHoursModal}
-        onClose={() => actions.setShowHoursModal(false)}
-        onSubmit={actions.handleSubmitHours}
-      />
-
-      <EmergencyPauseModal
-        isOpen={showEmergencyModal}
-        onClose={() => setShowEmergencyModal(false)}
-      />
+  // Default: loading/redirect state
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950/60 to-slate-950 text-slate-100 flex items-center justify-center">
+      <div className="text-center">
+        <RefreshCw className="w-8 h-8 animate-spin text-violet-400 mx-auto mb-3" />
+        <p className="text-sm text-slate-400 font-medium">Redirecting to dashboard...</p>
+      </div>
     </div>
   );
 }

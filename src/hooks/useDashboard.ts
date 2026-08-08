@@ -394,11 +394,12 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
         updateCumulativeStats(amountVal);
         await loadInitialData();
       } else {
+        const mockTxHash = '0x' + Math.random().toString(16).slice(2, 18) + 'abcdef1234567890';
         await new Promise(resolve => setTimeout(resolve, 1200));
         setEscrows((prev) =>
           prev.map((e) =>
             e.id === escrowId
-              ? { ...e, status: 'paid' }
+              ? { ...e, status: 'paid', transaction_hash: mockTxHash }
               : e
           )
         );
@@ -407,7 +408,7 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
             id: Date.now().toString(),
             type: 'payment',
             escrowId,
-            hash: '0x' + Math.random().toString(16).slice(2, 18),
+            hash: mockTxHash,
             status: 'success',
             timestamp: 'now',
             details: 'Payment finalized (Mock)',

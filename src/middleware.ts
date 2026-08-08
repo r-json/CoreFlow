@@ -20,8 +20,20 @@ import { jwtVerify } from 'jose';
 
 const PROTECTED_API_PREFIXES = ['/api/escrows', '/api/hours', '/api/admin', '/api/oracle/attest'];
 
+/**
+ * Routes under /api/admin that use their own auth mechanism (e.g. BOOTSTRAP_SECRET)
+ * and must NOT require a JWT session cookie. Without this, the first admin can never
+ * be created (chicken-and-egg problem).
+ */
+const ADMIN_PUBLIC_ROUTES = ['/api/admin/bootstrap'];
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Allow admin routes that handle their own authentication
+  if (ADMIN_PUBLIC_ROUTES.some((route) => pathname === route)) {
+    return NextResponse.next();
+  }
 
   const isProtected = PROTECTED_API_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 

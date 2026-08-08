@@ -1,22 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface SubmitHoursModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (escrowId: number, paymentId: number, hoursValue: string) => Promise<void>;
+  selectedEscrowId?: number | null;
 }
 
-export function SubmitHoursModal({ isOpen, onClose, onSubmit }: SubmitHoursModalProps) {
+export function SubmitHoursModal({ isOpen, onClose, onSubmit, selectedEscrowId }: SubmitHoursModalProps) {
   const [hoursEscrowId, setHoursEscrowId] = useState<number>(1);
   const [hoursPaymentId, setHoursPaymentId] = useState<number>(0);
   const [hoursValue, setHoursValue] = useState('40');
+
+  // Pre-fill escrow ID when opened for a specific escrow (e.g. resubmit)
+  useEffect(() => {
+    if (isOpen && selectedEscrowId) {
+      setHoursEscrowId(selectedEscrowId);
+    }
+  }, [isOpen, selectedEscrowId]);
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await onSubmit(hoursEscrowId, hoursPaymentId, hoursValue);
-    
+
     // reset defaults on close
     setHoursEscrowId(1);
     setHoursPaymentId(0);
@@ -26,7 +34,9 @@ export function SubmitHoursModal({ isOpen, onClose, onSubmit }: SubmitHoursModal
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
       <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl animate-scale-up">
-        <h3 className="text-base font-extrabold text-white mb-4 uppercase tracking-wider">Submit Oracle Work Proof</h3>
+        <h3 className="text-base font-extrabold text-white mb-4 uppercase tracking-wider">
+          {selectedEscrowId ? `Submit Hours — Escrow #${selectedEscrowId}` : 'Submit Oracle Work Proof'}
+        </h3>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>

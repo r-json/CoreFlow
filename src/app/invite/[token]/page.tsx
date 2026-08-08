@@ -66,7 +66,10 @@ export default function PublicInvitePage() {
       const data = await res.json();
       setSuccessMsg(data.message || 'Invitation accepted! Redirecting to dashboard...');
       setTimeout(() => {
-        router.push('/dashboard');
+        const targetDashboard = invitation?.role === 'ADMIN'
+          ? '/dashboard/admin'
+          : '/dashboard/employee';
+        router.push(targetDashboard);
       }, 1500);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to redeem invitation');
