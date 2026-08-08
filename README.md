@@ -1,5 +1,3 @@
-<div align="center">
-
 ---
 
 ## 🔗 Deployed Contract
@@ -17,6 +15,15 @@
 > - **Network:** Stellar Public Network
 >
 > The current MVP demonstrates the on-chain payroll approval state machine. Production deployment should connect the finalized payment path to Stellar Asset Contract / USDC token transfer and use a production-grade oracle verification scheme.
+
+---
+
+## Project Highlights
+
+- [Deployed Contract](https://stellar.expert/explorer/public/contract/CCTF5WBOQR7JP2KPLQT372X7JCGCINHDFRSAPF4YTYRKZXZ3J2XPRFFW)
+- [User Feedback](https://github.com/r-json/CoreFlow#-user-feedback)
+- [Presentations](https://github.com/r-json/CoreFlow#-presentations)
+- [Demo Video](https://github.com/r-json/CoreFlow#-demo-video)
 
 ---
 
@@ -40,7 +47,6 @@
 - [50-User Validation](#-50-user-validation)
 - [Security and Production Checklist](#-security-and-production-checklist)
 - [User Feedback](#-user-feedback)
-- [Users &amp; Testimonials](#-users--testimonials)
 - [Presentations](#-presentations)
 - [Demo Video](#-demo-video)
 - [References](#-references)
@@ -862,23 +868,6 @@ Before production funds are processed, CoreFlow should complete the following:
 
 ---
 
-## Users & Testimonials
-
-CoreFlow has been tested and validated by early adopters across the Philippine freelancer and remote work ecosystem.
-
-| Name                        | Organization                         | Testimonial                                                                                                                                      |
-| --------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Evangeline T.**     | Nextel Industrial Sales and Services | _"CoreFlow gave our team real transparency into payroll. We no longer chase emails for payment approvals — it's all on-chain and auditable."_ |
-| **Lucky R.**          | Office Assistant                     | _"The multi-sig escrow system is a game-changer. Our finance and project leads can independently approve payments without bottlenecks."_       |
-| **Patric Villanueva** | Worker                               | _"As a worker, I finally feel secure knowing my payment is locked in escrow the moment work is verified. No more chasing invoices."_           |
-| **Imelda H. Mariano** | HR                                   | _"The oracle-verified hours feature eliminated our manual reconciliation work."_                                                               |
-| **Joly Ann Delima**   | Finance                              | _"CoreFlow could help us spin up separate payroll contracts for each project team — clean isolation and full audit trails."_                 |
-
-> [!TIP]
-> Interested in piloting CoreFlow for your team or agency? Reach out to learn about our early adopter program.
-
----
-
 ## 🎤 Presentations
 
 Our project presentation deck covers the full CoreFlow vision — from problem statement and architecture to live demo walkthrough and go-to-market strategy.
@@ -942,5 +931,3 @@ Watch a full walkthrough of the CoreFlow platform in action — from wallet conn
 - FXC Intelligence. **B2B Cross-Border Payments in 2025: A Year in Data** — https://www.fxcintel.com/research/reports/ct-b2b-payments-2025-roundup
 
 ---
-
-<div align="center">
