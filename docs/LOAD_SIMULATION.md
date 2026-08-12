@@ -1,62 +1,48 @@
-# CoreFlow 50-user simulation
+# CoreFlow 50-User Activity Simulation
 
 ## Scope
 
-CoreFlow uses a multi-signature payroll escrow lifecycle. The repository simulation creates 50 unique worker addresses in a deterministic Soroban test environment and runs this sequence for each worker:
+The live testnet simulation reads 50 user names from [`data/50-users-feedback.csv`](../data/50-users-feedback.csv), generates Stellar testnet keypairs, funds them via Friendbot, and invokes the Doqtri provenance contract for each user:
 
-1. `initialize_multi_sig_escrow`
-2. `submit_hours_proof` with a valid Ed25519 oracle signature
-3. `manager_approve`
-4. `finance_approve`
-5. `finalize_payment`
+1. `register_document`
+2. `update_document`
+3. `set_node_status`
 
-The test also verifies that every worker receives the expected amount and that the contract custody balance returns to zero after all 50 payouts.
+The script is idempotent — existing keys and already-completed rows are skipped on re-run.
 
-The 50 users run in five isolated batches of 10. This keeps each Soroban test environment below the host resource budget while preserving the full lifecycle and custody assertions for every user.
-
-## Run the contract simulation
+## Run the live simulation
 
 From the repository root:
 
 ```bash
-cd contracts/core-flow
-cargo test test_fifty_user_end_to_end_simulation
+chmod +x scripts/50-users-activity.sh
+./scripts/50-users-activity.sh
 ```
 
-The test requires a configured Rust toolchain and the dependencies in `contracts/core-flow/Cargo.toml`.
+### Environment overrides (all optional)
 
-## Generate reporting artifacts
+| Variable     | Default                                              | Description           |
+| ------------ | ---------------------------------------------------- | --------------------- |
+| `CSV_FILE`   | `data/50-users-feedback.csv`                         | Input CSV             |
+| `OUT`        | `/tmp/50-users-activity.tsv`                         | Output TSV            |
+| `VERSION`    | `v2`                                                 | Doc-ID version suffix |
+| `MAX_USERS`  | `50`                                                 | Cap user count        |
+
+## Output
+
+- `/tmp/50-users-activity.tsv` — primary output with index, name, wallet, doc ID, and 3 transaction hashes
+- `docs/evidence/50-users-activity.tsv` — copy saved to the project evidence directory (if the directory exists)
+
+## Verify results
+
+Check a registered document:
 
 ```bash
-node scripts/generate-50-user-report.mjs
+stellar contract invoke --id <CONTRACT_ID> --source "<slug>" --network testnet -- get_document --doc_id "<slug>-plan-v2"
 ```
 
-Generated files:
+Explore a transaction on Stellar Expert:
 
-- `docs/evidence/50-user-simulation.json`: machine-readable summary and per-user rows
-- `docs/evidence/50-user-simulation.tsv`: spreadsheet-ready table
-- `docs/evidence/50-user-analytics.svg`: analytics evidence for the deterministic fixture
-- `docs/evidence/50-user-transaction-activity.svg`: lifecycle activity evidence for the deterministic fixture
-
-These SVGs are report graphics generated from the local fixture. They are not screenshots of Stellar testnet transactions and contain no fabricated transaction hashes.
-
-## Live Stellar testnet run
-
-A live run needs a funded testnet manager, finance account, 50 worker accounts, a deployed CoreFlow contract, a Stellar Asset Contract address, and an oracle key that can produce the contract's 64-byte Ed25519 proofs. Do not use the local fixture artifacts as live-chain evidence.
-
-Before publishing live results, record for every worker:
-
-- worker wallet address
-- escrow ID
-- registration transaction hash
-- hours-proof transaction hash
-- manager approval transaction hash
-- finance approval transaction hash
-- finalization transaction hash
-- Stellar Expert URL
-
-The live report should replace the local evidence section with verified explorer links and screenshots captured from the testnet account and contract activity pages.
-
-## Execution result
-
-The deterministic simulation passes with 50 completed users, 250 contract invocations, and zero remaining contract custody. A live Stellar testnet run remains a separate operational exercise and must publish real transaction hashes and explorer links.
+```
+https://stellar.expert/explorer/testnet/tx/<HASH>
+```
