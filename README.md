@@ -22,8 +22,6 @@
 
 ---
 
-## 📸 Platform Preview
-
 ![CoreFlow Landing Page](public/landing-preview.png)
 
 > *Employee & Admin role-gated dashboards — Freighter wallet sign-in, on-chain escrow creation, oracle-verified hours, and dual-approval payroll finalization.*
