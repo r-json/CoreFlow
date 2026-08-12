@@ -19,7 +19,7 @@
 ## Project Highlights
 
 - [Deployed Contract](https://stellar.expert/explorer/public/contract/CCTF5WBOQR7JP2KPLQT372X7JCGCINHDFRSAPF4YTYRKZXZ3J2XPRFFW)
-- [User Feedback](https://github.com/r-json/CoreFlow#-user-feedback)
+- [User Feedback](https://github.com/r-json/CoreFlow#user-feedback)
 - [Presentations](https://github.com/r-json/CoreFlow#-presentations)
 - [Demo Video](https://github.com/r-json/CoreFlow#-demo-video)
 
@@ -44,7 +44,7 @@
 - [Development](#-development)
 - [50-User Validation](#-50-user-validation)
 - [Security and Production Checklist](#-security-and-production-checklist)
-- [User Feedback](#-user-feedback)
+- [User Feedback](#user-feedback)
 - [Presentations](#-presentations)
 - [Demo Video](#-demo-video)
 - [References](#-references)
