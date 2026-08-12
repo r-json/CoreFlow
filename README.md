@@ -14,6 +14,7 @@
 **CoreFlow settles contractor and B2B payments on-chain — multi-signature escrow, oracle-verified hours, and dual-approval payroll with full audit trails. No hidden fees. No guessing. Just transparent, programmable payroll.**
 
 [![Live Contract](https://img.shields.io/badge/🔗_Mainnet_Contract-Live-22c55e?style=flat-square)](https://stellar.expert/explorer/public/contract/CCTF5WBOQR7JP2KPLQT372X7JCGCINHDFRSAPF4YTYRKZXZ3J2XPRFFW)
+[![User Feedback](https://img.shields.io/badge/📋_User_Feedback-Data_Export-8b5cf6?style=flat-square)](data/50-users-feedback.csv)
 [![Demo Video](https://img.shields.io/badge/🎬_Demo_Video-Watch-3b82f6?style=flat-square)](https://drive.google.com/file/d/1Jz7Pejnie-S4X3VD2YeF_d9EDV-hgQKb/view?usp=drive_link)
 [![Presentation](https://img.shields.io/badge/📊_Pitch_Deck-View-f59e0b?style=flat-square)](https://drive.google.com/file/d/1orKdCyjF-lVfLFo435NlOkiyDcxT1sKo/view?usp=drive_link)
 
