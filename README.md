@@ -964,14 +964,7 @@ CoreFlow onboarding respondents' Stellar identities were registered on the testn
 > [!NOTE]
 > Full activity log with all 150 transaction hashes: [`docs/evidence/50-users-activity.tsv`](docs/evidence/50-users-activity.tsv). Verify any transaction at [Stellar Expert Testnet Explorer](https://stellar.expert/explorer/testnet).
 
-**Reproduce the on-chain activity:**
 
-```bash
-chmod +x scripts/50-users-activity.sh
-./scripts/50-users-activity.sh
-```
-
-See [docs/LOAD_SIMULATION.md](docs/LOAD_SIMULATION.md) for full environment options and re-run instructions.
 
 
 
