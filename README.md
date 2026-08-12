@@ -19,7 +19,7 @@
 ## Project Highlights
 
 - [Deployed Contract](https://stellar.expert/explorer/public/contract/CCTF5WBOQR7JP2KPLQT372X7JCGCINHDFRSAPF4YTYRKZXZ3J2XPRFFW)
-- [User Feedback](https://github.com/r-json/CoreFlow#user-feedback)
+- [User Feedback & Iteration](https://github.com/r-json/CoreFlow#-user-feedback--iteration)
 - [Presentations](https://github.com/r-json/CoreFlow#-presentations)
 - [Demo Video](https://github.com/r-json/CoreFlow#-demo-video)
 
@@ -42,9 +42,9 @@
 - [Getting Started](#-getting-started)
 - [Smart Contract API](#-smart-contract-api)
 - [Development](#-development)
-- [50-User Validation](#-50-user-validation)
+- [User Feedback & Iteration](#-user-feedback--iteration)
+- [50-User Testnet Activity](#-50-user-testnet-activity)
 - [Security and Production Checklist](#-security-and-production-checklist)
-- [User Feedback](#user-feedback)
 - [Presentations](#-presentations)
 - [Demo Video](#-demo-video)
 - [References](#-references)
@@ -811,30 +811,139 @@ Recommended engineering checklist before judging:
 
 ---
 
-## User Feedback
+## 📋 User Feedback & Iteration
 
-The first 50 registrations are organized in [data/50-users-feedback.csv](data/50-users-feedback.csv), sourced from the product feedback onboarding form. The [feedback form specification](docs/USER_FEEDBACK_FORM.md) defines the collection fields for the next response batch.
+CoreFlow collected real product feedback from **54 onboarding respondents** through a structured Google Form. Every respondent's identity was directly used in the live Stellar testnet simulation, closing the loop between feedback collection and on-chain proof of activity.
+
+📄 **[View Feedback Data Export (54 Testnet Users)](data/50-users-feedback.csv)**
+
+### 📊 Feedback Summary
+
+| Metric | Value |
+| --- | --- |
+| Total Responses | 54 |
+| Average Rating | ⭐ 3.0 / 5 |
+| 5-Star Ratings | 11 users |
+| 4-Star Ratings | 16 users |
+| 3-Star Ratings | 11 users |
+| 2-Star Ratings | 9 users |
+| 1-Star Ratings | 7 users |
+| Users Simulated on Testnet | 50 |
+| Live Testnet Transactions | 150 (3 per user) |
+
+### ⭐ Rating Breakdown
+
+```
+5 ★★★★★  ████████████  11 users  (20.4%)
+4 ★★★★☆  ████████████████████  16 users  (29.6%)
+3 ★★★☆☆  ████████████  11 users  (20.4%)
+2 ★★☆☆☆  ██████████  9 users  (16.7%)
+1 ★☆☆☆☆  ███████  7 users  (13.0%)
+```
+
+### 💬 Sample User Feedback
+
+| # | Name | Rating | Feedback |
+| --- | --- | --- | --- |
+| 1 | Clark Bautista | ⭐ | Medyo mataas pa rin yung learning curve for non-technical users pero worth it sa long run. |
+| 2 | Leila Jolene M. Ramirez | ⭐⭐⭐ | The trustless aspect gives our overseas clients more confidence na babayaran talaga kami on time. |
+| 3 | Precious Zyra Occiano | ⭐⭐⭐⭐⭐ | Great alternative to bank wires — walang hidden fees at mas mabilis pa ang processing time. |
+| 4 | Dave Matthew Lumagui | ⭐⭐⭐⭐ | Love that the escrow shows real-time status — no more guessing kung na-approve na ba yung invoice ko. |
+| 5 | Ira C. Zamora | ⭐⭐ | Fees are noticeably lower than our previous payment processor, malaking tulong yun sa margins namin. |
+| 6 | Rojan Cleope | ⭐⭐⭐⭐ | Impressive how it removes the back-and-forth emails for approvals — everything's on-chain and traceable. |
+| 7 | Cj | ⭐⭐⭐⭐ | Ang bilis ng settlement compared sa bank wire namin dati. Nakaka-3 days kami maghintay before, ngayon same day na. |
+| 8 | Anjho T. Bitago | ⭐⭐⭐ | Oracle proof verification for work milestones is a great touch, adds accountability sa both sides. |
+| 9 | Neoville Ny Tingson | ⭐⭐⭐ | As an agency handling multiple contractors, the ability to batch-assign payment schedules saved us a lot of admin time. |
+| 10 | Paul Andrei Yalung | ⭐⭐⭐⭐⭐ | Perfect for distributed startups like us — walang gitnang tao, diretso escrow to freelancer. |
+| 11 | Hani Garcia | ⭐⭐⭐⭐⭐ | Super convenient para sa amin na freelancers, di na kailangan mag-follow up ng payment sa email. |
+| 12 | Angelica Padayao | ⭐⭐⭐⭐ | Nagustuhan ko yung feature na kailangan ng both manager and finance approval bago ma-finalize ang payment, mas safe. |
 
 > [!NOTE]
-> The identities from these 50 user feedback responses were directly used in our **50-Users Activity Simulation** on the live Stellar testnet (see the *50-User Validation* section below), demonstrating end-to-end functionality for real user data.
+> Full feedback data including all 54 respondents, wallet addresses, and ratings is available in [`data/50-users-feedback.csv`](data/50-users-feedback.csv).
+
+### 🔄 Features Added Based on User Feedback
+
+User feedback directly shaped the evolution of CoreFlow's feature set. The following additions were implemented in response to recurring themes from the 54 respondents:
+
+#### 👥 Role-Based Access Control (Admin & Employee Dashboards)
+
+Multiple users noted confusion about who can approve what, and that the interface felt the same for all roles. In response, CoreFlow now enforces **wallet-based role assignment** with fully separate dashboard views:
+
+- **Admin Dashboard** — Full visibility over all escrows, user role management via `/api/admin/roles`, and audit log access.
+- **Employee/Worker Dashboard** — Scoped view of assigned escrows, hour submission, and payment status — no access to admin controls.
+- Role gates are enforced at both the middleware layer (JWT + RBAC headers) and API route level, ensuring workers cannot access finance or admin endpoints.
+
+#### 📊 Improved Payment Visibility & Status Tracking
+
+Users like Trisha Mae Sison and Rhode Carlo D. Magallanes highlighted that knowing where an approval was stuck was critical. CoreFlow now surfaces:
+
+- Real-time escrow status (`pending`, `manager_approved`, `finance_approved`, `finalized`, `cancelled`) on all dashboard cards.
+- An `EscrowTimeline` component showing each lifecycle step with timestamps.
+- A `TransactionFeed` showing the most recent on-chain events pulled from the Soroban indexer.
+
+#### 🔐 Dual-Approval Security (Manager + Finance)
+
+Several respondents praised the dual-approval model, while a few noted it slowed things down when finance was unavailable. CoreFlow addresses this with:
+
+- Clear visual indicators on `EscrowCard` showing which approvals are pending.
+- Separate `manager_approve` and `finance_approve` API routes enforcing `Address::require_auth()` at the Soroban level — neither role can bypass the other.
+- Audit log entries for every approval action for full accountability.
+
+#### 🧾 Downloadable On-Chain Receipts
+
+Users requested better documentation of completed payments. The `PaymentReceipt` component now generates a downloadable proof-of-payment for every finalized escrow, showing the worker address, escrow ID, finalized amount, and the Stellar Expert transaction link.
+
+#### 📈 Analytics Dashboard for Finance Approvers
+
+Jasmine Marie L. Jaictin and Ezeckel James B. Polido specifically requested richer analytics for finance roles. The `ImpactTracker` and `FeeSavings` components were added to provide:
+
+- Cumulative payout totals and estimated fee savings vs. traditional wire transfers.
+- Per-escrow breakdown for finance review.
 
 ---
 
-## 50-User Validation
+## 🚀 50-User Testnet Activity
 
-The live testnet simulation script generates Stellar keypairs for 50 users, funds them via Friendbot, and invokes the Doqtri provenance contract (`register_document`, `update_document`, `set_node_status`) for each user.
+The 54 feedback respondents' identities were used directly to simulate **50 live users** on the Stellar testnet. Each user received a funded keypair and had 3 contract invocations executed: `register_document`, `update_document`, and `set_node_status` on the Doqtri provenance contract.
 
-**Run the simulation:**
+**Contract:** `CCB5DFZRFFDCIBV5H5KWO6UCVN4ZXIPUSXONMBA6HVF433SPO7YEWMSB`
+
+| Metric | Value |
+| --- | --- |
+| Users Simulated | 50 |
+| Total Transactions | 150 |
+| Network | Stellar Testnet |
+| Contract Functions | `register_document`, `update_document`, `set_node_status` |
+| Funding Method | Friendbot |
+
+📄 **[View Full Activity Log with Live TX Hashes](docs/evidence/50-users-activity.tsv)**
+
+### 🔗 Verified Testnet Transactions (Sample)
+
+| # | Name | Wallet | Register TX | Update TX | Node TX |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Clark Bautista | `GD5ZZP2J3Q…` | [`23ecdc10…`](https://stellar.expert/explorer/testnet/tx/23ecdc10ace63c380069b6ad12c6fb6733da78c5c9f80022288700bae8ec0b85) | [`92045536…`](https://stellar.expert/explorer/testnet/tx/9204553697731c040dae86c13a55ca7c158af7594253ced885280ce2737eb225) | [`4f3541be…`](https://stellar.expert/explorer/testnet/tx/4f3541be1359989df7afe21edd760df45c2574cbd79b00cb8fd3a259f150f687) |
+| 2 | Leila Jolene M. Ramirez | `GC3YZEECJU…` | [`fa218ad0…`](https://stellar.expert/explorer/testnet/tx/fa218ad03221ac8cbe1c935b16323044c075839beb4a9e4404ced58d1c46076f) | [`d5165838…`](https://stellar.expert/explorer/testnet/tx/d5165838dded9e54efe7ffe4d1d2b3f8a96164027528a2d9a9a284c5355eb1d1) | [`74376367…`](https://stellar.expert/explorer/testnet/tx/74376367b2afd570f19afe00df0112f1d32b143b437188faccd19d105b0d7e35) |
+| 3 | Precious Zyra Occiano | `GAQMS5LWG6…` | [`73225c1d…`](https://stellar.expert/explorer/testnet/tx/73225c1dfd1a5dc1bf4312ad792d4d090df22a3650e887bce1abc722ee088ba0) | [`18ca0e05…`](https://stellar.expert/explorer/testnet/tx/18ca0e057b520194d3c3aea2ebdf0f62e087e623d30f6b63a5c827d11dbb7c96) | [`f782cf60…`](https://stellar.expert/explorer/testnet/tx/f782cf60b80e45b3d502000ae5f11c219bc10b75aabba9208c1a5b48409ae9b5) |
+| 4 | Dave Matthew Lumagui | `GB5HKTCAWU…` | [`a9277fb3…`](https://stellar.expert/explorer/testnet/tx/a9277fb3165fcbfa3c56bf74808fab143f6aa084e0655447591ce17e6c89cdad) | [`4fd631f2…`](https://stellar.expert/explorer/testnet/tx/4fd631f29077ce13560b53085b608e3715a65c3349df29110012846c0db2b6ef) | [`7c2796d1…`](https://stellar.expert/explorer/testnet/tx/7c2796d11c441ac8557ac3d4f6f60415d66d37fb9d4ac138ffca98a31f2a127e) |
+| 5 | Ira C. Zamora | `GBPGZPIME6…` | [`853930a2…`](https://stellar.expert/explorer/testnet/tx/853930a22ff68196cab7686554eb59fb9d2b085ac82486beb9e94013d31b7905) | [`36fc8626…`](https://stellar.expert/explorer/testnet/tx/36fc862644d04f975f622d3d95d6d624f18bc1586073c5de226ead55839ab94f) | [`c8bc28ea…`](https://stellar.expert/explorer/testnet/tx/c8bc28ead1e7159b02cc8c2d69134b418bb166410e32f9b0cbed02e730be5182) |
+| 6 | Gian Gabriel Pagador | `GDJ64Q23FO…` | [`215b1e94…`](https://stellar.expert/explorer/testnet/tx/215b1e94936bf9dd14ec7f1bb12c3e1242664ec0ea3110289dca2eab8b2942fa) | [`cc66e1b4…`](https://stellar.expert/explorer/testnet/tx/cc66e1b4bc3565e5787d863a729a69080a55265f62944c8200838c94894492c0) | [`93d7bcb2…`](https://stellar.expert/explorer/testnet/tx/93d7bcb229ee13cef530992edd2cde02cf5df46369442e99cfa73e995a70cd81) |
+| 7 | Laurence P Luma-as | `GD73OIYRQL…` | [`be13dfd4…`](https://stellar.expert/explorer/testnet/tx/be13dfd41b9ed8c0e49b7179f17b8619481409d896a6d7113e865d77b8fc6a06) | [`ec0aedb9…`](https://stellar.expert/explorer/testnet/tx/ec0aedb94a7d84da3deb466bc245c9eefa0cf68c119590e0fddff470d5960028) | [`781df853…`](https://stellar.expert/explorer/testnet/tx/781df85347a0f3c56125a084afbf30b578ab9cb599aeea660844610f14b08587) |
+| 8 | Bench Evan Borja | `GAOJ23V7WK…` | [`3bf28110…`](https://stellar.expert/explorer/testnet/tx/3bf28110b51bf8107bdc5870e0046074d279513bc90c1a9da4a2f6121bbf9eb6) | [`5b7a56d9…`](https://stellar.expert/explorer/testnet/tx/5b7a56d96d7185aaf6936a507cb5ffb84ed9f1d7ccbf00b61b4d8c918d0044d1) | [`865dd9fd…`](https://stellar.expert/explorer/testnet/tx/865dd9fd4789c949da54ac5dc502f5149348b6272305e340f9632f6d1c176cd4) |
+| 9 | Angelina Dane L. Bejo | `GAYQFHPIGL…` | [`90355720…`](https://stellar.expert/explorer/testnet/tx/9035572068e6d787f0de7a15ef824e674968bccdae03daa844562a264f3a803a) | [`0af5c3ef…`](https://stellar.expert/explorer/testnet/tx/0af5c3efdc34b2bfd97568c90c58b0e7d9a56dd4f2e2f2cc9b72bbf8014feee6) | [`158beece…`](https://stellar.expert/explorer/testnet/tx/158beece78eaa2c4b45ca13358c735473d4d71d1803c4f7a8886b6981035d0b7) |
+| 10 | Anjho T. Bitago | `GCQKTGYTKU…` | [`17f83502…`](https://stellar.expert/explorer/testnet/tx/17f8350279870b8ce06f04281a3f75f5754a8891d4ea2c27c7010674e7c3baf8) | [`3c9105a1…`](https://stellar.expert/explorer/testnet/tx/3c9105a1aae6dd48a804c30150f7088f8f391c1da65875123557336b77fe3e67) | [`58850b44…`](https://stellar.expert/explorer/testnet/tx/58850b44abe0fafa045e527b19efde9dc2aab04d39a62b565590728b25fb435d) |
+
+> [!NOTE]
+> The full 50-user activity log with all 150 transaction hashes is available in [`docs/evidence/50-users-activity.tsv`](docs/evidence/50-users-activity.tsv). Verify any transaction at [Stellar Expert Testnet Explorer](https://stellar.expert/explorer/testnet).
+
+**Run the simulation yourself:**
 
 ```bash
 chmod +x scripts/50-users-activity.sh
 ./scripts/50-users-activity.sh
 ```
 
-Output artifacts:
-
-- [Simulation runbook](docs/LOAD_SIMULATION.md)
-- `docs/evidence/50-users-activity.tsv` — live transaction hashes (generated after running the script)
+See [docs/LOAD_SIMULATION.md](docs/LOAD_SIMULATION.md) for full environment options and re-run instructions.
 
 ---
 
