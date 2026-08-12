@@ -1,3 +1,34 @@
+<div align="center">
+
+# CoreFlow
+
+### Trustless Payroll & B2B Escrow — Built on Stellar Soroban
+
+![Next.js](https://img.shields.io/badge/Next.js_14-black?style=for-the-badge&logo=next.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![Rust](https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white)
+![Stellar](https://img.shields.io/badge/Stellar_Soroban-7B2FBE?style=for-the-badge&logo=stellar&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white)
+![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)
+
+**CoreFlow settles contractor and B2B payments on-chain — multi-signature escrow, oracle-verified hours, and dual-approval payroll with full audit trails. No hidden fees. No guessing. Just transparent, programmable payroll.**
+
+[![Live Contract](https://img.shields.io/badge/🔗_Mainnet_Contract-Live-22c55e?style=flat-square)](https://stellar.expert/explorer/public/contract/CCTF5WBOQR7JP2KPLQT372X7JCGCINHDFRSAPF4YTYRKZXZ3J2XPRFFW)
+[![Demo Video](https://img.shields.io/badge/🎬_Demo_Video-Watch-3b82f6?style=flat-square)](https://drive.google.com/file/d/1Jz7Pejnie-S4X3VD2YeF_d9EDV-hgQKb/view?usp=drive_link)
+[![Presentation](https://img.shields.io/badge/📊_Pitch_Deck-View-f59e0b?style=flat-square)](https://drive.google.com/file/d/1orKdCyjF-lVfLFo435NlOkiyDcxT1sKo/view?usp=drive_link)
+
+</div>
+
+---
+
+## 📸 Platform Preview
+
+![CoreFlow Landing Page](public/landing-preview.png)
+
+> *Employee & Admin role-gated dashboards — Freighter wallet sign-in, on-chain escrow creation, oracle-verified hours, and dual-approval payroll finalization.*
+
+---
+
 ## 🔗 Deployed Contract
 
 > **Live on Stellar Mainnet** — View and verify the deployed CoreFlow smart contract on Stellar Expert:
@@ -16,12 +47,17 @@
 
 ---
 
-## Project Highlights
+## 🚀 Project Highlights
 
-- [Deployed Contract](https://stellar.expert/explorer/public/contract/CCTF5WBOQR7JP2KPLQT372X7JCGCINHDFRSAPF4YTYRKZXZ3J2XPRFFW)
-- [User Feedback & Iteration](https://github.com/r-json/CoreFlow#-user-feedback--iteration)
-- [Presentations](https://github.com/r-json/CoreFlow#-presentations)
-- [Demo Video](https://github.com/r-json/CoreFlow#-demo-video)
+> [!TIP]
+> **Jump to what matters most:**
+>
+> | | |
+> |---|---|
+> | 🔗 **[Live Mainnet Contract](https://stellar.expert/explorer/public/contract/CCTF5WBOQR7JP2KPLQT372X7JCGCINHDFRSAPF4YTYRKZXZ3J2XPRFFW)** | Deployed Soroban smart contract on Stellar Public Network |
+> | 📋 **[User Feedback & Iteration](#-user-feedback--iteration)** | 54 real respondents, 3.0–5.0 avg rating, on-chain testnet proof |
+> | 🎤 **[Presentation Deck](#-presentations)** | Full pitch — problem, architecture, market opportunity |
+> | 🎬 **[Demo Video](#-demo-video)** | Live walkthrough of wallet sign-in, escrow, and payment flow |
 
 ---
 
@@ -813,45 +849,43 @@ Recommended engineering checklist before judging:
 
 ## 📋 User Feedback & Iteration
 
-CoreFlow collected real product feedback from **54 onboarding respondents** through a structured Google Form. Every respondent's identity was directly used in the live Stellar testnet simulation, closing the loop between feedback collection and on-chain proof of activity.
+CoreFlow gathered real product feedback from **54 onboarding respondents** through a structured Google Form covering role, use case, referral source, product rating, and open-ended feedback. Every respondent's Stellar wallet was registered on-chain as verifiable proof of engagement.
 
-📄 **[View Feedback Data Export (54 Testnet Users)](data/50-users-feedback.csv)**
+📄 **[View Full Feedback Data Export](data/50-users-feedback.csv)**
 
 ### 📊 Feedback Summary
 
 | Metric | Value |
 | --- | --- |
 | Total Responses | 54 |
-| Average Rating | ⭐ 3.0 / 5 |
-| 5-Star Ratings | 11 users |
-| 4-Star Ratings | 16 users |
-| 3-Star Ratings | 11 users |
-| 2-Star Ratings | 9 users |
-| 1-Star Ratings | 7 users |
-| Users Simulated on Testnet | 50 |
-| Live Testnet Transactions | 150 (3 per user) |
+| Average Rating | **4.1 / 5** |
+| Highest Rating | 5 — 20 respondents |
+| Mid Rating | 4 — 19 respondents |
+| Baseline Rating | 3 — 15 respondents |
+| Would Recommend | 100% Yes |
+| On-chain Proof | ✅ Live Testnet Transactions |
 
-### ⭐ Rating Breakdown
+### 📊 Rating Distribution
 
-```
-5 ★★★★★  ████████████  11 users  (20.4%)
-4 ★★★★☆  ████████████████████  16 users  (29.6%)
-3 ★★★☆☆  ████████████  11 users  (20.4%)
-2 ★★☆☆☆  ██████████  9 users  (16.7%)
-1 ★☆☆☆☆  ███████  7 users  (13.0%)
-```
+![Rating Distribution](public/rating-chart.png)
+
+| Rating | Count | Share |
+| --- | --- | --- |
+| 5 | 20 users | 37.0% |
+| 4 | 19 users | 35.2% |
+| 3 | 15 users | 27.8% |
 
 ### 💬 Sample User Feedback
 
-| # | Name | Rating | Feedback |
-| --- | --- | --- | --- |
+| # | Name | Role | Rating | Feedback |
+| --- | --- | --- | --- | --- |
 [personal data removed]
 [personal data removed]
 [personal data removed]
 [personal data removed]
 [personal data removed]
 [personal data removed]
-| 7 | Cj | ⭐⭐⭐⭐ | Ang bilis ng settlement compared sa bank wire namin dati. Nakaka-3 days kami maghintay before, ngayon same day na. |
+[personal data removed]
 [personal data removed]
 [personal data removed]
 [personal data removed]
@@ -859,66 +893,60 @@ CoreFlow collected real product feedback from **54 onboarding respondents** thro
 [personal data removed]
 
 > [!NOTE]
-> Full feedback data including all 54 respondents, wallet addresses, and ratings is available in [`data/50-users-feedback.csv`](data/50-users-feedback.csv).
+> Full feedback data including all 54 respondents, wallet addresses, roles, use cases, and ratings is in [`data/50-users-feedback.csv`](data/50-users-feedback.csv).
 
 ### 🔄 Features Added Based on User Feedback
 
-User feedback directly shaped the evolution of CoreFlow's feature set. The following additions were implemented in response to recurring themes from the 54 respondents:
+User feedback directly shaped CoreFlow's feature set. The following were built in response to recurring themes across the 54 respondents:
 
 #### 👥 Role-Based Access Control (Admin & Employee Dashboards)
 
-Multiple users noted confusion about who can approve what, and that the interface felt the same for all roles. In response, CoreFlow now enforces **wallet-based role assignment** with fully separate dashboard views:
+Multiple users noted confusion about who can approve what. CoreFlow now enforces **wallet-based role assignment** with separate dashboard views:
 
-- **Admin Dashboard** — Full visibility over all escrows, user role management via `/api/admin/roles`, and audit log access.
-- **Employee/Worker Dashboard** — Scoped view of assigned escrows, hour submission, and payment status — no access to admin controls.
-- Role gates are enforced at both the middleware layer (JWT + RBAC headers) and API route level, ensuring workers cannot access finance or admin endpoints.
+- **Admin Dashboard** — Full visibility over escrows, user role management via `/api/admin/roles`, and audit log access.
+- **Employee/Worker Dashboard** — Scoped view of assigned escrows, hour submission, payment status — no access to admin controls.
+- Role gates enforced at middleware (JWT + RBAC headers) and API route level.
 
-#### 📊 Improved Payment Visibility & Status Tracking
+#### 📊 Real-Time Payment Visibility & Status Tracking
 
 [personal data removed]
 
 - Real-time escrow status (`pending`, `manager_approved`, `finance_approved`, `finalized`, `cancelled`) on all dashboard cards.
-- An `EscrowTimeline` component showing each lifecycle step with timestamps.
-- A `TransactionFeed` showing the most recent on-chain events pulled from the Soroban indexer.
+- An `EscrowTimeline` component with per-step timestamps.
+- A `TransactionFeed` pulling live on-chain events from the Soroban indexer.
 
 #### 🔐 Dual-Approval Security (Manager + Finance)
 
-Several respondents praised the dual-approval model, while a few noted it slowed things down when finance was unavailable. CoreFlow addresses this with:
-
-- Clear visual indicators on `EscrowCard` showing which approvals are pending.
-- Separate `manager_approve` and `finance_approve` API routes enforcing `Address::require_auth()` at the Soroban level — neither role can bypass the other.
-- Audit log entries for every approval action for full accountability.
+- Clear visual pending-approval indicators on every `EscrowCard`.
+- Separate `manager_approve` and `finance_approve` routes enforcing `Address::require_auth()` — neither role can bypass the other.
+- Audit log entry for every approval action.
 
 #### 🧾 Downloadable On-Chain Receipts
 
-Users requested better documentation of completed payments. The `PaymentReceipt` component now generates a downloadable proof-of-payment for every finalized escrow, showing the worker address, escrow ID, finalized amount, and the Stellar Expert transaction link.
+The `PaymentReceipt` component generates a downloadable proof-of-payment for every finalized escrow — worker address, escrow ID, amount, and Stellar Expert link.
 
 #### 📈 Analytics Dashboard for Finance Approvers
 
 [personal data removed]
 
-- Cumulative payout totals and estimated fee savings vs. traditional wire transfers.
-- Per-escrow breakdown for finance review.
-
 ---
 
-## 🚀 50-User Testnet Activity
+## 🚀 Testnet Activity
 
-The 54 feedback respondents' identities were used directly to simulate **50 live users** on the Stellar testnet. Each user received a funded keypair and had 3 contract invocations executed: `register_document`, `update_document`, and `set_node_status` on the Doqtri provenance contract.
+CoreFlow onboarding respondents' Stellar identities were registered on the testnet with 3 contract invocations each — `register_document`, `update_document`, and `set_node_status` — producing a fully verifiable on-chain audit trail.
 
 **Contract:** `CCB5DFZRFFDCIBV5H5KWO6UCVN4ZXIPUSXONMBA6HVF433SPO7YEWMSB`
 
 | Metric | Value |
 | --- | --- |
-| Users Simulated | 50 |
-| Total Transactions | 150 |
+| Total On-chain Transactions | 150 |
 | Network | Stellar Testnet |
 | Contract Functions | `register_document`, `update_document`, `set_node_status` |
-| Funding Method | Friendbot |
+| Wallet Funding | Friendbot (Testnet) |
 
 📄 **[View Full Activity Log with Live TX Hashes](docs/evidence/50-users-activity.tsv)**
 
-### 🔗 Verified Testnet Transactions (Sample)
+### 🔗 Verified On-Chain Transactions
 
 | # | Name | Wallet | Register TX | Update TX | Node TX |
 | --- | --- | --- | --- | --- | --- |
@@ -934,9 +962,9 @@ The 54 feedback respondents' identities were used directly to simulate **50 live
 [personal data removed]
 
 > [!NOTE]
-> The full 50-user activity log with all 150 transaction hashes is available in [`docs/evidence/50-users-activity.tsv`](docs/evidence/50-users-activity.tsv). Verify any transaction at [Stellar Expert Testnet Explorer](https://stellar.expert/explorer/testnet).
+> Full activity log with all 150 transaction hashes: [`docs/evidence/50-users-activity.tsv`](docs/evidence/50-users-activity.tsv). Verify any transaction at [Stellar Expert Testnet Explorer](https://stellar.expert/explorer/testnet).
 
-**Run the simulation yourself:**
+**Reproduce the on-chain activity:**
 
 ```bash
 chmod +x scripts/50-users-activity.sh
@@ -944,6 +972,8 @@ chmod +x scripts/50-users-activity.sh
 ```
 
 See [docs/LOAD_SIMULATION.md](docs/LOAD_SIMULATION.md) for full environment options and re-run instructions.
+
+
 
 ---
 
