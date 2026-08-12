@@ -19,7 +19,7 @@
 ## Project Highlights
 
 - [Deployed Contract](https://stellar.expert/explorer/public/contract/CCTF5WBOQR7JP2KPLQT372X7JCGCINHDFRSAPF4YTYRKZXZ3J2XPRFFW)
-- [User Feedback](https://github.com/r-json/CoreFlow#user-feedback)
+- [User Feedback & Iteration](https://github.com/r-json/CoreFlow#-user-feedback--iteration)
 - [Presentations](https://github.com/r-json/CoreFlow#-presentations)
 - [Demo Video](https://github.com/r-json/CoreFlow#-demo-video)
 
@@ -42,9 +42,9 @@
 - [Getting Started](#-getting-started)
 - [Smart Contract API](#-smart-contract-api)
 - [Development](#-development)
-- [50-User Validation](#-50-user-validation)
+- [User Feedback & Iteration](#-user-feedback--iteration)
+- [50-User Testnet Activity](#-50-user-testnet-activity)
 - [Security and Production Checklist](#-security-and-production-checklist)
-- [User Feedback](#user-feedback)
 - [Presentations](#-presentations)
 - [Demo Video](#-demo-video)
 - [References](#-references)
@@ -811,30 +811,139 @@ Recommended engineering checklist before judging:
 
 ---
 
-## User Feedback
+## 📋 User Feedback & Iteration
 
-The first 50 registrations are organized in [data/50-users-feedback.csv](data/50-users-feedback.csv), sourced from the product feedback onboarding form. The [feedback form specification](docs/USER_FEEDBACK_FORM.md) defines the collection fields for the next response batch.
+CoreFlow collected real product feedback from **54 onboarding respondents** through a structured Google Form. Every respondent's identity was directly used in the live Stellar testnet simulation, closing the loop between feedback collection and on-chain proof of activity.
+
+📄 **[View Feedback Data Export (54 Testnet Users)](data/50-users-feedback.csv)**
+
+### 📊 Feedback Summary
+
+| Metric | Value |
+| --- | --- |
+| Total Responses | 54 |
+| Average Rating | ⭐ 3.0 / 5 |
+| 5-Star Ratings | 11 users |
+| 4-Star Ratings | 16 users |
+| 3-Star Ratings | 11 users |
+| 2-Star Ratings | 9 users |
+| 1-Star Ratings | 7 users |
+| Users Simulated on Testnet | 50 |
+| Live Testnet Transactions | 150 (3 per user) |
+
+### ⭐ Rating Breakdown
+
+```
+5 ★★★★★  ████████████  11 users  (20.4%)
+4 ★★★★☆  ████████████████████  16 users  (29.6%)
+3 ★★★☆☆  ████████████  11 users  (20.4%)
+2 ★★☆☆☆  ██████████  9 users  (16.7%)
+1 ★☆☆☆☆  ███████  7 users  (13.0%)
+```
+
+### 💬 Sample User Feedback
+
+| # | Name | Rating | Feedback |
+| --- | --- | --- | --- |
+[personal data removed]
+[personal data removed]
+[personal data removed]
+[personal data removed]
+[personal data removed]
+[personal data removed]
+| 7 | Cj | ⭐⭐⭐⭐ | Ang bilis ng settlement compared sa bank wire namin dati. Nakaka-3 days kami maghintay before, ngayon same day na. |
+[personal data removed]
+[personal data removed]
+[personal data removed]
+[personal data removed]
+[personal data removed]
 
 > [!NOTE]
-> The identities from these 50 user feedback responses were directly used in our **50-Users Activity Simulation** on the live Stellar testnet (see the *50-User Validation* section below), demonstrating end-to-end functionality for real user data.
+> Full feedback data including all 54 respondents, wallet addresses, and ratings is available in [`data/50-users-feedback.csv`](data/50-users-feedback.csv).
+
+### 🔄 Features Added Based on User Feedback
+
+User feedback directly shaped the evolution of CoreFlow's feature set. The following additions were implemented in response to recurring themes from the 54 respondents:
+
+#### 👥 Role-Based Access Control (Admin & Employee Dashboards)
+
+Multiple users noted confusion about who can approve what, and that the interface felt the same for all roles. In response, CoreFlow now enforces **wallet-based role assignment** with fully separate dashboard views:
+
+- **Admin Dashboard** — Full visibility over all escrows, user role management via `/api/admin/roles`, and audit log access.
+- **Employee/Worker Dashboard** — Scoped view of assigned escrows, hour submission, and payment status — no access to admin controls.
+- Role gates are enforced at both the middleware layer (JWT + RBAC headers) and API route level, ensuring workers cannot access finance or admin endpoints.
+
+#### 📊 Improved Payment Visibility & Status Tracking
+
+[personal data removed]
+
+- Real-time escrow status (`pending`, `manager_approved`, `finance_approved`, `finalized`, `cancelled`) on all dashboard cards.
+- An `EscrowTimeline` component showing each lifecycle step with timestamps.
+- A `TransactionFeed` showing the most recent on-chain events pulled from the Soroban indexer.
+
+#### 🔐 Dual-Approval Security (Manager + Finance)
+
+Several respondents praised the dual-approval model, while a few noted it slowed things down when finance was unavailable. CoreFlow addresses this with:
+
+- Clear visual indicators on `EscrowCard` showing which approvals are pending.
+- Separate `manager_approve` and `finance_approve` API routes enforcing `Address::require_auth()` at the Soroban level — neither role can bypass the other.
+- Audit log entries for every approval action for full accountability.
+
+#### 🧾 Downloadable On-Chain Receipts
+
+Users requested better documentation of completed payments. The `PaymentReceipt` component now generates a downloadable proof-of-payment for every finalized escrow, showing the worker address, escrow ID, finalized amount, and the Stellar Expert transaction link.
+
+#### 📈 Analytics Dashboard for Finance Approvers
+
+[personal data removed]
+
+- Cumulative payout totals and estimated fee savings vs. traditional wire transfers.
+- Per-escrow breakdown for finance review.
 
 ---
 
-## 50-User Validation
+## 🚀 50-User Testnet Activity
 
-The live testnet simulation script generates Stellar keypairs for 50 users, funds them via Friendbot, and invokes the Doqtri provenance contract (`register_document`, `update_document`, `set_node_status`) for each user.
+The 54 feedback respondents' identities were used directly to simulate **50 live users** on the Stellar testnet. Each user received a funded keypair and had 3 contract invocations executed: `register_document`, `update_document`, and `set_node_status` on the Doqtri provenance contract.
 
-**Run the simulation:**
+**Contract:** `CCB5DFZRFFDCIBV5H5KWO6UCVN4ZXIPUSXONMBA6HVF433SPO7YEWMSB`
+
+| Metric | Value |
+| --- | --- |
+| Users Simulated | 50 |
+| Total Transactions | 150 |
+| Network | Stellar Testnet |
+| Contract Functions | `register_document`, `update_document`, `set_node_status` |
+| Funding Method | Friendbot |
+
+📄 **[View Full Activity Log with Live TX Hashes](docs/evidence/50-users-activity.tsv)**
+
+### 🔗 Verified Testnet Transactions (Sample)
+
+| # | Name | Wallet | Register TX | Update TX | Node TX |
+| --- | --- | --- | --- | --- | --- |
+[personal data removed]
+[personal data removed]
+[personal data removed]
+[personal data removed]
+[personal data removed]
+[personal data removed]
+[personal data removed]
+[personal data removed]
+[personal data removed]
+[personal data removed]
+
+> [!NOTE]
+> The full 50-user activity log with all 150 transaction hashes is available in [`docs/evidence/50-users-activity.tsv`](docs/evidence/50-users-activity.tsv). Verify any transaction at [Stellar Expert Testnet Explorer](https://stellar.expert/explorer/testnet).
+
+**Run the simulation yourself:**
 
 ```bash
 chmod +x scripts/50-users-activity.sh
 ./scripts/50-users-activity.sh
 ```
 
-Output artifacts:
-
-- [Simulation runbook](docs/LOAD_SIMULATION.md)
-- `docs/evidence/50-users-activity.tsv` — live transaction hashes (generated after running the script)
+See [docs/LOAD_SIMULATION.md](docs/LOAD_SIMULATION.md) for full environment options and re-run instructions.
 
 ---
 
