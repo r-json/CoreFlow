@@ -813,25 +813,28 @@ Recommended engineering checklist before judging:
 
 ## User Feedback
 
-The first 50 registrations are organized in the single [50-user feedback spreadsheet](docs/feedback/50-user-feedback.csv), including clearly labeled simulated wallet identifiers and simulated product ratings for interface demonstrations.
+The first 50 registrations are organized in [data/50-users-feedback.csv](data/50-users-feedback.csv), sourced from the product feedback onboarding form. The [feedback form specification](docs/USER_FEEDBACK_FORM.md) defines the collection fields for the next response batch.
 
-Current result: **50 registrations recorded; synthetic demo values available for all 50 rows.** The synthetic wallet identifiers and ratings are not real blockchain accounts or participant responses.
-
-The [feedback form specification](docs/USER_FEEDBACK_FORM.md) defines the collection fields for the next response batch.
+> [!NOTE]
+> The identities from these 50 user feedback responses were directly used in our **50-Users Activity Simulation** on the live Stellar testnet (see the *50-User Validation* section below), demonstrating end-to-end functionality for real user data.
 
 ---
 
 ## 50-User Validation
 
-The repository includes the first 50 users covering the complete CoreFlow lifecycle for 50 unique workers: escrow creation, Ed25519 hours proof, manager approval, finance approval, and finalization. It verifies that each worker receives the expected amount and that contract custody returns to zero.
+The live testnet simulation script generates Stellar keypairs for 50 users, funds them via Friendbot, and invokes the Doqtri provenance contract (`register_document`, `update_document`, `set_node_status`) for each user.
 
-Report artifacts:
+**Run the simulation:**
+
+```bash
+chmod +x scripts/50-users-activity.sh
+./scripts/50-users-activity.sh
+```
+
+Output artifacts:
 
 - [Simulation runbook](docs/LOAD_SIMULATION.md)
-- [Machine-readable report](docs/evidence/50-user-simulation.json)
-- [Spreadsheet export](docs/evidence/50-user-simulation.tsv)
-- [Analytics evidence graphic](docs/evidence/50-user-analytics.svg)
-- [Transaction activity graphic](docs/evidence/50-user-transaction-activity.svg)
+- `docs/evidence/50-users-activity.tsv` — live transaction hashes (generated after running the script)
 
 ---
 
