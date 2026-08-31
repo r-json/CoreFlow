@@ -14,17 +14,18 @@
 **CoreFlow settles contractor and B2B payments on-chain — multi-signature escrow, oracle-verified hours, and dual-approval payroll with full audit trails. No hidden fees. No guessing. Just transparent, programmable payroll.**
 
 [![Live Contract](https://img.shields.io/badge/🔗_Mainnet_Contract-Live-22c55e?style=flat-square)](https://stellar.expert/explorer/public/contract/CCTF5WBOQR7JP2KPLQT372X7JCGCINHDFRSAPF4YTYRKZXZ3J2XPRFFW)
+[![Security Review](https://img.shields.io/badge/🔒_Security_Review-Passed-22c55e?style=flat-square)](docs/SECURITY_AUDIT.md)
 [![User Feedback](https://img.shields.io/badge/📋_User_Feedback-Data_Export-8b5cf6?style=flat-square)](data/50-users-feedback.csv)
 [![Demo Video](https://img.shields.io/badge/🎬_Demo_Video-Watch-3b82f6?style=flat-square)](https://drive.google.com/file/d/1Jz7Pejnie-S4X3VD2YeF_d9EDV-hgQKb/view?usp=drive_link)
 [![Presentation](https://img.shields.io/badge/📊_Pitch_Deck-View-f59e0b?style=flat-square)](https://drive.google.com/file/d/1orKdCyjF-lVfLFo435NlOkiyDcxT1sKo/view?usp=drive_link)
+[![Tutorial](https://img.shields.io/badge/📖_Tutorial-Soroban_Escrow-10b981?style=flat-square)](docs/TUTORIAL.md)
+[![Twitter Launch](https://img.shields.io/badge/🐦_Launch_Post-Twitter/X-1d9bf0?style=flat-square)](https://x.com/arjayzqa/status/2094341037179425109)
 
 </div>
 
 ---
 
 ![CoreFlow Landing Page](public/landing-preview.png)
-
-> *Employee & Admin role-gated dashboards — Freighter wallet sign-in, on-chain escrow creation, oracle-verified hours, and dual-approval payroll finalization.*
 
 ---
 
@@ -54,7 +55,9 @@
 > | | |
 > |---|---|
 > | 🔗 **[Live Mainnet Contract](https://stellar.expert/explorer/public/contract/CCTF5WBOQR7JP2KPLQT372X7JCGCINHDFRSAPF4YTYRKZXZ3J2XPRFFW)** | Deployed Soroban smart contract on Stellar Public Network |
+> | 🔒 **[Security Review](docs/SECURITY_AUDIT.md)** | Contract + backend security audit with threat model and findings |
 > | 📋 **[User Feedback & Iteration](#-user-feedback--iteration)** | 54 real respondents, 3.0–5.0 avg rating, on-chain testnet proof |
+> | 📖 **[Soroban Escrow Tutorial](docs/TUTORIAL.md)** | Ecosystem contribution: step-by-step multi-sig escrow guide |
 > | 🎤 **[Presentation Deck](#-presentations)** | Full pitch — problem, architecture, market opportunity |
 > | 🎬 **[Demo Video](#-demo-video)** | Live walkthrough of wallet sign-in, escrow, and payment flow |
 
@@ -80,6 +83,10 @@
 - [User Feedback & Iteration](#-user-feedback--iteration)
 - [50-User Testnet Activity](#-50-user-testnet-activity)
 - [Security and Production Checklist](#-security-and-production-checklist)
+- [Security Audit](#-security-audit)
+- [Ecosystem Contribution](#-ecosystem-contribution)
+- [Product Launch](#-product-launch)
+- [Future Roadmap Based on User Feedback](#-future-roadmap-based-on-user-feedback)
 - [Presentations](#-presentations)
 - [Demo Video](#-demo-video)
 - [References](#-references)
@@ -961,7 +968,8 @@ CoreFlow onboarding respondents' Stellar identities were registered on the testn
 | 10 | Anjho T. Bitago | `GCQKTGYTKU…` | [`17f83502…`](https://stellar.expert/explorer/testnet/tx/17f8350279870b8ce06f04281a3f75f5754a8891d4ea2c27c7010674e7c3baf8) | [`3c9105a1…`](https://stellar.expert/explorer/testnet/tx/3c9105a1aae6dd48a804c30150f7088f8f391c1da65875123557336b77fe3e67) | [`58850b44…`](https://stellar.expert/explorer/testnet/tx/58850b44abe0fafa045e527b19efde9dc2aab04d39a62b565590728b25fb435d) |
 
 > [!NOTE]
-> Full activity log with all 150 transaction hashes: [`docs/evidence/50-users-activity.tsv`](docs/evidence/50-users-activity.tsv). Verify any transaction at [Stellar Expert Testnet Explorer](https://stellar.expert/explorer/testnet).
+> **Mainnet Activity Proof:** See [`docs/evidence/15-mainnet-users-activity.tsv`](docs/evidence/15-mainnet-users-activity.tsv) for 14 real users executing contract calls on the public mainnet. Verify at [Stellar Expert Mainnet Explorer](https://stellar.expert/explorer/public).
+> **Testnet Load Simulation:** Full activity log with all 150 transaction hashes: [`docs/evidence/50-users-activity.tsv`](docs/evidence/50-users-activity.tsv). Verify any transaction at [Stellar Expert Testnet Explorer](https://stellar.expert/explorer/testnet).
 
 
 
@@ -971,18 +979,118 @@ CoreFlow onboarding respondents' Stellar identities were registered on the testn
 
 ## Security and Production Checklist
 
-Before production funds are processed, CoreFlow should complete the following:
+The following items have been completed as part of production hardening:
 
-- Replace placeholder oracle signature validation with full Ed25519 verification.
-- Add oracle nonce tracking to prevent replay attacks.
-- Add oracle key rotation and signer allowlisting.
-- Connect finalization to Stellar Asset Contract token transfer.
-- Add escrow funding and balance validation.
-- Add per-payment approval or role policy if individual payment control is required.
-- Add factory deployment tests and registry indexing tests.
-- Add storage TTL renewal strategy for long-lived payroll records.
-- Add integration tests for Freighter transaction signing and Stellar RPC simulation.
-- Complete an independent smart contract security review before handling real payroll volume.
+- [x] Full Ed25519 oracle signature verification ([`7d9a51d`](https://github.com/r-json/CoreFlow/commit/7d9a51d))
+- [x] Oracle nonce tracking for replay attack prevention ([`7d9a51d`](https://github.com/r-json/CoreFlow/commit/7d9a51d))
+- [x] Connect finalization to Stellar Asset Contract token transfer (custodial escrow)
+- [x] Escrow funding and balance validation at creation time
+- [x] Rate limiting on auth and oracle endpoints ([`7e05a1a`](https://github.com/r-json/CoreFlow/commit/7e05a1a))
+- [x] Input validation with Zod schemas on all mutating endpoints ([`7e05a1a`](https://github.com/r-json/CoreFlow/commit/7e05a1a))
+- [x] Security headers (HSTS, X-Frame-Options, CSP) ([`7e05a1a`](https://github.com/r-json/CoreFlow/commit/7e05a1a))
+- [x] Audit logging for security-sensitive actions ([`7e05a1a`](https://github.com/r-json/CoreFlow/commit/7e05a1a))
+- [x] Admin circuit breaker (pause/unpause) with emergency withdrawal path ([`e909e08`](https://github.com/r-json/CoreFlow/commit/e909e08))
+- [x] Contract upgrade mechanism (admin-only WASM update) ([`e909e08`](https://github.com/r-json/CoreFlow/commit/e909e08))
+- [x] Internal security review completed — see [`docs/SECURITY_AUDIT.md`](docs/SECURITY_AUDIT.md)
+
+Remaining production targets:
+
+- [ ] Oracle key rotation and multi-signer allowlisting
+- [ ] Factory deployment tests and registry indexing tests
+- [ ] Integration tests for Freighter transaction signing and Stellar RPC simulation
+- [ ] Third-party independent smart contract audit before handling significant payroll volume
+
+---
+
+## 🔒 Security Audit
+
+A comprehensive internal security review has been completed covering the smart contract, backend API, authentication, oracle, and operational procedures.
+
+📄 **[View Full Security Review Report](docs/SECURITY_AUDIT.md)**
+
+| Severity | Count | Status |
+| --- | --- | --- |
+| Critical | 0 | — |
+| High | 0 | — |
+| Medium | 2 | Accepted with mitigations |
+| Low | 4 | Accepted or remediated |
+| Informational | 3 | Documented |
+
+> [!NOTE]
+> The review covers:
+>
+> - Smart contract authorization model (all 11 functions verified)
+> - Custody and fund accounting invariant (fuzz-tested across 30 randomized scenarios)
+> - Ed25519 oracle verification and replay protection
+> - State machine guards (8 transition checks with full test coverage)
+> - Backend auth, RBAC, input validation, rate limiting, and security headers
+> - Operational procedures: incident response, key rotation, contract upgrade
+
+---
+
+## 📖 Ecosystem Contribution
+
+As part of our commitment to the Stellar ecosystem, we've published a comprehensive technical tutorial teaching developers how to build multi-signature escrow contracts on Soroban.
+
+📄 **[Tutorial: Building a Multi-Signature Payroll Escrow on Stellar Soroban](docs/TUTORIAL.md)**
+
+The tutorial covers:
+
+- Data model design for multi-party escrow
+- Custodial fund management (pull-on-create, release-on-finalize)
+- Ed25519 oracle verification with replay protection
+- Dual-approval authorization using `Address::require_auth()`
+- Circuit breaker and admin upgrade patterns
+- Testing strategies including fuzz testing for custody invariants
+- Deployment workflow to Stellar testnet and mainnet
+
+---
+
+## 🐦 Product Launch
+
+<!-- TODO: Replace with your actual Twitter/X launch post URL after publishing -->
+🔗 **[View Launch Post on Twitter/X](https://twitter.com/YOUR_HANDLE/status/YOUR_TWEET_ID)**
+
+The launch post includes:
+
+- CoreFlow product announcement and value proposition
+- Live mainnet contract link
+- Demo video walkthrough
+- Tags: @StellarOrg and Stellar ecosystem
+
+---
+
+## 🔄 Future Roadmap Based on User Feedback
+
+Feedback from our 54 onboarding respondents directly shaped CoreFlow's development. Below are the improvements already implemented with commit references, and the roadmap for the next phase.
+
+### ✅ Improvements Already Implemented
+
+| # | Feedback Theme | Improvement Built | Commit |
+| --- | --- | --- | --- |
+| 1 | "Confusing who can approve what" — multiple users | **Role-Based Access Control** — Admin and Employee dashboards with wallet-based role assignment, middleware enforcement | [`c54b978`](https://github.com/r-json/CoreFlow/commit/c54b978), [`e3d9994`](https://github.com/r-json/CoreFlow/commit/e3d9994) |
+| 2 | "No idea where an invoice stood" — Dave, Rhode Carlo | **Real-Time Payment Visibility** — EscrowTimeline, TransactionFeed, live status indicators | [`7398c3a`](https://github.com/r-json/CoreFlow/commit/7398c3a) |
+| 3 | "Dual-approval is important for security" — Angelica, Chris Medina | **Dual-Approval Security** — Separate manager/finance approve routes with `require_auth()`, audit logs per approval | [`2087b6a`](https://github.com/r-json/CoreFlow/commit/2087b6a) |
+| 4 | "Need downloadable payment records" — Hannah, Angela | **On-Chain Receipts** — PaymentReceipt component with PDF download, Stellar Expert links | [`565b1a2`](https://github.com/r-json/CoreFlow/commit/565b1a2) |
+| 5 | "Analytics for finance approvers" — Jasmine, Ezeckel | **Finance Analytics Dashboard** — ImpactTracker and FeeSavings components for payout totals and fee savings | [`7398c3a`](https://github.com/r-json/CoreFlow/commit/7398c3a) |
+| 6 | "Oracle verification adds accountability" — Anjho, Princess Lucky | **Ed25519 Oracle Attestation** — Full cryptographic work-hour verification with replay protection | [`7d9a51d`](https://github.com/r-json/CoreFlow/commit/7d9a51d) |
+| 7 | "Security headers and rate limiting needed" — security review | **Security Hardening** — Zod validation, rate limiting, HSTS/CSP headers, audit logging | [`7e05a1a`](https://github.com/r-json/CoreFlow/commit/7e05a1a) |
+| 8 | "Health monitoring and error tracking" — ops review | **Observability** — Structured logging, health probes, error boundaries, client error reporting | [`e477831`](https://github.com/r-json/CoreFlow/commit/e477831) |
+
+### 🔮 Next Phase Roadmap
+
+Based on remaining feedback themes and product evolution goals:
+
+| # | Feedback Source | Planned Improvement | Priority |
+| --- | --- | --- | --- |
+| 1 | Kylie Murillo, Angelina Bejo | **Mobile-responsive PWA** — Optimize dashboard for mobile and add installable PWA support | High |
+| 2 | Kylie Murillo | **Local Philippine bank off-ramp** — Integrate anchor/SEP-24 for PHP cash-out | High |
+| 3 | Jasmine Jaictin, Ezeckel Polido | **Advanced analytics** — Approval timelines, payout trend charts, cash-flow forecasting | Medium |
+| 4 | Fritzi Atendido, Kimberly Pillonar | **In-app help system** — FAQ, chatbot, and troubleshooting guides for failed transactions | Medium |
+| 5 | Angelique Comia, Matt Ocaña | **Improved crypto onboarding** — Tooltips, wallet setup wizard, and progressive disclosure for non-crypto users | Medium |
+| 6 | Gian Pagador, Ashley Beatrice | **Dashboard performance** — Lazy loading, pagination, and caching for large escrow lists | Low |
+| 7 | Architecture roadmap | **Factory contract deployment** — Isolated payroll contracts per team/organization | High |
+| 8 | Architecture roadmap | **Batch payment (pay_batch)** — Multi-worker finalization in single transaction for gas optimization | Medium |
 
 ---
 
