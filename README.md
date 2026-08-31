@@ -14,7 +14,7 @@
 **CoreFlow settles contractor and B2B payments on-chain — multi-signature escrow, oracle-verified hours, and dual-approval payroll with full audit trails. No hidden fees. No guessing. Just transparent, programmable payroll.**
 
 [![Live Contract](https://img.shields.io/badge/🔗_Mainnet_Contract-Live-22c55e?style=flat-square)](https://stellar.expert/explorer/public/contract/CCTF5WBOQR7JP2KPLQT372X7JCGCINHDFRSAPF4YTYRKZXZ3J2XPRFFW)
-[![Mainnet Users](https://img.shields.io/badge/👥_Mainnet_Users-Verified-10b981?style=flat-square)](docs/evidence/15-mainnet-users-activity.tsv)
+[![Mainnet Users](https://img.shields.io/badge/👥_Mainnet_Users-Verified-10b981?style=flat-square)](docs/evidence/20-mainnet-users-activity.tsv)
 [![Security Review](https://img.shields.io/badge/🔒_Security_Review-Passed-22c55e?style=flat-square)](docs/SECURITY_AUDIT.md)
 [![User Feedback](https://img.shields.io/badge/📋_User_Feedback-Data_Export-8b5cf6?style=flat-square)](data/50-users-feedback.csv)
 [![Demo Video](https://img.shields.io/badge/🎬_Demo_Video-Watch-3b82f6?style=flat-square)](https://drive.google.com/file/d/1Jz7Pejnie-S4X3VD2YeF_d9EDV-hgQKb/view?usp=drive_link)
@@ -56,7 +56,7 @@
 > | | |
 > |---|---|
 > | 🔗 **[Live Mainnet Contract](https://stellar.expert/explorer/public/contract/CCTF5WBOQR7JP2KPLQT372X7JCGCINHDFRSAPF4YTYRKZXZ3J2XPRFFW)** | Deployed Soroban smart contract on Stellar Public Network |
-> | 👥 **[Mainnet Users Proof](docs/evidence/15-mainnet-users-activity.tsv)** | 14 real users executing contract calls on the public mainnet |
+> | 👥 **[Mainnet Users Proof](docs/evidence/20-mainnet-users-activity.tsv)** | 20 real users executing contract calls on the public mainnet |
 > | 🔒 **[Security Review](docs/SECURITY_AUDIT.md)** | Contract + backend security audit with threat model and findings |
 > | 📋 **[User Feedback & Iteration](#-user-feedback--iteration)** | 54 real respondents, 3.0–5.0 avg rating, on-chain testnet proof |
 > | 📖 **[Soroban Escrow Tutorial](docs/TUTORIAL.md)** | Ecosystem contribution: step-by-step multi-sig escrow guide |
@@ -970,7 +970,7 @@ CoreFlow onboarding respondents' Stellar identities were registered on the testn
 | 10 | Anjho T. Bitago | `GCQKTGYTKU…` | [`17f83502…`](https://stellar.expert/explorer/testnet/tx/17f8350279870b8ce06f04281a3f75f5754a8891d4ea2c27c7010674e7c3baf8) | [`3c9105a1…`](https://stellar.expert/explorer/testnet/tx/3c9105a1aae6dd48a804c30150f7088f8f391c1da65875123557336b77fe3e67) | [`58850b44…`](https://stellar.expert/explorer/testnet/tx/58850b44abe0fafa045e527b19efde9dc2aab04d39a62b565590728b25fb435d) |
 
 > [!NOTE]
-> **Mainnet Activity Proof:** See [`docs/evidence/15-mainnet-users-activity.tsv`](docs/evidence/15-mainnet-users-activity.tsv) for 14 real users executing contract calls on the public mainnet. Verify at [Stellar Expert Mainnet Explorer](https://stellar.expert/explorer/public).
+> **Mainnet Activity Proof:** See [`docs/evidence/20-mainnet-users-activity.tsv`](docs/evidence/20-mainnet-users-activity.tsv) for 20 real users executing contract calls on the public mainnet. Verify at [Stellar Expert Mainnet Explorer](https://stellar.expert/explorer/public).
 > **Testnet Load Simulation:** Full activity log with all 150 transaction hashes: [`docs/evidence/50-users-activity.tsv`](docs/evidence/50-users-activity.tsv). Verify any transaction at [Stellar Expert Testnet Explorer](https://stellar.expert/explorer/testnet).
 
 
