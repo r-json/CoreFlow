@@ -1051,7 +1051,7 @@ The tutorial covers:
 ## 🐦 Product Launch
 
 <!-- TODO: Replace with your actual Twitter/X launch post URL after publishing -->
-🔗 **[View Launch Post on Twitter/X](https://twitter.com/YOUR_HANDLE/status/YOUR_TWEET_ID)**
+🔗 **[View Launch Post on Twitter/X](https://x.com/arjayzqa/status/2094341037179425109)**
 
 The launch post includes:
 
