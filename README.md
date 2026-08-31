@@ -14,6 +14,7 @@
 **CoreFlow settles contractor and B2B payments on-chain — multi-signature escrow, oracle-verified hours, and dual-approval payroll with full audit trails. No hidden fees. No guessing. Just transparent, programmable payroll.**
 
 [![Live Contract](https://img.shields.io/badge/🔗_Mainnet_Contract-Live-22c55e?style=flat-square)](https://stellar.expert/explorer/public/contract/CCTF5WBOQR7JP2KPLQT372X7JCGCINHDFRSAPF4YTYRKZXZ3J2XPRFFW)
+[![Mainnet Users](https://img.shields.io/badge/👥_Mainnet_Users-Verified-10b981?style=flat-square)](docs/evidence/15-mainnet-users-activity.tsv)
 [![Security Review](https://img.shields.io/badge/🔒_Security_Review-Passed-22c55e?style=flat-square)](docs/SECURITY_AUDIT.md)
 [![User Feedback](https://img.shields.io/badge/📋_User_Feedback-Data_Export-8b5cf6?style=flat-square)](data/50-users-feedback.csv)
 [![Demo Video](https://img.shields.io/badge/🎬_Demo_Video-Watch-3b82f6?style=flat-square)](https://drive.google.com/file/d/1Jz7Pejnie-S4X3VD2YeF_d9EDV-hgQKb/view?usp=drive_link)
@@ -55,6 +56,7 @@
 > | | |
 > |---|---|
 > | 🔗 **[Live Mainnet Contract](https://stellar.expert/explorer/public/contract/CCTF5WBOQR7JP2KPLQT372X7JCGCINHDFRSAPF4YTYRKZXZ3J2XPRFFW)** | Deployed Soroban smart contract on Stellar Public Network |
+> | 👥 **[Mainnet Users Proof](docs/evidence/15-mainnet-users-activity.tsv)** | 14 real users executing contract calls on the public mainnet |
 > | 🔒 **[Security Review](docs/SECURITY_AUDIT.md)** | Contract + backend security audit with threat model and findings |
 > | 📋 **[User Feedback & Iteration](#-user-feedback--iteration)** | 54 real respondents, 3.0–5.0 avg rating, on-chain testnet proof |
 > | 📖 **[Soroban Escrow Tutorial](docs/TUTORIAL.md)** | Ecosystem contribution: step-by-step multi-sig escrow guide |
