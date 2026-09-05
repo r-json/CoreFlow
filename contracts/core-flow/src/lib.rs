@@ -23,6 +23,9 @@ pub enum ContractError {
     NotAdmin = 10,
     Paused = 11,
     AdminAlreadySet = 12,
+    ProofMissing = 13,
+    NonceOverflow = 14,
+    SignersNotDistinct = 15,
 }
 
 #[contracttype]
@@ -43,11 +46,17 @@ pub enum PaymentStatus {
 pub struct PaymentSchedule {
     pub id: u32,
     pub worker: Address,
+    /// Per-payee Stellar Asset Contract (SAC) address — e.g. the USDC SAC for
+    /// one payee and the native XLM SAC for another within the same batch.
+    pub token: Address,
     pub amount: i128,
     pub start_date: u64,
     pub end_date: u64,
     pub hours_logged: i128,
     pub rate_per_hour: i128,
+    /// Set true only by `submit_hours_proof` after a valid Ed25519 oracle
+    /// signature. `pay_batch` refuses to settle a payment without it.
+    pub proof_verified: bool,
     pub status: PaymentStatus,
 }
 
@@ -56,13 +65,13 @@ pub struct PaymentSchedule {
 pub struct CoreFlowEscrow {
     pub manager: Address,
     pub finance_approver: Address,
-    /// Stellar Asset Contract (SAC) address used for custody/settlement (e.g. USDC).
-    pub token: Address,
     pub oracle_pubkey: BytesN<32>,
     pub payments: Vec<PaymentSchedule>,
     pub manager_approved: bool,
     pub finance_approved: bool,
     pub cancelled: bool,
+    /// Times the oracle key has been rotated on this escrow (audit trail).
+    pub oracle_rotations: u32,
 }
 
 // ========== STORAGE KEYS ==========
@@ -158,24 +167,126 @@ impl CoreFlowContract {
         Ok(())
     }
 
+    // ===== Oracle primitives =====
+
+    /// Verify an Ed25519 oracle attestation over `payload`.
+    ///
+    /// NOTE ON RETURN TYPE: this cannot return `bool`. `Env::crypto().ed25519_verify`
+    /// traps the host on an invalid signature and there is no catchable failure in
+    /// `no_std` wasm, so a `-> bool` signature could only ever return `true`. A
+    /// caller that branches on a bool would read as a check while enforcing nothing.
+    /// Returning `()` and trapping is the honest contract.
+    fn verify_oracle_work(env: &Env, payload: &Bytes, sig: &BytesN<64>, pub_key: &BytesN<32>) {
+        env.crypto().ed25519_verify(pub_key, payload, sig);
+    }
+
+    /// Consume `nonce` for `escrow_id`, rejecting replays.
+    ///
+    /// NOTE ON STORAGE: this uses a monotonic counter rather than a `Vec` of spent
+    /// nonces. A Vec grows without bound, costs more rent every call, and eventually
+    /// makes the escrow unusable — and it only rejects *exact* duplicates. A counter
+    /// is O(1) forever and rejects every nonce at or below the watermark, which is a
+    /// strictly stronger replay guarantee.
+    fn track_nonce(env: &Env, escrow_id: u32, nonce: u64) -> Result<(), ContractError> {
+        let expected: u64 = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Nonce(escrow_id))
+            .unwrap_or(0u64);
+        if nonce != expected {
+            return Err(ContractError::InvalidNonce);
+        }
+        let next = nonce.checked_add(1).ok_or(ContractError::NonceOverflow)?;
+        env.storage().persistent().set(&DataKey::Nonce(escrow_id), &next);
+        env.storage().persistent().extend_ttl(
+            &DataKey::Nonce(escrow_id),
+            PERSISTENT_TTL_THRESHOLD,
+            PERSISTENT_TTL_EXTEND,
+        );
+        Ok(())
+    }
+
+    /// Rotate the oracle public key for an escrow. Signatures produced by the
+    /// retired key stop verifying immediately, since `verify_oracle_work` reads
+    /// this stored key. Manager-authorized; refused once funds have moved.
+    pub fn rotate_oracle_key(
+        env: Env,
+        escrow_id: u32,
+        new_pubkey: BytesN<32>,
+    ) -> Result<(), ContractError> {
+        Self::require_not_paused(&env)?;
+        let mut escrow: CoreFlowEscrow = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Escrow(escrow_id))
+            .ok_or(ContractError::InvalidPaymentId)?;
+
+        escrow.manager.require_auth();
+
+        if escrow.cancelled {
+            return Err(ContractError::EscrowCancelled);
+        }
+        for i in 0..escrow.payments.len() {
+            if escrow.payments.get(i).unwrap().status == PaymentStatus::Finalized {
+                return Err(ContractError::PaymentAlreadyFinalized);
+            }
+        }
+
+        escrow.oracle_pubkey = new_pubkey.clone();
+        escrow.oracle_rotations += 1;
+
+        // Proofs verified under the retired key are revoked: a rotation means the
+        // old attestations are no longer trustworthy, so they must be re-submitted.
+        let mut revoked = Vec::new(&env);
+        for i in 0..escrow.payments.len() {
+            let mut p = escrow.payments.get(i).unwrap();
+            p.proof_verified = false;
+            revoked.push_back(p);
+        }
+        escrow.payments = revoked;
+
+        env.storage()
+            .persistent()
+            .set(&DataKey::Escrow(escrow_id), &escrow);
+        env.storage().persistent().extend_ttl(
+            &DataKey::Escrow(escrow_id),
+            PERSISTENT_TTL_THRESHOLD,
+            PERSISTENT_TTL_EXTEND,
+        );
+
+        env.events().publish(
+            (symbol_short!("oracle"), symbol_short!("rotate")),
+            (escrow_id, escrow.oracle_rotations),
+        );
+
+        Ok(())
+    }
+
     /// Initialize a multi-signature escrow with payment schedules and oracle public key.
     /// The oracle_pubkey is an Ed25519 public key used to verify work proof signatures.
     pub fn initialize_multi_sig_escrow(
         env: Env,
         manager: Address,
         finance_approver: Address,
-        token: Address,
         oracle_pubkey: BytesN<32>,
         payments: Vec<PaymentSchedule>,
     ) -> Result<u32, ContractError> {
         Self::require_not_paused(&env)?;
         manager.require_auth();
 
+        // Dual control is the core security property: one key holding both roles
+        // would make `pay_batch`'s two-approval gate vacuous. Rejected at creation
+        // so a mis-configured escrow can never be funded in the first place.
+        if manager == finance_approver {
+            return Err(ContractError::SignersNotDistinct);
+        }
+
         if payments.is_empty() {
             return Err(ContractError::InvalidAmount);
         }
 
-        // Guard amounts/rates and sum the total to be escrowed.
+        // Guard amounts/rates. `total_amount` is for the event only — custody is
+        // now funded per asset, since a batch may mix e.g. USDC and native XLM.
         let mut total_amount: i128 = 0;
         for i in 0..payments.len() {
             let p = payments.get(i).unwrap();
@@ -194,21 +305,46 @@ impl CoreFlowContract {
             .unwrap_or(0u32)
             + 1;
 
-        // Pull the full escrow amount from the manager into contract custody.
-        // Requires the manager's authorization for the token sub-invocation and
-        // reverts (host trap) if the manager has insufficient balance.
-        let token_client = TokenClient::new(&env, &token);
-        token_client.transfer(&manager, &env.current_contract_address(), &total_amount);
+        // Pull custody per distinct asset: one transfer per token rather than one
+        // per payee, so a 50-row batch paying two assets costs two sub-invocations
+        // instead of fifty. The outer loop visits each token once (skipping any
+        // already handled at a lower index); the inner loop sums that token's rows.
+        let contract_addr = env.current_contract_address();
+        for i in 0..payments.len() {
+            let token_i = payments.get(i).unwrap().token;
+
+            let mut already_funded = false;
+            for j in 0..i {
+                if payments.get(j).unwrap().token == token_i {
+                    already_funded = true;
+                    break;
+                }
+            }
+            if already_funded {
+                continue;
+            }
+
+            let mut asset_total: i128 = 0;
+            for j in 0..payments.len() {
+                let p = payments.get(j).unwrap();
+                if p.token == token_i {
+                    asset_total += p.amount;
+                }
+            }
+
+            // Traps if the manager lacks balance or a trustline for this asset.
+            TokenClient::new(&env, &token_i).transfer(&manager, &contract_addr, &asset_total);
+        }
 
         let escrow = CoreFlowEscrow {
             manager: manager.clone(),
             finance_approver: finance_approver.clone(),
-            token: token.clone(),
             oracle_pubkey,
             payments: payments.clone(),
             manager_approved: false,
             finance_approved: false,
             cancelled: false,
+            oracle_rotations: 0,
         };
 
         // Store escrow in persistent storage (per-key TTL control)
@@ -288,16 +424,6 @@ impl CoreFlowContract {
             return Err(ContractError::InvalidPaymentId);
         }
 
-        // Verify nonce matches expected value (replay protection)
-        let expected_nonce: u64 = env
-            .storage()
-            .persistent()
-            .get(&DataKey::Nonce(escrow_id))
-            .unwrap_or(0u64);
-        if nonce != expected_nonce {
-            return Err(ContractError::InvalidNonce);
-        }
-
         // Construct the 32-byte message the oracle should have signed
         let mut msg_data = [0u8; 32];
         msg_data[0..4].copy_from_slice(&escrow_id.to_be_bytes());
@@ -306,23 +432,17 @@ impl CoreFlowContract {
         msg_data[24..32].copy_from_slice(&nonce.to_be_bytes());
         let message = Bytes::from_slice(&env, &msg_data);
 
-        // Ed25519 signature verification — panics on failure (host-level error)
-        env.crypto()
-            .ed25519_verify(&escrow.oracle_pubkey, &message, &signature);
+        // Signature first, then nonce. Verification traps on a bad signature, so
+        // consuming the nonce beforehand would let an attacker burn the escrow's
+        // nonce sequence with garbage signatures.
+        Self::verify_oracle_work(&env, &message, &signature, &escrow.oracle_pubkey);
+        Self::track_nonce(&env, escrow_id, nonce)?;
 
-        // Increment nonce after successful verification
-        env.storage()
-            .persistent()
-            .set(&DataKey::Nonce(escrow_id), &(nonce + 1));
-        env.storage().persistent().extend_ttl(
-            &DataKey::Nonce(escrow_id),
-            PERSISTENT_TTL_THRESHOLD,
-            PERSISTENT_TTL_EXTEND,
-        );
-
-        // Update the payment schedule with hours logged
+        // Update the payment schedule with hours logged and mark the payment as
+        // carrying a verified proof — `pay_batch` requires this flag.
         let mut payment = escrow.payments.get(payment_id).unwrap();
         payment.hours_logged = hours_logged;
+        payment.proof_verified = true;
 
         escrow.payments.set(payment_id, payment);
         env.storage()
@@ -422,7 +542,19 @@ impl CoreFlowContract {
     }
 
     /// Finalize payment once both approvals are obtained
+    /// Deprecated alias retained so the Mainnet-deployed ABI and the existing
+    /// dashboard client keep working. New callers should use `pay_batch`.
     pub fn finalize_payment(
+        env: Env,
+        escrow_id: u32,
+    ) -> Result<Vec<PaymentSchedule>, ContractError> {
+        Self::pay_batch(env, escrow_id)
+    }
+
+    /// Settle every payment in the escrow: one transaction, one SAC transfer per
+    /// payee, each in that payee's own asset. Requires both approvals AND a
+    /// verified oracle proof on every row.
+    pub fn pay_batch(
         env: Env,
         escrow_id: u32,
     ) -> Result<Vec<PaymentSchedule>, ContractError> {
@@ -440,28 +572,38 @@ impl CoreFlowContract {
 
         escrow.manager.require_auth();
 
+        if escrow.manager == escrow.finance_approver {
+            return Err(ContractError::SignersNotDistinct);
+        }
+
         if !escrow.manager_approved || !escrow.finance_approved {
             return Err(ContractError::InsufficientApprovals);
         }
 
-        // Guard: check if any payment is already finalized (double-finalize protection)
+        // Guard: double-finalize protection, and refuse to move funds for any
+        // payment lacking a verified oracle attestation. This is what makes the
+        // "funds only move against proof of work" claim true on-chain rather
+        // than merely procedural.
         for i in 0..escrow.payments.len() {
             let p = escrow.payments.get(i).unwrap();
             if p.status == PaymentStatus::Finalized {
                 return Err(ContractError::PaymentAlreadyFinalized);
             }
+            if !p.proof_verified {
+                return Err(ContractError::ProofMissing);
+            }
         }
 
-        // Mark all payments as finalized and release escrowed funds to workers.
-        let token_client = TokenClient::new(&env, &escrow.token);
+        // Settle each payee in that payee's own asset. Atomic by construction:
+        // any failing transfer (missing trustline, insufficient custody) traps
+        // and reverts the whole batch, so custody can never partially drain.
         let contract_addr = env.current_contract_address();
         let mut finalized_payments = Vec::new(&env);
         let mut total_amount: i128 = 0;
         for i in 0..escrow.payments.len() {
             let mut p = escrow.payments.get(i).unwrap();
             p.status = PaymentStatus::Finalized;
-            // Transfer this payment's amount from contract custody to the worker.
-            token_client.transfer(&contract_addr, &p.worker, &p.amount);
+            TokenClient::new(&env, &p.token).transfer(&contract_addr, &p.worker, &p.amount);
             total_amount += p.amount;
             finalized_payments.push_back(p);
         }
@@ -504,25 +646,46 @@ impl CoreFlowContract {
 
         escrow.manager.require_auth();
 
-        // Cannot cancel already finalized escrows; total the refund owed.
-        let mut refund_amount: i128 = 0;
+        // Cannot cancel already finalized escrows.
         for i in 0..escrow.payments.len() {
-            let p = escrow.payments.get(i).unwrap();
-            if p.status == PaymentStatus::Finalized {
+            if escrow.payments.get(i).unwrap().status == PaymentStatus::Finalized {
                 return Err(ContractError::PaymentAlreadyFinalized);
             }
-            refund_amount += p.amount;
         }
 
-        // Refund the full escrowed amount back to the manager (nothing was
-        // released since finalize settles all payments atomically).
-        if refund_amount > 0 {
-            let token_client = TokenClient::new(&env, &escrow.token);
-            token_client.transfer(
-                &env.current_contract_address(),
-                &escrow.manager,
-                &refund_amount,
-            );
+        // Refund per asset, mirroring how custody was funded — one transfer per
+        // distinct token back to the manager. Nothing was ever partially
+        // released, since pay_batch settles atomically.
+        let contract_addr = env.current_contract_address();
+        for i in 0..escrow.payments.len() {
+            let token_i = escrow.payments.get(i).unwrap().token;
+
+            let mut already_refunded = false;
+            for j in 0..i {
+                if escrow.payments.get(j).unwrap().token == token_i {
+                    already_refunded = true;
+                    break;
+                }
+            }
+            if already_refunded {
+                continue;
+            }
+
+            let mut asset_total: i128 = 0;
+            for j in 0..escrow.payments.len() {
+                let p = escrow.payments.get(j).unwrap();
+                if p.token == token_i {
+                    asset_total += p.amount;
+                }
+            }
+
+            if asset_total > 0 {
+                TokenClient::new(&env, &token_i).transfer(
+                    &contract_addr,
+                    &escrow.manager,
+                    &asset_total,
+                );
+            }
         }
 
         escrow.cancelled = true;

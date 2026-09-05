@@ -1,0 +1,16 @@
+# Pinned for soroban-sdk 20.5.0 compatibility.
+#
+# Upper bound: rustc >=1.9x makes core::num::TryFromIntError non-zero-sized,
+# which breaks `ethnum 1.5.0` (E0512). ethnum is pinned exactly ("=1.5.0")
+# inside soroban-env-common 20.3.0, so it cannot be updated independently.
+#
+# Lower bound: cargo <1.85 cannot parse the edition2024 manifest shipped by
+# `zeroize 1.9.0`, pulled in via ed25519-dalek.
+#
+# 1.85.0 is the only window that satisfies both. Revisit when upgrading
+# soroban-sdk past 20.x.
+[toolchain]
+channel = "1.85.0"
+# wasm32v1-none is the deployable target: wasm32-unknown-unknown builds fine
+# but produces reference-types wasm the Soroban host refuses to upload.
+targets = ["wasm32v1-none", "wasm32-unknown-unknown"]

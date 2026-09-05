@@ -19,7 +19,7 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
-    "contract:build": "cd contracts/core-flow && cargo build --target wasm32-unknown-unknown --release",
+    "contract:build": "cd contracts/core-flow && cargo build --target wasm32v1-none --release",
     "contract:test": "cd contracts/core-flow && cargo test",
     "db:seed": "prisma db seed"
   },

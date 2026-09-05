@@ -9,6 +9,8 @@ import { STELLAR_CONFIG } from './config';
 
 export interface PaymentScheduleInput {
   worker: string;
+  /** Per-payee Stellar Asset Contract address (USDC SAC, native XLM SAC, ...). */
+  token: string;
   amount: bigint;
   start_date: number;
   end_date: number;
@@ -18,23 +20,25 @@ export interface PaymentScheduleInput {
 export interface PaymentSchedule {
   id: number;
   worker: string;
+  token: string;
   amount: bigint;
   start_date: number;
   end_date: number;
   hours_logged: bigint;
   rate_per_hour: bigint;
+  proof_verified: boolean;
   status: number;
 }
 
 export interface EscrowDetails {
   manager: string;
   finance_approver: string;
-  token: string;
   oracle_pubkey: string;
   payments: PaymentSchedule[];
   manager_approved: boolean;
   finance_approved: boolean;
   cancelled: boolean;
+  oracle_rotations: number;
 }
 
 export interface SimulateResult {
@@ -203,12 +207,14 @@ export class CoreFlowClient {
       return {
         manager: rawEscrow.manager,
         finance_approver: rawEscrow.finance_approver,
-        token: rawEscrow.token,
         oracle_pubkey: rawEscrow.oracle_pubkey,
+        oracle_rotations: Number(rawEscrow.oracle_rotations ?? 0),
         manager_approved: rawEscrow.manager_approved,
         finance_approved: rawEscrow.finance_approved,
         cancelled: rawEscrow.cancelled,
         payments: (rawEscrow.payments || []).map((p: any) => ({
+          token: p.token,
+          proof_verified: Boolean(p.proof_verified),
           id: Number(p.id),
           worker: p.worker,
           amount: BigInt(p.amount),
@@ -263,7 +269,6 @@ export class CoreFlowClient {
   async submitInitializeEscrow(
     managerAddress: string,
     financeAddress: string,
-    tokenAddress: string,
     oraclePubkeyHex: string,
     payments: PaymentScheduleInput[]
   ): Promise<SubmitResult> {
@@ -273,18 +278,18 @@ export class CoreFlowClient {
     const mappedPayments = payments.map((p, idx) => ({
       id: idx + 1, // Start with sequential ID
       worker: sdk.Address.fromString(p.worker),
+      token: sdk.Address.fromString(p.token),
       amount: p.amount,
       start_date: BigInt(p.start_date),
       end_date: BigInt(p.end_date),
       hours_logged: 0n,
       rate_per_hour: p.rate_per_hour,
+      proof_verified: false,
       status: 0, // PaymentStatus::Pending
     }));
 
     const managerScVal = sdk.Address.fromString(managerAddress);
     const financeScVal = sdk.Address.fromString(financeAddress);
-    // Token (Stellar Asset Contract) address used for custody/settlement.
-    const tokenScVal = sdk.Address.fromString(tokenAddress);
     // Convert hex oracle public key to BytesN<32> ScVal.
     // The contract expects a fixed 32-byte value, so we must use the exact
     // byte-length encoding rather than variable-length scvBytes.
@@ -298,7 +303,6 @@ export class CoreFlowClient {
     return this.submitTransaction('initialize_multi_sig_escrow', [
       managerScVal,
       financeScVal,
-      tokenScVal,
       oraclePubkeyScVal,
       paymentsScVal,
     ]);
@@ -355,12 +359,35 @@ export class CoreFlowClient {
   }
 
   /**
-   * Submit finalize payment
+   * Settle the batch: one transaction, one SAC transfer per payee, each in
+   * that payee's own asset. Requires both approvals and a verified oracle
+   * proof on every payment.
    */
-  async submitFinalizePayment(escrowId: number): Promise<SubmitResult> {
+  async submitPayBatch(escrowId: number): Promise<SubmitResult> {
     const sdk = await this.loadSDK();
-    return this.submitTransaction('finalize_payment', [
+    return this.submitTransaction('pay_batch', [
       sdk.nativeToScVal(escrowId, { type: 'u32' }),
+    ]);
+  }
+
+  /** @deprecated Use submitPayBatch. Retained for the live Mainnet ABI. */
+  async submitFinalizePayment(escrowId: number): Promise<SubmitResult> {
+    return this.submitPayBatch(escrowId);
+  }
+
+  /**
+   * Rotate the escrow's oracle public key. Signatures made by the retired key
+   * stop verifying, and any previously verified proofs are revoked.
+   */
+  async submitRotateOracleKey(escrowId: number, newPubkeyHex: string): Promise<SubmitResult> {
+    const sdk = await this.loadSDK();
+    const bytes = Buffer.from(newPubkeyHex, 'hex');
+    if (bytes.length !== 32) {
+      throw new Error(`Oracle public key must be exactly 32 bytes (got ${bytes.length})`);
+    }
+    return this.submitTransaction('rotate_oracle_key', [
+      sdk.nativeToScVal(escrowId, { type: 'u32' }),
+      sdk.nativeToScVal(bytes, { type: 'bytes' }),
     ]);
   }
 
