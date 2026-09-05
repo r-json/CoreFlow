@@ -121,9 +121,6 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
                 },
                 {
-                  "address": "CDS3FDGQ4JA2V3F26Y4BMWWJEC5TT26RJBN7KIQKUMVO2MAOCMDTSZ7A"
-                },
-                {
                   "bytes": "79b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad049664"
                 },
                 {
@@ -170,6 +167,14 @@
                         },
                         {
                           "key": {
+                            "symbol": "proof_verified"
+                          },
+                          "val": {
+                            "bool": false
+                          }
+                        },
+                        {
+                          "key": {
                             "symbol": "rate_per_hour"
                           },
                           "val": {
@@ -193,6 +198,14 @@
                           },
                           "val": {
                             "u32": 0
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "token"
+                          },
+                          "val": {
+                            "address": "CDS3FDGQ4JA2V3F26Y4BMWWJEC5TT26RJBN7KIQKUMVO2MAOCMDTSZ7A"
                           }
                         },
                         {
@@ -397,6 +410,14 @@
                     },
                     {
                       "key": {
+                        "symbol": "oracle_rotations"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
+                    },
+                    {
+                      "key": {
                         "symbol": "payments"
                       },
                       "val": {
@@ -443,6 +464,14 @@
                               },
                               {
                                 "key": {
+                                  "symbol": "proof_verified"
+                                },
+                                "val": {
+                                  "bool": false
+                                }
+                              },
+                              {
+                                "key": {
                                   "symbol": "rate_per_hour"
                                 },
                                 "val": {
@@ -470,6 +499,14 @@
                               },
                               {
                                 "key": {
+                                  "symbol": "token"
+                                },
+                                "val": {
+                                  "address": "CDS3FDGQ4JA2V3F26Y4BMWWJEC5TT26RJBN7KIQKUMVO2MAOCMDTSZ7A"
+                                }
+                              },
+                              {
+                                "key": {
                                   "symbol": "worker"
                                 },
                                 "val": {
@@ -479,14 +516,6 @@
                             ]
                           }
                         ]
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "token"
-                      },
-                      "val": {
-                        "address": "CDS3FDGQ4JA2V3F26Y4BMWWJEC5TT26RJBN7KIQKUMVO2MAOCMDTSZ7A"
                       }
                     }
                   ]
@@ -1509,9 +1538,6 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
                 },
                 {
-                  "address": "CDS3FDGQ4JA2V3F26Y4BMWWJEC5TT26RJBN7KIQKUMVO2MAOCMDTSZ7A"
-                },
-                {
                   "bytes": "79b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad049664"
                 },
                 {
@@ -1558,6 +1584,14 @@
                         },
                         {
                           "key": {
+                            "symbol": "proof_verified"
+                          },
+                          "val": {
+                            "bool": false
+                          }
+                        },
+                        {
+                          "key": {
                             "symbol": "rate_per_hour"
                           },
                           "val": {
@@ -1581,6 +1615,14 @@
                           },
                           "val": {
                             "u32": 0
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "token"
+                          },
+                          "val": {
+                            "address": "CDS3FDGQ4JA2V3F26Y4BMWWJEC5TT26RJBN7KIQKUMVO2MAOCMDTSZ7A"
                           }
                         },
                         {

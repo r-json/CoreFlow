@@ -557,6 +557,9 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
         const payload = [
           {
             worker: workerPubKey,
+            // Per-payee asset. This single-escrow path uses the configured
+            // default SAC; the Bulk Pay CSV flow sets it per row.
+            token: tokenAddress,
             amount: BigInt(amountCents),
             start_date: Math.floor(Date.now() / 1000),
             end_date: Math.floor(Date.now() / 1000) + 86400 * 7,
@@ -569,7 +572,7 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
           throw new Error('Oracle is not configured; cannot create a verifiable escrow.');
         }
         const { pubkey: oraclePubkey } = await pubkeyRes.json();
-        const txResult = await client.submitInitializeEscrow(walletAddress, walletAddress, tokenAddress, oraclePubkey, payload);
+        const txResult = await client.submitInitializeEscrow(walletAddress, walletAddress, oraclePubkey, payload);
         
         try {
           await fetch('/api/escrows', {
