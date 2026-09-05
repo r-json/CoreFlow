@@ -2,11 +2,58 @@ name: CoreFlow CI Pipeline
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main, master, 'instawards/**' ]
   pull_request:
     branches: [ main, master ]
 
 jobs:
+  contract-tests:
+    name: Soroban Contract Tests (Rust)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # No toolchain input: contracts/core-flow/rust-toolchain.toml pins 1.85.0
+      # and declares the wasm32v1-none target. That pin is load-bearing --
+      # soroban-sdk 20.5.0 fails to compile on newer rustc (ethnum E0512) and
+      # fails to resolve on older cargo (zeroize edition2024).
+      - name: Install Rust (pinned by rust-toolchain.toml)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: '1.85.0'
+          targets: wasm32v1-none
+
+      - name: Cache Cargo Registry & Build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            contracts/core-flow/target
+          key: cargo-${{ runner.os }}-${{ hashFiles('contracts/core-flow/Cargo.lock') }}
+          restore-keys: cargo-${{ runner.os }}-
+
+      - name: Run Rust Contract Test Suite
+        working-directory: contracts/core-flow
+        run: cargo test --locked
+
+      # wasm32v1-none, NOT wasm32-unknown-unknown: rustc 1.85 emits
+      # reference-types into the latter and the Soroban host rejects the upload
+      # with Error(WasmVm, InvalidAction). Building here keeps that regression
+      # out of main rather than surfacing it at deploy time.
+      - name: Build Deployable WASM
+        working-directory: contracts/core-flow
+        run: cargo build --release --target wasm32v1-none
+
+      - name: Upload WASM Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: core-flow-wasm
+          path: contracts/core-flow/target/wasm32v1-none/release/core_flow.wasm
+          if-no-files-found: error
+
   test-and-build:
     name: Build & Test Validation
     runs-on: ubuntu-latest
