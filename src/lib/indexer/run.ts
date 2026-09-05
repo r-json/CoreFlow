@@ -48,7 +48,9 @@ export async function runIndexerFromRpc(): Promise<RunResult> {
       worker: p?.worker ?? 'unknown',
       amountCents: p ? Number(p.amount) : 0,
       rateCents: p ? Number(p.rate_per_hour) : 0,
-      tokenAddress: detail.token ?? null,
+      // Token moved onto each payment row (per-payee assets); index the
+      // first row's asset, which is what the single-worker DB model expects.
+      tokenAddress: p?.token ?? null,
     };
   };
 
