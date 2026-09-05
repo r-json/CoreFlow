@@ -64,9 +64,6 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
                 },
                 {
-                  "address": "CDS3FDGQ4JA2V3F26Y4BMWWJEC5TT26RJBN7KIQKUMVO2MAOCMDTSZ7A"
-                },
-                {
                   "bytes": "79b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad049664"
                 },
                 {
@@ -113,6 +110,14 @@
                         },
                         {
                           "key": {
+                            "symbol": "proof_verified"
+                          },
+                          "val": {
+                            "bool": false
+                          }
+                        },
+                        {
+                          "key": {
                             "symbol": "rate_per_hour"
                           },
                           "val": {
@@ -136,6 +141,14 @@
                           },
                           "val": {
                             "u32": 0
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "token"
+                          },
+                          "val": {
+                            "address": "CDS3FDGQ4JA2V3F26Y4BMWWJEC5TT26RJBN7KIQKUMVO2MAOCMDTSZ7A"
                           }
                         },
                         {
@@ -190,6 +203,14 @@
                         },
                         {
                           "key": {
+                            "symbol": "proof_verified"
+                          },
+                          "val": {
+                            "bool": false
+                          }
+                        },
+                        {
+                          "key": {
                             "symbol": "rate_per_hour"
                           },
                           "val": {
@@ -213,6 +234,14 @@
                           },
                           "val": {
                             "u32": 0
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "token"
+                          },
+                          "val": {
+                            "address": "CDS3FDGQ4JA2V3F26Y4BMWWJEC5TT26RJBN7KIQKUMVO2MAOCMDTSZ7A"
                           }
                         },
                         {
@@ -258,6 +287,8 @@
         }
       ]
     ],
+    [],
+    [],
     [],
     [
       [
@@ -475,6 +506,14 @@
                     },
                     {
                       "key": {
+                        "symbol": "oracle_rotations"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
+                    },
+                    {
+                      "key": {
                         "symbol": "payments"
                       },
                       "val": {
@@ -507,7 +546,7 @@
                                 "val": {
                                   "i128": {
                                     "hi": 0,
-                                    "lo": 20
+                                    "lo": 40
                                   }
                                 }
                               },
@@ -517,6 +556,14 @@
                                 },
                                 "val": {
                                   "u32": 1
+                                }
+                              },
+                              {
+                                "key": {
+                                  "symbol": "proof_verified"
+                                },
+                                "val": {
+                                  "bool": true
                                 }
                               },
                               {
@@ -544,6 +591,14 @@
                                 },
                                 "val": {
                                   "u32": 3
+                                }
+                              },
+                              {
+                                "key": {
+                                  "symbol": "token"
+                                },
+                                "val": {
+                                  "address": "CDS3FDGQ4JA2V3F26Y4BMWWJEC5TT26RJBN7KIQKUMVO2MAOCMDTSZ7A"
                                 }
                               },
                               {
@@ -584,7 +639,7 @@
                                 "val": {
                                   "i128": {
                                     "hi": 0,
-                                    "lo": 32
+                                    "lo": 40
                                   }
                                 }
                               },
@@ -594,6 +649,14 @@
                                 },
                                 "val": {
                                   "u32": 2
+                                }
+                              },
+                              {
+                                "key": {
+                                  "symbol": "proof_verified"
+                                },
+                                "val": {
+                                  "bool": true
                                 }
                               },
                               {
@@ -625,6 +688,14 @@
                               },
                               {
                                 "key": {
+                                  "symbol": "token"
+                                },
+                                "val": {
+                                  "address": "CDS3FDGQ4JA2V3F26Y4BMWWJEC5TT26RJBN7KIQKUMVO2MAOCMDTSZ7A"
+                                }
+                              },
+                              {
+                                "key": {
                                   "symbol": "worker"
                                 },
                                 "val": {
@@ -634,14 +705,6 @@
                             ]
                           }
                         ]
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "token"
-                      },
-                      "val": {
-                        "address": "CDS3FDGQ4JA2V3F26Y4BMWWJEC5TT26RJBN7KIQKUMVO2MAOCMDTSZ7A"
                       }
                     }
                   ]
@@ -728,7 +791,7 @@
                 },
                 "durability": "persistent",
                 "val": {
-                  "u64": 0
+                  "u64": 2
                 }
               }
             },
@@ -1598,9 +1661,6 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
                 },
                 {
-                  "address": "CDS3FDGQ4JA2V3F26Y4BMWWJEC5TT26RJBN7KIQKUMVO2MAOCMDTSZ7A"
-                },
-                {
                   "bytes": "79b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad049664"
                 },
                 {
@@ -1647,6 +1707,14 @@
                         },
                         {
                           "key": {
+                            "symbol": "proof_verified"
+                          },
+                          "val": {
+                            "bool": false
+                          }
+                        },
+                        {
+                          "key": {
                             "symbol": "rate_per_hour"
                           },
                           "val": {
@@ -1670,6 +1738,14 @@
                           },
                           "val": {
                             "u32": 0
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "token"
+                          },
+                          "val": {
+                            "address": "CDS3FDGQ4JA2V3F26Y4BMWWJEC5TT26RJBN7KIQKUMVO2MAOCMDTSZ7A"
                           }
                         },
                         {
@@ -1724,6 +1800,14 @@
                         },
                         {
                           "key": {
+                            "symbol": "proof_verified"
+                          },
+                          "val": {
+                            "bool": false
+                          }
+                        },
+                        {
+                          "key": {
                             "symbol": "rate_per_hour"
                           },
                           "val": {
@@ -1747,6 +1831,14 @@
                           },
                           "val": {
                             "u32": 0
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "token"
+                          },
+                          "val": {
+                            "address": "CDS3FDGQ4JA2V3F26Y4BMWWJEC5TT26RJBN7KIQKUMVO2MAOCMDTSZ7A"
                           }
                         },
                         {
@@ -2012,6 +2104,14 @@
                 },
                 {
                   "key": {
+                    "symbol": "oracle_rotations"
+                  },
+                  "val": {
+                    "u32": 0
+                  }
+                },
+                {
+                  "key": {
                     "symbol": "payments"
                   },
                   "val": {
@@ -2058,6 +2158,14 @@
                           },
                           {
                             "key": {
+                              "symbol": "proof_verified"
+                            },
+                            "val": {
+                              "bool": false
+                            }
+                          },
+                          {
+                            "key": {
                               "symbol": "rate_per_hour"
                             },
                             "val": {
@@ -2081,6 +2189,14 @@
                             },
                             "val": {
                               "u32": 0
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "token"
+                            },
+                            "val": {
+                              "address": "CDS3FDGQ4JA2V3F26Y4BMWWJEC5TT26RJBN7KIQKUMVO2MAOCMDTSZ7A"
                             }
                           },
                           {
@@ -2135,6 +2251,14 @@
                           },
                           {
                             "key": {
+                              "symbol": "proof_verified"
+                            },
+                            "val": {
+                              "bool": false
+                            }
+                          },
+                          {
+                            "key": {
                               "symbol": "rate_per_hour"
                             },
                             "val": {
@@ -2162,6 +2286,14 @@
                           },
                           {
                             "key": {
+                              "symbol": "token"
+                            },
+                            "val": {
+                              "address": "CDS3FDGQ4JA2V3F26Y4BMWWJEC5TT26RJBN7KIQKUMVO2MAOCMDTSZ7A"
+                            }
+                          },
+                          {
+                            "key": {
                               "symbol": "worker"
                             },
                             "val": {
@@ -2172,17 +2304,213 @@
                       }
                     ]
                   }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": null,
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_call"
+              },
+              {
+                "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
+              },
+              {
+                "symbol": "submit_hours_proof"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "u32": 1
                 },
                 {
-                  "key": {
-                    "symbol": "token"
-                  },
-                  "val": {
-                    "address": "CDS3FDGQ4JA2V3F26Y4BMWWJEC5TT26RJBN7KIQKUMVO2MAOCMDTSZ7A"
+                  "u32": 0
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 40
+                  }
+                },
+                {
+                  "u64": 0
+                },
+                {
+                  "bytes": "18b2d8e96e718093ac9417a09ce651296f21324e8f8cdefef2c1d48994e12f55a088fcf42b739934eb8a1dd789ae594e76d68cd784b60c979e10ec5a62ff6b0c"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "hours"
+              },
+              {
+                "symbol": "submit"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "u32": 1
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 40
                   }
                 }
               ]
             }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_return"
+              },
+              {
+                "symbol": "submit_hours_proof"
+              }
+            ],
+            "data": "void"
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": null,
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_call"
+              },
+              {
+                "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
+              },
+              {
+                "symbol": "submit_hours_proof"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "u32": 1
+                },
+                {
+                  "u32": 1
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 40
+                  }
+                },
+                {
+                  "u64": 1
+                },
+                {
+                  "bytes": "545f3be0dcd295023476a3607937196eb3b6bcd47e2bf7af5a5a1e72b485af566db6496d36b3c076cf68c07d96b4f65845979ffcd3281947244628009bb1cd08"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "hours"
+              },
+              {
+                "symbol": "submit"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "u32": 1
+                },
+                {
+                  "u32": 1
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 40
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_return"
+              },
+              {
+                "symbol": "submit_hours_proof"
+              }
+            ],
+            "data": "void"
           }
         }
       },
@@ -2619,7 +2947,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 20
+                          "lo": 40
                         }
                       }
                     },
@@ -2629,6 +2957,14 @@
                       },
                       "val": {
                         "u32": 1
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "proof_verified"
+                      },
+                      "val": {
+                        "bool": true
                       }
                     },
                     {
@@ -2656,6 +2992,14 @@
                       },
                       "val": {
                         "u32": 3
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "token"
+                      },
+                      "val": {
+                        "address": "CDS3FDGQ4JA2V3F26Y4BMWWJEC5TT26RJBN7KIQKUMVO2MAOCMDTSZ7A"
                       }
                     },
                     {
@@ -2696,7 +3040,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 32
+                          "lo": 40
                         }
                       }
                     },
@@ -2706,6 +3050,14 @@
                       },
                       "val": {
                         "u32": 2
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "proof_verified"
+                      },
+                      "val": {
+                        "bool": true
                       }
                     },
                     {
@@ -2733,6 +3085,14 @@
                       },
                       "val": {
                         "u32": 3
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "token"
+                      },
+                      "val": {
+                        "address": "CDS3FDGQ4JA2V3F26Y4BMWWJEC5TT26RJBN7KIQKUMVO2MAOCMDTSZ7A"
                       }
                     },
                     {

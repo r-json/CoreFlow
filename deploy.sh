@@ -6,7 +6,12 @@
 #
 # Prerequisites:
 #   - Stellar CLI            (https://github.com/stellar/stellar-cli)
-#   - Rust + wasm32 target   (rustup target add wasm32-unknown-unknown)
+#   - Rust + wasm32v1-none   (provisioned by contracts/core-flow/rust-toolchain.toml)
+#
+# TARGET: must be wasm32v1-none, NOT wasm32-unknown-unknown. rustc 1.85 emits
+# reference-types into the latter, and the Soroban host rejects the upload with
+#   Error(WasmVm, InvalidAction) "reference-types not enabled: zero byte expected"
+# RUSTFLAGS="-C target-feature=-reference-types" does NOT suppress it.
 #
 # Usage:
 #   NETWORK=testnet SOURCE=my-key ADMIN=GADMIN... ./deploy.sh
@@ -22,12 +27,12 @@ NETWORK="${NETWORK:-testnet}"
 SOURCE="${SOURCE:-}"
 ADMIN="${ADMIN:-}"
 CONTRACT_DIR="./contracts/core-flow"
-WASM="$CONTRACT_DIR/target/wasm32-unknown-unknown/release/core_flow.wasm"
+WASM="$CONTRACT_DIR/target/wasm32v1-none/release/core_flow.wasm"
 
 echo "== CoreFlow deploy (network=$NETWORK) =="
 
 echo "[1/4] Building contract (release/wasm)…"
-( cd "$CONTRACT_DIR" && cargo build --target wasm32-unknown-unknown --release )
+( cd "$CONTRACT_DIR" && cargo build --target wasm32v1-none --release )
 [ -f "$WASM" ] || { echo "ERROR: WASM not found at $WASM"; exit 1; }
 
 echo "[2/4] Optimizing WASM…"
