@@ -104,8 +104,14 @@ confirming which public key is post-rotation — a fact that cannot be inferred 
 here, and guessing it could re-authorize an exposed credential.
 
 
-Everything exposed by `prodenv.txt` — the oracle signing key, `AUTH_SECRET`,
-`BOOTSTRAP_SECRET`, cron/indexer secrets, the database credential. Owner-operated;
+Everything exposed by `prodenv.txt`. Scope established by enumerating the dump's
+variable names: the oracle signing key, `AUTH_SECRET`, `BOOTSTRAP_SECRET`, and the
+database credential across all four URL variables. `CRON_SECRET` / `INDEXER_SECRET`
+are **not** in that dump — an earlier revision of this item claimed they were, and
+that was wrong; they are hygiene, not breach response. Runbook and executor:
+[SECRET_ROTATION.md](SECRET_ROTATION.md), `scripts/rotate-secrets.mjs`, which
+refuses `ORACLE_SECRET_KEY` because its public half is registered on chain.
+Owner-operated;
 not something to be solved by reading the secrets. Until each is rotated and the old
 value proven unable to authenticate or sign, this environment is not
 production-grade regardless of what the test suite reports.
