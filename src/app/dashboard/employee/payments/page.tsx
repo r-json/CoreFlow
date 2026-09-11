@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
+import { txUrl } from '@/lib/explorer';
 import { useDashboard } from '@/hooks/useDashboard';
 import {
   DollarSign,
@@ -244,7 +245,7 @@ export default function EmployeePaymentsPage() {
                         TX: {escrow.transaction_hash.slice(0, 12)}...
                       </span>
                       <a
-                        href={`https://stellar.expert/explorer/public/tx/${escrow.transaction_hash}`}
+                        href={txUrl(escrow.transaction_hash)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-[10px] font-bold text-violet-400 hover:text-violet-300 transition-colors flex items-center gap-1"

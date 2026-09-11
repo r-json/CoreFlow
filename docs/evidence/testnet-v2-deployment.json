@@ -1,0 +1,25 @@
+{
+  "version": "v2",
+  "network": "testnet",
+  "networkPassphrase": "Test SDF Network ; September 2015",
+  "contractId": "CDN4FIKLJ72WYNPBIKWYSDJWDZG22QNPLWI37VTUAE4EKKIBVAQRG5F4",
+  "wasmSha256": "d9f2d849d69b56aebcbdf585e8b2e0e8d81d9e5bf13f51534f27bf479d0e56da",
+  "wasmBytes": 42425,
+  "proofSchema": "CFWP-v2",
+  "adminAddress": "GAELEFW56FPEVOO57SJATCGEHX4ROQHULSUHEFMMPLEMACTA5A7PO2J2",
+  "adminPinnedInWasm": true,
+  "oraclePublicKey": "f42a48839e48d58e6628f5d096ee859e635b056be580bdcc68d620e2a2badae0",
+  "oracleKeyRegistered": true,
+  "paused": false,
+  "deployedAt": "2026-09-09T21:51:06Z",
+  "explorer": "https://stellar.expert/explorer/testnet/contract/CDN4FIKLJ72WYNPBIKWYSDJWDZG22QNPLWI37VTUAE4EKKIBVAQRG5F4",
+  "note": "CoreFlow v2, Testnet only. v1 remains deployed separately on Mainnet and is not affected by this deployment.",
+  "settlementAsset": {
+    "code": "USDC",
+    "issuer": "GBGO2HQVLFR3G5MYUJQMBZAQQRYU2MITGICHPJXH2MDGWT3BBA6GDQUL",
+    "sacContractId": "CBW2ZKFBHLHNNVCZ7JP4AXHQOOC3S6NLAMORXOAIWQNWMKUVJS743Q5M",
+    "decimals": 7,
+    "note": "Test USDC issued on Testnet for validation. Not Circle USDC."
+  },
+  "explorerAsset": "https://stellar.expert/explorer/testnet/contract/CBW2ZKFBHLHNNVCZ7JP4AXHQOOC3S6NLAMORXOAIWQNWMKUVJS743Q5M"
+}

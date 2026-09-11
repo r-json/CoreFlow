@@ -18,7 +18,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 
-const PROTECTED_API_PREFIXES = ['/api/escrows', '/api/hours', '/api/admin', '/api/oracle/attest'];
+const PROTECTED_API_PREFIXES = [
+  '/api/escrows',
+  '/api/hours',
+  '/api/admin',
+  '/api/oracle/attest',
+  // Issues Ed25519 attestations that unlock on-chain settlement — never public.
+  '/api/submit-batch',
+];
 
 /**
  * Routes under /api/admin that use their own auth mechanism (e.g. BOOTSTRAP_SECRET)
@@ -85,5 +92,6 @@ export const config = {
     '/api/hours/:path*',
     '/api/admin/:path*',
     '/api/oracle/attest',
+    '/api/submit-batch',
   ],
 };

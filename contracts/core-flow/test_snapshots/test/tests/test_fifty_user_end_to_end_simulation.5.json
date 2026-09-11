@@ -77,7 +77,7 @@
                           "val": {
                             "i128": {
                               "hi": 0,
-                              "lo": 1040
+                              "lo": 1000
                             }
                           }
                         },
@@ -182,7 +182,7 @@
                     {
                       "i128": {
                         "hi": 0,
-                        "lo": 1040
+                        "lo": 1000
                       }
                     }
                   ]
@@ -194,6 +194,7 @@
         }
       ]
     ],
+    [],
     [],
     [
       [
@@ -282,7 +283,7 @@
                           "val": {
                             "i128": {
                               "hi": 0,
-                              "lo": 1041
+                              "lo": 1025
                             }
                           }
                         },
@@ -387,7 +388,7 @@
                     {
                       "i128": {
                         "hi": 0,
-                        "lo": 1041
+                        "lo": 1025
                       }
                     }
                   ]
@@ -399,6 +400,7 @@
         }
       ]
     ],
+    [],
     [],
     [
       [
@@ -487,7 +489,7 @@
                           "val": {
                             "i128": {
                               "hi": 0,
-                              "lo": 1042
+                              "lo": 1050
                             }
                           }
                         },
@@ -592,7 +594,7 @@
                     {
                       "i128": {
                         "hi": 0,
-                        "lo": 1042
+                        "lo": 1050
                       }
                     }
                   ]
@@ -604,6 +606,7 @@
         }
       ]
     ],
+    [],
     [],
     [
       [
@@ -692,7 +695,7 @@
                           "val": {
                             "i128": {
                               "hi": 0,
-                              "lo": 1043
+                              "lo": 1075
                             }
                           }
                         },
@@ -797,7 +800,7 @@
                     {
                       "i128": {
                         "hi": 0,
-                        "lo": 1043
+                        "lo": 1075
                       }
                     }
                   ]
@@ -809,6 +812,7 @@
         }
       ]
     ],
+    [],
     [],
     [
       [
@@ -897,7 +901,7 @@
                           "val": {
                             "i128": {
                               "hi": 0,
-                              "lo": 1044
+                              "lo": 1100
                             }
                           }
                         },
@@ -1002,7 +1006,7 @@
                     {
                       "i128": {
                         "hi": 0,
-                        "lo": 1044
+                        "lo": 1100
                       }
                     }
                   ]
@@ -1014,6 +1018,7 @@
         }
       ]
     ],
+    [],
     [],
     [
       [
@@ -1102,7 +1107,7 @@
                           "val": {
                             "i128": {
                               "hi": 0,
-                              "lo": 1045
+                              "lo": 1125
                             }
                           }
                         },
@@ -1207,7 +1212,7 @@
                     {
                       "i128": {
                         "hi": 0,
-                        "lo": 1045
+                        "lo": 1125
                       }
                     }
                   ]
@@ -1219,6 +1224,7 @@
         }
       ]
     ],
+    [],
     [],
     [
       [
@@ -1307,7 +1313,7 @@
                           "val": {
                             "i128": {
                               "hi": 0,
-                              "lo": 1046
+                              "lo": 1150
                             }
                           }
                         },
@@ -1412,7 +1418,7 @@
                     {
                       "i128": {
                         "hi": 0,
-                        "lo": 1046
+                        "lo": 1150
                       }
                     }
                   ]
@@ -1424,6 +1430,7 @@
         }
       ]
     ],
+    [],
     [],
     [
       [
@@ -1512,7 +1519,7 @@
                           "val": {
                             "i128": {
                               "hi": 0,
-                              "lo": 1047
+                              "lo": 1175
                             }
                           }
                         },
@@ -1617,7 +1624,7 @@
                     {
                       "i128": {
                         "hi": 0,
-                        "lo": 1047
+                        "lo": 1175
                       }
                     }
                   ]
@@ -1629,6 +1636,7 @@
         }
       ]
     ],
+    [],
     [],
     [
       [
@@ -1717,7 +1725,7 @@
                           "val": {
                             "i128": {
                               "hi": 0,
-                              "lo": 1048
+                              "lo": 1000
                             }
                           }
                         },
@@ -1822,7 +1830,7 @@
                     {
                       "i128": {
                         "hi": 0,
-                        "lo": 1048
+                        "lo": 1000
                       }
                     }
                   ]
@@ -1834,6 +1842,7 @@
         }
       ]
     ],
+    [],
     [],
     [
       [
@@ -1922,7 +1931,7 @@
                           "val": {
                             "i128": {
                               "hi": 0,
-                              "lo": 1049
+                              "lo": 1025
                             }
                           }
                         },
@@ -2027,7 +2036,7 @@
                     {
                       "i128": {
                         "hi": 0,
-                        "lo": 1049
+                        "lo": 1025
                       }
                     }
                   ]
@@ -2039,6 +2048,7 @@
         }
       ]
     ],
+    [],
     [],
     [
       [
@@ -2280,7 +2290,7 @@
                                 "val": {
                                   "i128": {
                                     "hi": 0,
-                                    "lo": 1040
+                                    "lo": 1000
                                   }
                                 }
                               },
@@ -2299,7 +2309,7 @@
                                 "val": {
                                   "i128": {
                                     "hi": 0,
-                                    "lo": 80
+                                    "lo": 40
                                   }
                                 }
                               },
@@ -2484,7 +2494,7 @@
                                 "val": {
                                   "i128": {
                                     "hi": 0,
-                                    "lo": 1041
+                                    "lo": 1025
                                   }
                                 }
                               },
@@ -2503,7 +2513,7 @@
                                 "val": {
                                   "i128": {
                                     "hi": 0,
-                                    "lo": 81
+                                    "lo": 41
                                   }
                                 }
                               },
@@ -2688,7 +2698,7 @@
                                 "val": {
                                   "i128": {
                                     "hi": 0,
-                                    "lo": 1042
+                                    "lo": 1050
                                   }
                                 }
                               },
@@ -2707,7 +2717,7 @@
                                 "val": {
                                   "i128": {
                                     "hi": 0,
-                                    "lo": 82
+                                    "lo": 42
                                   }
                                 }
                               },
@@ -2892,7 +2902,7 @@
                                 "val": {
                                   "i128": {
                                     "hi": 0,
-                                    "lo": 1043
+                                    "lo": 1075
                                   }
                                 }
                               },
@@ -2911,7 +2921,7 @@
                                 "val": {
                                   "i128": {
                                     "hi": 0,
-                                    "lo": 83
+                                    "lo": 43
                                   }
                                 }
                               },
@@ -3096,7 +3106,7 @@
                                 "val": {
                                   "i128": {
                                     "hi": 0,
-                                    "lo": 1044
+                                    "lo": 1100
                                   }
                                 }
                               },
@@ -3115,7 +3125,7 @@
                                 "val": {
                                   "i128": {
                                     "hi": 0,
-                                    "lo": 84
+                                    "lo": 44
                                   }
                                 }
                               },
@@ -3300,7 +3310,7 @@
                                 "val": {
                                   "i128": {
                                     "hi": 0,
-                                    "lo": 1045
+                                    "lo": 1125
                                   }
                                 }
                               },
@@ -3319,7 +3329,7 @@
                                 "val": {
                                   "i128": {
                                     "hi": 0,
-                                    "lo": 85
+                                    "lo": 45
                                   }
                                 }
                               },
@@ -3504,7 +3514,7 @@
                                 "val": {
                                   "i128": {
                                     "hi": 0,
-                                    "lo": 1046
+                                    "lo": 1150
                                   }
                                 }
                               },
@@ -3523,7 +3533,7 @@
                                 "val": {
                                   "i128": {
                                     "hi": 0,
-                                    "lo": 86
+                                    "lo": 46
                                   }
                                 }
                               },
@@ -3708,7 +3718,7 @@
                                 "val": {
                                   "i128": {
                                     "hi": 0,
-                                    "lo": 1047
+                                    "lo": 1175
                                   }
                                 }
                               },
@@ -3727,7 +3737,7 @@
                                 "val": {
                                   "i128": {
                                     "hi": 0,
-                                    "lo": 87
+                                    "lo": 47
                                   }
                                 }
                               },
@@ -3912,7 +3922,7 @@
                                 "val": {
                                   "i128": {
                                     "hi": 0,
-                                    "lo": 1048
+                                    "lo": 1000
                                   }
                                 }
                               },
@@ -3931,7 +3941,7 @@
                                 "val": {
                                   "i128": {
                                     "hi": 0,
-                                    "lo": 88
+                                    "lo": 40
                                   }
                                 }
                               },
@@ -4116,7 +4126,7 @@
                                 "val": {
                                   "i128": {
                                     "hi": 0,
-                                    "lo": 1049
+                                    "lo": 1025
                                   }
                                 }
                               },
@@ -4135,7 +4145,7 @@
                                 "val": {
                                   "i128": {
                                     "hi": 0,
-                                    "lo": 89
+                                    "lo": 41
                                   }
                                 }
                               },
@@ -6203,7 +6213,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 989555
+                          "lo": 989275
                         }
                       }
                     },
@@ -6276,7 +6286,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 1040
+                          "lo": 1000
                         }
                       }
                     },
@@ -6349,7 +6359,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 1041
+                          "lo": 1025
                         }
                       }
                     },
@@ -6422,7 +6432,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 1042
+                          "lo": 1050
                         }
                       }
                     },
@@ -6495,7 +6505,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 1043
+                          "lo": 1075
                         }
                       }
                     },
@@ -6568,7 +6578,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 1044
+                          "lo": 1100
                         }
                       }
                     },
@@ -6641,7 +6651,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 1045
+                          "lo": 1125
                         }
                       }
                     },
@@ -6714,7 +6724,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 1046
+                          "lo": 1150
                         }
                       }
                     },
@@ -6787,7 +6797,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 1047
+                          "lo": 1175
                         }
                       }
                     },
@@ -6860,7 +6870,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 1048
+                          "lo": 1000
                         }
                       }
                     },
@@ -6933,7 +6943,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 1049
+                          "lo": 1025
                         }
                       }
                     },
@@ -7347,7 +7357,7 @@
                           "val": {
                             "i128": {
                               "hi": 0,
-                              "lo": 1040
+                              "lo": 1000
                             }
                           }
                         },
@@ -7469,7 +7479,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1040
+                    "lo": 1000
                   }
                 }
               ]
@@ -7503,7 +7513,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 1040
+                "lo": 1000
               }
             }
           }
@@ -7558,8 +7568,62 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1040
+                    "lo": 1000
                   }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "payment"
+              },
+              {
+                "symbol": "add"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "u32": 1
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                },
+                {
+                  "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 1000
+                  }
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 25
+                  }
+                },
+                {
+                  "u64": 1
+                },
+                {
+                  "u64": 2
                 }
               ]
             }
@@ -7606,6 +7670,214 @@
                 "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
               },
               {
+                "symbol": "get_escrow"
+              }
+            ],
+            "data": {
+              "u32": 1
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_return"
+              },
+              {
+                "symbol": "get_escrow"
+              }
+            ],
+            "data": {
+              "map": [
+                {
+                  "key": {
+                    "symbol": "cancelled"
+                  },
+                  "val": {
+                    "bool": false
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "finance_approved"
+                  },
+                  "val": {
+                    "bool": false
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "finance_approver"
+                  },
+                  "val": {
+                    "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "manager"
+                  },
+                  "val": {
+                    "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "manager_approved"
+                  },
+                  "val": {
+                    "bool": false
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "oracle_pubkey"
+                  },
+                  "val": {
+                    "bytes": "79b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad049664"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "oracle_rotations"
+                  },
+                  "val": {
+                    "u32": 0
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "payments"
+                  },
+                  "val": {
+                    "vec": [
+                      {
+                        "map": [
+                          {
+                            "key": {
+                              "symbol": "amount"
+                            },
+                            "val": {
+                              "i128": {
+                                "hi": 0,
+                                "lo": 1000
+                              }
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "end_date"
+                            },
+                            "val": {
+                              "u64": 2
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "hours_logged"
+                            },
+                            "val": {
+                              "i128": {
+                                "hi": 0,
+                                "lo": 0
+                              }
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "id"
+                            },
+                            "val": {
+                              "u32": 1
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "proof_verified"
+                            },
+                            "val": {
+                              "bool": false
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "rate_per_hour"
+                            },
+                            "val": {
+                              "i128": {
+                                "hi": 0,
+                                "lo": 25
+                              }
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "start_date"
+                            },
+                            "val": {
+                              "u64": 1
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "status"
+                            },
+                            "val": {
+                              "u32": 0
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "token"
+                            },
+                            "val": {
+                              "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "worker"
+                            },
+                            "val": {
+                              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": null,
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_call"
+              },
+              {
+                "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
+              },
+              {
                 "symbol": "submit_hours_proof"
               }
             ],
@@ -7620,14 +7892,14 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 80
+                    "lo": 40
                   }
                 },
                 {
                   "u64": 0
                 },
                 {
-                  "bytes": "e2a94c3b6dff951ce7886580f6059823e7b14f23b83ee8dc1085cf1f0dce39ac69d532ca0c7d9eb9956e2f444a08b3947f1c9cccb8cba27fe6293485f20c6a04"
+                  "bytes": "f3bdf6eb753157650d1687999d22798556297ff817141b43381969e7a981c98f73d17aa603cb38614a91578a2b58c0ad1f16643ee4d0613d2b19b5ca3712dc05"
                 }
               ]
             }
@@ -7662,7 +7934,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 80
+                    "lo": 40
                   }
                 }
               ]
@@ -7888,7 +8160,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1040
+                    "lo": 1000
                   }
                 }
               ]
@@ -7922,7 +8194,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 1040
+                "lo": 1000
               }
             }
           }
@@ -7963,6 +8235,54 @@
                 "symbol": "payment"
               },
               {
+                "symbol": "paid"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "u32": 1
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                },
+                {
+                  "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 1000
+                  }
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 40
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "payment"
+              },
+              {
                 "symbol": "final"
               }
             ],
@@ -7974,7 +8294,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1040
+                    "lo": 1000
                   }
                 },
                 {
@@ -8013,7 +8333,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 1040
+                          "lo": 1000
                         }
                       }
                     },
@@ -8032,7 +8352,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 80
+                          "lo": 40
                         }
                       }
                     },
@@ -8148,7 +8468,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 1040
+                "lo": 1000
               }
             }
           }
@@ -8196,7 +8516,7 @@
                           "val": {
                             "i128": {
                               "hi": 0,
-                              "lo": 1041
+                              "lo": 1025
                             }
                           }
                         },
@@ -8318,7 +8638,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1041
+                    "lo": 1025
                   }
                 }
               ]
@@ -8352,7 +8672,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 1041
+                "lo": 1025
               }
             }
           }
@@ -8407,8 +8727,62 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1041
+                    "lo": 1025
                   }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "payment"
+              },
+              {
+                "symbol": "add"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "u32": 2
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOLZM"
+                },
+                {
+                  "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 1025
+                  }
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 25
+                  }
+                },
+                {
+                  "u64": 1
+                },
+                {
+                  "u64": 2
                 }
               ]
             }
@@ -8455,6 +8829,214 @@
                 "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
               },
               {
+                "symbol": "get_escrow"
+              }
+            ],
+            "data": {
+              "u32": 2
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_return"
+              },
+              {
+                "symbol": "get_escrow"
+              }
+            ],
+            "data": {
+              "map": [
+                {
+                  "key": {
+                    "symbol": "cancelled"
+                  },
+                  "val": {
+                    "bool": false
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "finance_approved"
+                  },
+                  "val": {
+                    "bool": false
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "finance_approver"
+                  },
+                  "val": {
+                    "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "manager"
+                  },
+                  "val": {
+                    "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "manager_approved"
+                  },
+                  "val": {
+                    "bool": false
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "oracle_pubkey"
+                  },
+                  "val": {
+                    "bytes": "79b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad049664"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "oracle_rotations"
+                  },
+                  "val": {
+                    "u32": 0
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "payments"
+                  },
+                  "val": {
+                    "vec": [
+                      {
+                        "map": [
+                          {
+                            "key": {
+                              "symbol": "amount"
+                            },
+                            "val": {
+                              "i128": {
+                                "hi": 0,
+                                "lo": 1025
+                              }
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "end_date"
+                            },
+                            "val": {
+                              "u64": 2
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "hours_logged"
+                            },
+                            "val": {
+                              "i128": {
+                                "hi": 0,
+                                "lo": 0
+                              }
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "id"
+                            },
+                            "val": {
+                              "u32": 1
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "proof_verified"
+                            },
+                            "val": {
+                              "bool": false
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "rate_per_hour"
+                            },
+                            "val": {
+                              "i128": {
+                                "hi": 0,
+                                "lo": 25
+                              }
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "start_date"
+                            },
+                            "val": {
+                              "u64": 1
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "status"
+                            },
+                            "val": {
+                              "u32": 0
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "token"
+                            },
+                            "val": {
+                              "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "worker"
+                            },
+                            "val": {
+                              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOLZM"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": null,
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_call"
+              },
+              {
+                "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
+              },
+              {
                 "symbol": "submit_hours_proof"
               }
             ],
@@ -8469,14 +9051,14 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 81
+                    "lo": 41
                   }
                 },
                 {
                   "u64": 0
                 },
                 {
-                  "bytes": "de0c941d45277de86bb6075286efd0f1ab3c3fee9cb8ad63952ea2f2745fd6917a87845720472aea6b6dc2f68751d1c3a87a293318224f244224e771a3c18d0c"
+                  "bytes": "b0c4a348b2142ce3d68ecf85aa173005d75bf5dd1f736fe95f07862e505da9c9fdb63f13924aa5ea93883df60ed73a2a4984592361cf135dc3a35075ab28a905"
                 }
               ]
             }
@@ -8511,7 +9093,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 81
+                    "lo": 41
                   }
                 }
               ]
@@ -8737,7 +9319,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1041
+                    "lo": 1025
                   }
                 }
               ]
@@ -8771,7 +9353,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 1041
+                "lo": 1025
               }
             }
           }
@@ -8812,6 +9394,54 @@
                 "symbol": "payment"
               },
               {
+                "symbol": "paid"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "u32": 2
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOLZM"
+                },
+                {
+                  "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 1025
+                  }
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 41
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "payment"
+              },
+              {
                 "symbol": "final"
               }
             ],
@@ -8823,7 +9453,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1041
+                    "lo": 1025
                   }
                 },
                 {
@@ -8862,7 +9492,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 1041
+                          "lo": 1025
                         }
                       }
                     },
@@ -8881,7 +9511,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 81
+                          "lo": 41
                         }
                       }
                     },
@@ -8997,7 +9627,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 1041
+                "lo": 1025
               }
             }
           }
@@ -9045,7 +9675,7 @@
                           "val": {
                             "i128": {
                               "hi": 0,
-                              "lo": 1042
+                              "lo": 1050
                             }
                           }
                         },
@@ -9167,7 +9797,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1042
+                    "lo": 1050
                   }
                 }
               ]
@@ -9201,7 +9831,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 1042
+                "lo": 1050
               }
             }
           }
@@ -9256,8 +9886,62 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1042
+                    "lo": 1050
                   }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "payment"
+              },
+              {
+                "symbol": "add"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "u32": 3
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARQG5"
+                },
+                {
+                  "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 1050
+                  }
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 25
+                  }
+                },
+                {
+                  "u64": 1
+                },
+                {
+                  "u64": 2
                 }
               ]
             }
@@ -9304,6 +9988,214 @@
                 "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
               },
               {
+                "symbol": "get_escrow"
+              }
+            ],
+            "data": {
+              "u32": 3
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_return"
+              },
+              {
+                "symbol": "get_escrow"
+              }
+            ],
+            "data": {
+              "map": [
+                {
+                  "key": {
+                    "symbol": "cancelled"
+                  },
+                  "val": {
+                    "bool": false
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "finance_approved"
+                  },
+                  "val": {
+                    "bool": false
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "finance_approver"
+                  },
+                  "val": {
+                    "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "manager"
+                  },
+                  "val": {
+                    "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "manager_approved"
+                  },
+                  "val": {
+                    "bool": false
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "oracle_pubkey"
+                  },
+                  "val": {
+                    "bytes": "79b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad049664"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "oracle_rotations"
+                  },
+                  "val": {
+                    "u32": 0
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "payments"
+                  },
+                  "val": {
+                    "vec": [
+                      {
+                        "map": [
+                          {
+                            "key": {
+                              "symbol": "amount"
+                            },
+                            "val": {
+                              "i128": {
+                                "hi": 0,
+                                "lo": 1050
+                              }
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "end_date"
+                            },
+                            "val": {
+                              "u64": 2
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "hours_logged"
+                            },
+                            "val": {
+                              "i128": {
+                                "hi": 0,
+                                "lo": 0
+                              }
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "id"
+                            },
+                            "val": {
+                              "u32": 1
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "proof_verified"
+                            },
+                            "val": {
+                              "bool": false
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "rate_per_hour"
+                            },
+                            "val": {
+                              "i128": {
+                                "hi": 0,
+                                "lo": 25
+                              }
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "start_date"
+                            },
+                            "val": {
+                              "u64": 1
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "status"
+                            },
+                            "val": {
+                              "u32": 0
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "token"
+                            },
+                            "val": {
+                              "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "worker"
+                            },
+                            "val": {
+                              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARQG5"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": null,
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_call"
+              },
+              {
+                "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
+              },
+              {
                 "symbol": "submit_hours_proof"
               }
             ],
@@ -9318,14 +10210,14 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 82
+                    "lo": 42
                   }
                 },
                 {
                   "u64": 0
                 },
                 {
-                  "bytes": "efbf61f0cacf3470547d075e91b907a789b6a32733ad3fd2df2d2bdb3cd56d52449b81756224a8851f889e6521885282802a187827f64350bfde404c2e9abe0d"
+                  "bytes": "58203a1c6196802ee6dd1506d260d164fa4fff95bf83641bb1f2e7d06c98d17fdd99897719feeeb6f12878bd09594bd86d8fea0726bf4c283a5d547a24497b0b"
                 }
               ]
             }
@@ -9360,7 +10252,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 82
+                    "lo": 42
                   }
                 }
               ]
@@ -9586,7 +10478,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1042
+                    "lo": 1050
                   }
                 }
               ]
@@ -9620,7 +10512,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 1042
+                "lo": 1050
               }
             }
           }
@@ -9661,6 +10553,54 @@
                 "symbol": "payment"
               },
               {
+                "symbol": "paid"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "u32": 3
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARQG5"
+                },
+                {
+                  "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 1050
+                  }
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 42
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "payment"
+              },
+              {
                 "symbol": "final"
               }
             ],
@@ -9672,7 +10612,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1042
+                    "lo": 1050
                   }
                 },
                 {
@@ -9711,7 +10651,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 1042
+                          "lo": 1050
                         }
                       }
                     },
@@ -9730,7 +10670,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 82
+                          "lo": 42
                         }
                       }
                     },
@@ -9846,7 +10786,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 1042
+                "lo": 1050
               }
             }
           }
@@ -9894,7 +10834,7 @@
                           "val": {
                             "i128": {
                               "hi": 0,
-                              "lo": 1043
+                              "lo": 1075
                             }
                           }
                         },
@@ -10016,7 +10956,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1043
+                    "lo": 1075
                   }
                 }
               ]
@@ -10050,7 +10990,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 1043
+                "lo": 1075
               }
             }
           }
@@ -10105,8 +11045,62 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1043
+                    "lo": 1075
                   }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "payment"
+              },
+              {
+                "symbol": "add"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "u32": 4
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATYON"
+                },
+                {
+                  "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 1075
+                  }
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 25
+                  }
+                },
+                {
+                  "u64": 1
+                },
+                {
+                  "u64": 2
                 }
               ]
             }
@@ -10153,6 +11147,214 @@
                 "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
               },
               {
+                "symbol": "get_escrow"
+              }
+            ],
+            "data": {
+              "u32": 4
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_return"
+              },
+              {
+                "symbol": "get_escrow"
+              }
+            ],
+            "data": {
+              "map": [
+                {
+                  "key": {
+                    "symbol": "cancelled"
+                  },
+                  "val": {
+                    "bool": false
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "finance_approved"
+                  },
+                  "val": {
+                    "bool": false
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "finance_approver"
+                  },
+                  "val": {
+                    "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "manager"
+                  },
+                  "val": {
+                    "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "manager_approved"
+                  },
+                  "val": {
+                    "bool": false
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "oracle_pubkey"
+                  },
+                  "val": {
+                    "bytes": "79b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad049664"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "oracle_rotations"
+                  },
+                  "val": {
+                    "u32": 0
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "payments"
+                  },
+                  "val": {
+                    "vec": [
+                      {
+                        "map": [
+                          {
+                            "key": {
+                              "symbol": "amount"
+                            },
+                            "val": {
+                              "i128": {
+                                "hi": 0,
+                                "lo": 1075
+                              }
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "end_date"
+                            },
+                            "val": {
+                              "u64": 2
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "hours_logged"
+                            },
+                            "val": {
+                              "i128": {
+                                "hi": 0,
+                                "lo": 0
+                              }
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "id"
+                            },
+                            "val": {
+                              "u32": 1
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "proof_verified"
+                            },
+                            "val": {
+                              "bool": false
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "rate_per_hour"
+                            },
+                            "val": {
+                              "i128": {
+                                "hi": 0,
+                                "lo": 25
+                              }
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "start_date"
+                            },
+                            "val": {
+                              "u64": 1
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "status"
+                            },
+                            "val": {
+                              "u32": 0
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "token"
+                            },
+                            "val": {
+                              "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "worker"
+                            },
+                            "val": {
+                              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATYON"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": null,
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_call"
+              },
+              {
+                "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
+              },
+              {
                 "symbol": "submit_hours_proof"
               }
             ],
@@ -10167,14 +11369,14 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 83
+                    "lo": 43
                   }
                 },
                 {
                   "u64": 0
                 },
                 {
-                  "bytes": "38a44d079e557be046a134aff30f7b70bb7fd887a192eec86a12679e17b84f23d077ed3ec9a4164304cb4b071d64bc8792f8a31253ecbc98a7f74e344aeb1005"
+                  "bytes": "ce92b45540af8346ab71c2323647054722445dcae4ddd77c0ca81664d72532bee6130e61a9da5ce71f87a4c29d06c4319a973bfa81d42c076c47afd534f7ef07"
                 }
               ]
             }
@@ -10209,7 +11411,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 83
+                    "lo": 43
                   }
                 }
               ]
@@ -10435,7 +11637,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1043
+                    "lo": 1075
                   }
                 }
               ]
@@ -10469,7 +11671,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 1043
+                "lo": 1075
               }
             }
           }
@@ -10510,6 +11712,54 @@
                 "symbol": "payment"
               },
               {
+                "symbol": "paid"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "u32": 4
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATYON"
+                },
+                {
+                  "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 1075
+                  }
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 43
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "payment"
+              },
+              {
                 "symbol": "final"
               }
             ],
@@ -10521,7 +11771,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1043
+                    "lo": 1075
                   }
                 },
                 {
@@ -10560,7 +11810,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 1043
+                          "lo": 1075
                         }
                       }
                     },
@@ -10579,7 +11829,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 83
+                          "lo": 43
                         }
                       }
                     },
@@ -10695,7 +11945,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 1043
+                "lo": 1075
               }
             }
           }
@@ -10743,7 +11993,7 @@
                           "val": {
                             "i128": {
                               "hi": 0,
-                              "lo": 1044
+                              "lo": 1100
                             }
                           }
                         },
@@ -10865,7 +12115,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1044
+                    "lo": 1100
                   }
                 }
               ]
@@ -10899,7 +12149,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 1044
+                "lo": 1100
               }
             }
           }
@@ -10954,8 +12204,62 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1044
+                    "lo": 1100
                   }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "payment"
+              },
+              {
+                "symbol": "add"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "u32": 5
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAVAX5"
+                },
+                {
+                  "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 1100
+                  }
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 25
+                  }
+                },
+                {
+                  "u64": 1
+                },
+                {
+                  "u64": 2
                 }
               ]
             }
@@ -11002,6 +12306,214 @@
                 "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
               },
               {
+                "symbol": "get_escrow"
+              }
+            ],
+            "data": {
+              "u32": 5
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_return"
+              },
+              {
+                "symbol": "get_escrow"
+              }
+            ],
+            "data": {
+              "map": [
+                {
+                  "key": {
+                    "symbol": "cancelled"
+                  },
+                  "val": {
+                    "bool": false
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "finance_approved"
+                  },
+                  "val": {
+                    "bool": false
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "finance_approver"
+                  },
+                  "val": {
+                    "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "manager"
+                  },
+                  "val": {
+                    "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "manager_approved"
+                  },
+                  "val": {
+                    "bool": false
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "oracle_pubkey"
+                  },
+                  "val": {
+                    "bytes": "79b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad049664"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "oracle_rotations"
+                  },
+                  "val": {
+                    "u32": 0
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "payments"
+                  },
+                  "val": {
+                    "vec": [
+                      {
+                        "map": [
+                          {
+                            "key": {
+                              "symbol": "amount"
+                            },
+                            "val": {
+                              "i128": {
+                                "hi": 0,
+                                "lo": 1100
+                              }
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "end_date"
+                            },
+                            "val": {
+                              "u64": 2
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "hours_logged"
+                            },
+                            "val": {
+                              "i128": {
+                                "hi": 0,
+                                "lo": 0
+                              }
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "id"
+                            },
+                            "val": {
+                              "u32": 1
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "proof_verified"
+                            },
+                            "val": {
+                              "bool": false
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "rate_per_hour"
+                            },
+                            "val": {
+                              "i128": {
+                                "hi": 0,
+                                "lo": 25
+                              }
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "start_date"
+                            },
+                            "val": {
+                              "u64": 1
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "status"
+                            },
+                            "val": {
+                              "u32": 0
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "token"
+                            },
+                            "val": {
+                              "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "worker"
+                            },
+                            "val": {
+                              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAVAX5"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": null,
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_call"
+              },
+              {
+                "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
+              },
+              {
                 "symbol": "submit_hours_proof"
               }
             ],
@@ -11016,14 +12528,14 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 84
+                    "lo": 44
                   }
                 },
                 {
                   "u64": 0
                 },
                 {
-                  "bytes": "8c351f097382ba7cb2302ab83ef686a8c0999dcd8e6aad88e1cb41c19f2721a6fe3585f5455d9d6fa9e55e1ee583335668984a8d5e0ba8c8ac704b95dfc99807"
+                  "bytes": "86df43a17e7b99e9b4ac8c3288c9b2427c135f9156b1067eec8bb704aa12d19fe9605505e9e63c13348f37ca9332066a4fecb7b52d99a9424ff9fab4f01a2507"
                 }
               ]
             }
@@ -11058,7 +12570,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 84
+                    "lo": 44
                   }
                 }
               ]
@@ -11284,7 +12796,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1044
+                    "lo": 1100
                   }
                 }
               ]
@@ -11318,7 +12830,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 1044
+                "lo": 1100
               }
             }
           }
@@ -11359,6 +12871,54 @@
                 "symbol": "payment"
               },
               {
+                "symbol": "paid"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "u32": 5
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAVAX5"
+                },
+                {
+                  "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 1100
+                  }
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 44
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "payment"
+              },
+              {
                 "symbol": "final"
               }
             ],
@@ -11370,7 +12930,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1044
+                    "lo": 1100
                   }
                 },
                 {
@@ -11409,7 +12969,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 1044
+                          "lo": 1100
                         }
                       }
                     },
@@ -11428,7 +12988,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 84
+                          "lo": 44
                         }
                       }
                     },
@@ -11544,7 +13104,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 1044
+                "lo": 1100
               }
             }
           }
@@ -11592,7 +13152,7 @@
                           "val": {
                             "i128": {
                               "hi": 0,
-                              "lo": 1045
+                              "lo": 1125
                             }
                           }
                         },
@@ -11714,7 +13274,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1045
+                    "lo": 1125
                   }
                 }
               ]
@@ -11748,7 +13308,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 1045
+                "lo": 1125
               }
             }
           }
@@ -11803,8 +13363,62 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1045
+                    "lo": 1125
                   }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "payment"
+              },
+              {
+                "symbol": "add"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "u32": 6
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAXI7N"
+                },
+                {
+                  "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 1125
+                  }
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 25
+                  }
+                },
+                {
+                  "u64": 1
+                },
+                {
+                  "u64": 2
                 }
               ]
             }
@@ -11851,6 +13465,214 @@
                 "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
               },
               {
+                "symbol": "get_escrow"
+              }
+            ],
+            "data": {
+              "u32": 6
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_return"
+              },
+              {
+                "symbol": "get_escrow"
+              }
+            ],
+            "data": {
+              "map": [
+                {
+                  "key": {
+                    "symbol": "cancelled"
+                  },
+                  "val": {
+                    "bool": false
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "finance_approved"
+                  },
+                  "val": {
+                    "bool": false
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "finance_approver"
+                  },
+                  "val": {
+                    "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "manager"
+                  },
+                  "val": {
+                    "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "manager_approved"
+                  },
+                  "val": {
+                    "bool": false
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "oracle_pubkey"
+                  },
+                  "val": {
+                    "bytes": "79b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad049664"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "oracle_rotations"
+                  },
+                  "val": {
+                    "u32": 0
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "payments"
+                  },
+                  "val": {
+                    "vec": [
+                      {
+                        "map": [
+                          {
+                            "key": {
+                              "symbol": "amount"
+                            },
+                            "val": {
+                              "i128": {
+                                "hi": 0,
+                                "lo": 1125
+                              }
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "end_date"
+                            },
+                            "val": {
+                              "u64": 2
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "hours_logged"
+                            },
+                            "val": {
+                              "i128": {
+                                "hi": 0,
+                                "lo": 0
+                              }
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "id"
+                            },
+                            "val": {
+                              "u32": 1
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "proof_verified"
+                            },
+                            "val": {
+                              "bool": false
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "rate_per_hour"
+                            },
+                            "val": {
+                              "i128": {
+                                "hi": 0,
+                                "lo": 25
+                              }
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "start_date"
+                            },
+                            "val": {
+                              "u64": 1
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "status"
+                            },
+                            "val": {
+                              "u32": 0
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "token"
+                            },
+                            "val": {
+                              "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "worker"
+                            },
+                            "val": {
+                              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAXI7N"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": null,
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_call"
+              },
+              {
+                "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
+              },
+              {
                 "symbol": "submit_hours_proof"
               }
             ],
@@ -11865,14 +13687,14 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 85
+                    "lo": 45
                   }
                 },
                 {
                   "u64": 0
                 },
                 {
-                  "bytes": "67095d1c9b515479564af51b896c715701809d5573a3de47cf66fb757ae9f4f7858c4c6caca12ec3e1ff14fbea765ab612883547e8597a0fa756160c8774d809"
+                  "bytes": "93db3d860077a2b9de2d750e66d22966fb2a983a0abd22344576e4ce758db78145e3ae1a13468cae55ac42158bab13528b13837de933d0692d8f623124fc2506"
                 }
               ]
             }
@@ -11907,7 +13729,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 85
+                    "lo": 45
                   }
                 }
               ]
@@ -12133,7 +13955,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1045
+                    "lo": 1125
                   }
                 }
               ]
@@ -12167,7 +13989,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 1045
+                "lo": 1125
               }
             }
           }
@@ -12208,6 +14030,54 @@
                 "symbol": "payment"
               },
               {
+                "symbol": "paid"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "u32": 6
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAXI7N"
+                },
+                {
+                  "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 1125
+                  }
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 45
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "payment"
+              },
+              {
                 "symbol": "final"
               }
             ],
@@ -12219,7 +14089,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1045
+                    "lo": 1125
                   }
                 },
                 {
@@ -12258,7 +14128,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 1045
+                          "lo": 1125
                         }
                       }
                     },
@@ -12277,7 +14147,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 85
+                          "lo": 45
                         }
                       }
                     },
@@ -12393,7 +14263,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 1045
+                "lo": 1125
               }
             }
           }
@@ -12441,7 +14311,7 @@
                           "val": {
                             "i128": {
                               "hi": 0,
-                              "lo": 1046
+                              "lo": 1150
                             }
                           }
                         },
@@ -12563,7 +14433,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1046
+                    "lo": 1150
                   }
                 }
               ]
@@ -12597,7 +14467,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 1046
+                "lo": 1150
               }
             }
           }
@@ -12652,8 +14522,62 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1046
+                    "lo": 1150
                   }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "payment"
+              },
+              {
+                "symbol": "add"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "u32": 7
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAYRE5"
+                },
+                {
+                  "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 1150
+                  }
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 25
+                  }
+                },
+                {
+                  "u64": 1
+                },
+                {
+                  "u64": 2
                 }
               ]
             }
@@ -12700,6 +14624,214 @@
                 "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
               },
               {
+                "symbol": "get_escrow"
+              }
+            ],
+            "data": {
+              "u32": 7
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_return"
+              },
+              {
+                "symbol": "get_escrow"
+              }
+            ],
+            "data": {
+              "map": [
+                {
+                  "key": {
+                    "symbol": "cancelled"
+                  },
+                  "val": {
+                    "bool": false
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "finance_approved"
+                  },
+                  "val": {
+                    "bool": false
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "finance_approver"
+                  },
+                  "val": {
+                    "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "manager"
+                  },
+                  "val": {
+                    "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "manager_approved"
+                  },
+                  "val": {
+                    "bool": false
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "oracle_pubkey"
+                  },
+                  "val": {
+                    "bytes": "79b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad049664"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "oracle_rotations"
+                  },
+                  "val": {
+                    "u32": 0
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "payments"
+                  },
+                  "val": {
+                    "vec": [
+                      {
+                        "map": [
+                          {
+                            "key": {
+                              "symbol": "amount"
+                            },
+                            "val": {
+                              "i128": {
+                                "hi": 0,
+                                "lo": 1150
+                              }
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "end_date"
+                            },
+                            "val": {
+                              "u64": 2
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "hours_logged"
+                            },
+                            "val": {
+                              "i128": {
+                                "hi": 0,
+                                "lo": 0
+                              }
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "id"
+                            },
+                            "val": {
+                              "u32": 1
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "proof_verified"
+                            },
+                            "val": {
+                              "bool": false
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "rate_per_hour"
+                            },
+                            "val": {
+                              "i128": {
+                                "hi": 0,
+                                "lo": 25
+                              }
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "start_date"
+                            },
+                            "val": {
+                              "u64": 1
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "status"
+                            },
+                            "val": {
+                              "u32": 0
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "token"
+                            },
+                            "val": {
+                              "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "worker"
+                            },
+                            "val": {
+                              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAYRE5"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": null,
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_call"
+              },
+              {
+                "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
+              },
+              {
                 "symbol": "submit_hours_proof"
               }
             ],
@@ -12714,14 +14846,14 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 86
+                    "lo": 46
                   }
                 },
                 {
                   "u64": 0
                 },
                 {
-                  "bytes": "19ed90dbec83cb4b90365d366992e0080ea80c7a15822620d7977d65177bcdec37ee509570fdbe99bf6eab3ee34830abd383f0fcd6ef8d3a1b13a79b8ddb1705"
+                  "bytes": "78de14750f19ddd60f832717c51cdaebb03269672380e312d2a52f14124acacf2fd1d76793d52b901fd9d5924af9e7846eb7285613512f80b677dddafe79cf0c"
                 }
               ]
             }
@@ -12756,7 +14888,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 86
+                    "lo": 46
                   }
                 }
               ]
@@ -12982,7 +15114,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1046
+                    "lo": 1150
                   }
                 }
               ]
@@ -13016,7 +15148,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 1046
+                "lo": 1150
               }
             }
           }
@@ -13057,6 +15189,54 @@
                 "symbol": "payment"
               },
               {
+                "symbol": "paid"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "u32": 7
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAYRE5"
+                },
+                {
+                  "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 1150
+                  }
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 46
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "payment"
+              },
+              {
                 "symbol": "final"
               }
             ],
@@ -13068,7 +15248,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1046
+                    "lo": 1150
                   }
                 },
                 {
@@ -13107,7 +15287,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 1046
+                          "lo": 1150
                         }
                       }
                     },
@@ -13126,7 +15306,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 86
+                          "lo": 46
                         }
                       }
                     },
@@ -13242,7 +15422,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 1046
+                "lo": 1150
               }
             }
           }
@@ -13290,7 +15470,7 @@
                           "val": {
                             "i128": {
                               "hi": 0,
-                              "lo": 1047
+                              "lo": 1175
                             }
                           }
                         },
@@ -13412,7 +15592,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1047
+                    "lo": 1175
                   }
                 }
               ]
@@ -13446,7 +15626,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 1047
+                "lo": 1175
               }
             }
           }
@@ -13501,8 +15681,62 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1047
+                    "lo": 1175
                   }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "payment"
+              },
+              {
+                "symbol": "add"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "u32": 8
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA2ZMN"
+                },
+                {
+                  "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 1175
+                  }
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 25
+                  }
+                },
+                {
+                  "u64": 1
+                },
+                {
+                  "u64": 2
                 }
               ]
             }
@@ -13549,6 +15783,214 @@
                 "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
               },
               {
+                "symbol": "get_escrow"
+              }
+            ],
+            "data": {
+              "u32": 8
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_return"
+              },
+              {
+                "symbol": "get_escrow"
+              }
+            ],
+            "data": {
+              "map": [
+                {
+                  "key": {
+                    "symbol": "cancelled"
+                  },
+                  "val": {
+                    "bool": false
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "finance_approved"
+                  },
+                  "val": {
+                    "bool": false
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "finance_approver"
+                  },
+                  "val": {
+                    "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "manager"
+                  },
+                  "val": {
+                    "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "manager_approved"
+                  },
+                  "val": {
+                    "bool": false
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "oracle_pubkey"
+                  },
+                  "val": {
+                    "bytes": "79b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad049664"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "oracle_rotations"
+                  },
+                  "val": {
+                    "u32": 0
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "payments"
+                  },
+                  "val": {
+                    "vec": [
+                      {
+                        "map": [
+                          {
+                            "key": {
+                              "symbol": "amount"
+                            },
+                            "val": {
+                              "i128": {
+                                "hi": 0,
+                                "lo": 1175
+                              }
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "end_date"
+                            },
+                            "val": {
+                              "u64": 2
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "hours_logged"
+                            },
+                            "val": {
+                              "i128": {
+                                "hi": 0,
+                                "lo": 0
+                              }
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "id"
+                            },
+                            "val": {
+                              "u32": 1
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "proof_verified"
+                            },
+                            "val": {
+                              "bool": false
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "rate_per_hour"
+                            },
+                            "val": {
+                              "i128": {
+                                "hi": 0,
+                                "lo": 25
+                              }
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "start_date"
+                            },
+                            "val": {
+                              "u64": 1
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "status"
+                            },
+                            "val": {
+                              "u32": 0
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "token"
+                            },
+                            "val": {
+                              "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "worker"
+                            },
+                            "val": {
+                              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA2ZMN"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": null,
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_call"
+              },
+              {
+                "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
+              },
+              {
                 "symbol": "submit_hours_proof"
               }
             ],
@@ -13563,14 +16005,14 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 87
+                    "lo": 47
                   }
                 },
                 {
                   "u64": 0
                 },
                 {
-                  "bytes": "be77e46e11a4445948d6be660cc6b98426ec50a2ffcaa18613c4354ab81eceb874cddb51f066fa38f9d9f4be5220a81e2e7afef83c773e15ff8e2e4dded7840b"
+                  "bytes": "21d4c6568c4c893fc4c0af018bd4d0ed57effc83e1fad9ddf600a74ee7f2a9a2161f38819e538a6e0e0dc181fb3675662308f82c3fa07b58cb3b62aa8f7bf407"
                 }
               ]
             }
@@ -13605,7 +16047,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 87
+                    "lo": 47
                   }
                 }
               ]
@@ -13831,7 +16273,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1047
+                    "lo": 1175
                   }
                 }
               ]
@@ -13865,7 +16307,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 1047
+                "lo": 1175
               }
             }
           }
@@ -13906,6 +16348,54 @@
                 "symbol": "payment"
               },
               {
+                "symbol": "paid"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "u32": 8
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA2ZMN"
+                },
+                {
+                  "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 1175
+                  }
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 47
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "payment"
+              },
+              {
                 "symbol": "final"
               }
             ],
@@ -13917,7 +16407,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1047
+                    "lo": 1175
                   }
                 },
                 {
@@ -13956,7 +16446,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 1047
+                          "lo": 1175
                         }
                       }
                     },
@@ -13975,7 +16465,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 87
+                          "lo": 47
                         }
                       }
                     },
@@ -14091,7 +16581,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 1047
+                "lo": 1175
               }
             }
           }
@@ -14139,7 +16629,7 @@
                           "val": {
                             "i128": {
                               "hi": 0,
-                              "lo": 1048
+                              "lo": 1000
                             }
                           }
                         },
@@ -14261,7 +16751,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1048
+                    "lo": 1000
                   }
                 }
               ]
@@ -14295,7 +16785,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 1048
+                "lo": 1000
               }
             }
           }
@@ -14350,8 +16840,62 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1048
+                    "lo": 1000
                   }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "payment"
+              },
+              {
+                "symbol": "add"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "u32": 9
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4BV5"
+                },
+                {
+                  "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 1000
+                  }
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 25
+                  }
+                },
+                {
+                  "u64": 1
+                },
+                {
+                  "u64": 2
                 }
               ]
             }
@@ -14398,6 +16942,214 @@
                 "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
               },
               {
+                "symbol": "get_escrow"
+              }
+            ],
+            "data": {
+              "u32": 9
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_return"
+              },
+              {
+                "symbol": "get_escrow"
+              }
+            ],
+            "data": {
+              "map": [
+                {
+                  "key": {
+                    "symbol": "cancelled"
+                  },
+                  "val": {
+                    "bool": false
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "finance_approved"
+                  },
+                  "val": {
+                    "bool": false
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "finance_approver"
+                  },
+                  "val": {
+                    "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "manager"
+                  },
+                  "val": {
+                    "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "manager_approved"
+                  },
+                  "val": {
+                    "bool": false
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "oracle_pubkey"
+                  },
+                  "val": {
+                    "bytes": "79b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad049664"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "oracle_rotations"
+                  },
+                  "val": {
+                    "u32": 0
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "payments"
+                  },
+                  "val": {
+                    "vec": [
+                      {
+                        "map": [
+                          {
+                            "key": {
+                              "symbol": "amount"
+                            },
+                            "val": {
+                              "i128": {
+                                "hi": 0,
+                                "lo": 1000
+                              }
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "end_date"
+                            },
+                            "val": {
+                              "u64": 2
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "hours_logged"
+                            },
+                            "val": {
+                              "i128": {
+                                "hi": 0,
+                                "lo": 0
+                              }
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "id"
+                            },
+                            "val": {
+                              "u32": 1
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "proof_verified"
+                            },
+                            "val": {
+                              "bool": false
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "rate_per_hour"
+                            },
+                            "val": {
+                              "i128": {
+                                "hi": 0,
+                                "lo": 25
+                              }
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "start_date"
+                            },
+                            "val": {
+                              "u64": 1
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "status"
+                            },
+                            "val": {
+                              "u32": 0
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "token"
+                            },
+                            "val": {
+                              "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "worker"
+                            },
+                            "val": {
+                              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4BV5"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": null,
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_call"
+              },
+              {
+                "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
+              },
+              {
                 "symbol": "submit_hours_proof"
               }
             ],
@@ -14412,14 +17164,14 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 88
+                    "lo": 40
                   }
                 },
                 {
                   "u64": 0
                 },
                 {
-                  "bytes": "4b369131d5cfa8fdf3b05573d0c0d853185b87b879639c8959d4d207b74c85548020b7f8991f8b753a19e0b743f562fafda60fb9d571f61c9ca17d90b7adda0f"
+                  "bytes": "d4648fd46183ca8c9f003f3259fb7b7bf958d251b12f5e89c49bd6751b6fd42c665652a2f062db9be7c17fe7b92293e3c7fec3155edfdb906dc2914298af780d"
                 }
               ]
             }
@@ -14454,7 +17206,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 88
+                    "lo": 40
                   }
                 }
               ]
@@ -14680,7 +17432,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1048
+                    "lo": 1000
                   }
                 }
               ]
@@ -14714,7 +17466,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 1048
+                "lo": 1000
               }
             }
           }
@@ -14755,6 +17507,54 @@
                 "symbol": "payment"
               },
               {
+                "symbol": "paid"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "u32": 9
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4BV5"
+                },
+                {
+                  "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 1000
+                  }
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 40
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "payment"
+              },
+              {
                 "symbol": "final"
               }
             ],
@@ -14766,7 +17566,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1048
+                    "lo": 1000
                   }
                 },
                 {
@@ -14805,7 +17605,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 1048
+                          "lo": 1000
                         }
                       }
                     },
@@ -14824,7 +17624,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 88
+                          "lo": 40
                         }
                       }
                     },
@@ -14940,7 +17740,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 1048
+                "lo": 1000
               }
             }
           }
@@ -14988,7 +17788,7 @@
                           "val": {
                             "i128": {
                               "hi": 0,
-                              "lo": 1049
+                              "lo": 1025
                             }
                           }
                         },
@@ -15110,7 +17910,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1049
+                    "lo": 1025
                   }
                 }
               ]
@@ -15144,7 +17944,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 1049
+                "lo": 1025
               }
             }
           }
@@ -15199,8 +17999,62 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1049
+                    "lo": 1025
                   }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "payment"
+              },
+              {
+                "symbol": "add"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "u32": 10
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA6J5N"
+                },
+                {
+                  "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 1025
+                  }
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 25
+                  }
+                },
+                {
+                  "u64": 1
+                },
+                {
+                  "u64": 2
                 }
               ]
             }
@@ -15247,6 +18101,214 @@
                 "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
               },
               {
+                "symbol": "get_escrow"
+              }
+            ],
+            "data": {
+              "u32": 10
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_return"
+              },
+              {
+                "symbol": "get_escrow"
+              }
+            ],
+            "data": {
+              "map": [
+                {
+                  "key": {
+                    "symbol": "cancelled"
+                  },
+                  "val": {
+                    "bool": false
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "finance_approved"
+                  },
+                  "val": {
+                    "bool": false
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "finance_approver"
+                  },
+                  "val": {
+                    "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "manager"
+                  },
+                  "val": {
+                    "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "manager_approved"
+                  },
+                  "val": {
+                    "bool": false
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "oracle_pubkey"
+                  },
+                  "val": {
+                    "bytes": "79b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad049664"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "oracle_rotations"
+                  },
+                  "val": {
+                    "u32": 0
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "payments"
+                  },
+                  "val": {
+                    "vec": [
+                      {
+                        "map": [
+                          {
+                            "key": {
+                              "symbol": "amount"
+                            },
+                            "val": {
+                              "i128": {
+                                "hi": 0,
+                                "lo": 1025
+                              }
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "end_date"
+                            },
+                            "val": {
+                              "u64": 2
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "hours_logged"
+                            },
+                            "val": {
+                              "i128": {
+                                "hi": 0,
+                                "lo": 0
+                              }
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "id"
+                            },
+                            "val": {
+                              "u32": 1
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "proof_verified"
+                            },
+                            "val": {
+                              "bool": false
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "rate_per_hour"
+                            },
+                            "val": {
+                              "i128": {
+                                "hi": 0,
+                                "lo": 25
+                              }
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "start_date"
+                            },
+                            "val": {
+                              "u64": 1
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "status"
+                            },
+                            "val": {
+                              "u32": 0
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "token"
+                            },
+                            "val": {
+                              "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
+                            }
+                          },
+                          {
+                            "key": {
+                              "symbol": "worker"
+                            },
+                            "val": {
+                              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA6J5N"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": null,
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_call"
+              },
+              {
+                "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
+              },
+              {
                 "symbol": "submit_hours_proof"
               }
             ],
@@ -15261,14 +18323,14 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 89
+                    "lo": 41
                   }
                 },
                 {
                   "u64": 0
                 },
                 {
-                  "bytes": "bb05f06a2a202215b8cd6f8e2c2ce842730c5259dcec757ab59392b684a83660e71a067997e32f0e08c334e8eb5a39c5ee4e5db4921f9e7754eafa74442e1a0d"
+                  "bytes": "fcc334487ed0de43025a2cd64a471dd18bd7aa9999f5843b4e3820b640616df48dd1771190860bb7c67960c7dbe62e7b957d35e0cfbefc2fc0ebf2387a72a600"
                 }
               ]
             }
@@ -15303,7 +18365,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 89
+                    "lo": 41
                   }
                 }
               ]
@@ -15529,7 +18591,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1049
+                    "lo": 1025
                   }
                 }
               ]
@@ -15563,7 +18625,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 1049
+                "lo": 1025
               }
             }
           }
@@ -15604,6 +18666,54 @@
                 "symbol": "payment"
               },
               {
+                "symbol": "paid"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "u32": 10
+                },
+                {
+                  "u32": 0
+                },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA6J5N"
+                },
+                {
+                  "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 1025
+                  }
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 41
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "payment"
+              },
+              {
                 "symbol": "final"
               }
             ],
@@ -15615,7 +18725,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 1049
+                    "lo": 1025
                   }
                 },
                 {
@@ -15654,7 +18764,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 1049
+                          "lo": 1025
                         }
                       }
                     },
@@ -15673,7 +18783,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 89
+                          "lo": 41
                         }
                       }
                     },
@@ -15789,7 +18899,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 1049
+                "lo": 1025
               }
             }
           }
@@ -15893,7 +19003,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 989555
+                "lo": 989275
               }
             }
           }

@@ -1,86 +1,99 @@
+/**
+ * GET  /api/invitations/:token — what this invitation offers
+ * POST /api/invitations/:token — accept it
+ *
+ * Public by necessity: the recipient has no membership yet, so there is nothing to
+ * authorize against except the token itself. Acceptance still requires an
+ * authenticated wallet — a token proves you were invited, not who you are.
+ *
+ * ── Why every failure looks the same ────────────────────────────────────────
+ * Expired, revoked, already-used and never-existed all return the same 404 body.
+ * Distinguishing them tells someone probing tokens which of their guesses were
+ * real, and a real-but-used token still reveals that an organization invited that
+ * address.
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db/prisma';
-import { getUserFromRequest, Role } from '@/lib/auth';
-import { audit } from '@/lib/audit';
+import { getUserFromRequest } from '@/lib/auth';
+import { resolveInvitation, acceptInvitation } from '@/lib/tenancy/membership';
+import { permissionsFor } from '@/lib/tenancy/rbac';
+import { rateLimit, clientIp } from '@/lib/ratelimit';
 
-export async function GET(request: NextRequest, { params }: { params: { token: string } }) {
-  try {
-    const invitation = await prisma.invitation.findUnique({
-      where: { token: params.token },
-    });
+const NOT_FOUND = NextResponse.json(
+  { error: 'This invitation is not valid. Ask your administrator for a new one.' },
+  { status: 404 }
+);
 
-    if (!invitation) {
-      return NextResponse.json({ error: 'Invalid or expired invitation token' }, { status: 404 });
-    }
+export async function GET(_request: NextRequest, { params }: { params: { token: string } }) {
+  // Unauthenticated and guessable-by-construction, so brake it per IP.
+  const rl = rateLimit(`invite-read:${clientIp(_request)}`, 30, 60_000);
+  if (!rl.ok) return NOT_FOUND;
 
-    if (invitation.usedAt) {
-      return NextResponse.json({ error: 'This invitation link has already been used' }, { status: 400 });
-    }
-
-    if (invitation.expiresAt < new Date()) {
-      return NextResponse.json({ error: 'This invitation has expired' }, { status: 400 });
-    }
-
-    return NextResponse.json({
-      invitation: {
-        email: invitation.email,
-        role: invitation.role,
-        expiresAt: invitation.expiresAt,
-      },
-    });
-  } catch (error) {
-    console.error('[invitations/token] GET error:', error);
-    return NextResponse.json({ error: 'Failed to validate invitation' }, { status: 500 });
+  const resolved = await resolveInvitation(prisma, params.token);
+  if (!resolved.ok) {
+    console.warn(`[invitations] rejected lookup: ${resolved.reason}`);
+    return NOT_FOUND;
   }
+
+  const org = await prisma.organization.findUnique({
+    where: { id: resolved.value.orgId },
+    select: { name: true, slug: true },
+  });
+
+  return NextResponse.json({
+    invitation: {
+      // The organization NAME is shown so the recipient knows what they are
+      // joining. Its id is not: that is an internal identifier with no business
+      // meaning to an invitee.
+      organizationName: org?.name ?? 'an organization',
+      email: resolved.value.email,
+      role: resolved.value.orgRole,
+      permissions: permissionsFor(resolved.value.orgRole),
+    },
+  });
 }
 
 export async function POST(request: NextRequest, { params }: { params: { token: string } }) {
+  const rl = rateLimit(`invite-accept:${clientIp(request)}`, 10, 60_000);
+  if (!rl.ok) return NOT_FOUND;
+
+  // A token says you were invited. It does not say who you are — that needs a
+  // wallet signature, so the membership is bound to a proven identity.
   const user = await getUserFromRequest(request);
   if (!user) {
-    return NextResponse.json({ error: 'Please connect and sign in with your wallet first' }, { status: 401 });
+    return NextResponse.json(
+      {
+        error: 'Connect and sign in with your Stellar wallet to accept this invitation.',
+        code: 'AUTHENTICATION_REQUIRED',
+      },
+      { status: 401 }
+    );
   }
 
-  try {
-    const invitation = await prisma.invitation.findUnique({
-      where: { token: params.token },
-    });
+  const result = await acceptInvitation(prisma, params.token, {
+    id: user.userId,
+    walletAddress: user.walletAddress,
+  });
 
-    if (!invitation) {
-      return NextResponse.json({ error: 'Invalid invitation token' }, { status: 404 });
+  if (!result.ok) {
+    // A 403 here is meaningful and safe: the caller is authenticated, and being
+    // told their membership was removed is information they already have.
+    if (result.status === 403) {
+      return NextResponse.json({ error: result.message }, { status: 403 });
     }
-
-    if (invitation.usedAt) {
-      return NextResponse.json({ error: 'This invitation link has already been redeemed' }, { status: 400 });
-    }
-
-    if (invitation.expiresAt < new Date()) {
-      return NextResponse.json({ error: 'This invitation link has expired' }, { status: 400 });
-    }
-
-    // Assign the role to the logged-in wallet user
-    const updatedUser = await prisma.user.update({
-      where: { walletAddress: user.walletAddress },
-      data: { role: invitation.role as Role },
-    });
-
-    // Mark invitation as used
-    await prisma.invitation.update({
-      where: { token: params.token },
-      data: { usedAt: new Date() },
-    });
-
-    await audit('invitation.accept', {
-      actor: user.walletAddress,
-      target: invitation.email,
-      metadata: { role: invitation.role, token: params.token },
-    });
-
-    return NextResponse.json({
-      message: `Invitation accepted! Role set to ${updatedUser.role}`,
-      user: updatedUser,
-    });
-  } catch (error) {
-    console.error('[invitations/token] POST error:', error);
-    return NextResponse.json({ error: 'Failed to redeem invitation' }, { status: 500 });
+    return NOT_FOUND;
   }
+
+  const org = await prisma.organization.findUnique({
+    where: { id: result.value.orgId },
+    select: { id: true, name: true, slug: true },
+  });
+
+  return NextResponse.json({
+    joined: true,
+    organization: org,
+    role: result.value.role,
+    permissions: permissionsFor(result.value.role),
+  });
 }

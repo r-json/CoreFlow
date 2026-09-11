@@ -20,10 +20,17 @@ coverage
 node_modules/
 
 # dotenv environment variables files
+#
+# Deny EVERY .env variant and re-admit only the example. The previous list named
+# .env, .env.local and .env.*.local individually, which left .env.production,
+# .env.development and anything else a tool decides to write unignored — and a
+# `vercel env pull` writes real production secrets into files like those.
 .env
-.env.local
-.env.*.local
+.env.*
 !.env.example
+
+# Local TLS certificates for `next dev --experimental-https`
+certs/
 
 # IDE & OS
 .vscode/
@@ -60,3 +67,8 @@ contracts/*/target/
 # Playwright
 /playwright-report/
 /test-results/
+
+# Exported environment dumps (e.g. `vercel env pull`) — these hold LIVE secrets
+prodenv.txt
+*env*.txt
+.env*.txt

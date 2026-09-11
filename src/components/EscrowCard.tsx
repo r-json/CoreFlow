@@ -16,8 +16,25 @@ import {
   Fingerprint,
 } from 'lucide-react';
 import { EscrowTimeline } from './EscrowTimeline';
+import { BatchPaymentsTable } from './payments/BatchPaymentsTable';
 import { FeeSavings } from './FeeSavings';
 import { PaymentReceipt } from './PaymentReceipt';
+import { txUrl } from '@/lib/explorer';
+
+/** One payment within an escrow, as returned by GET /api/escrows. */
+export interface EscrowPaymentData {
+  id: string;
+  index?: number | null;
+  recipient: string;
+  /** Pre-formatted at the asset's own precision. */
+  amount: string;
+  amountBaseUnits?: string;
+  hours?: string;
+  state: string;
+  stateLabel?: string;
+  txHash?: string | null;
+  settledAt?: string | null;
+}
 
 export interface EscrowData {
   id: number;
@@ -33,6 +50,16 @@ export interface EscrowData {
   created_at: string;
   transaction_hash?: string;
   isMock?: boolean;
+  /**
+   * The escrow's payments, one per payee.
+   *
+   * Optional because the mock/demo path still produces single-payee escrows. When
+   * present with more than one row, the card renders the per-payment breakdown
+   * instead of a single aggregate line — an escrow-shaped summary of a multi-payee
+   * batch is the lossiness this model removed.
+   */
+  payments?: EscrowPaymentData[];
+  paymentCount?: number;
 }
 
 interface EscrowCardProps {
@@ -212,6 +239,32 @@ export const EscrowCard = ({
               icon={<KeyRound className="w-3.5 h-3.5 text-slate-400" />}
               label="Custody"
               value="Soroban Escrow Contract"
+            />
+          </div>
+        )}
+
+        {/*
+          Per-payment breakdown.
+
+          Shown whenever the escrow holds more than one payment. Rendering a
+          multi-payee batch as a single aggregate line is exactly what hid eleven
+          of twelve contractors in the previous model, so the individual payments
+          take precedence over the summary above.
+        */}
+        {escrow.payments && escrow.payments.length > 1 && (
+          <div className="mt-4">
+            <BatchPaymentsTable
+              payments={escrow.payments.map((p) => ({
+                id: p.id,
+                index: p.index,
+                recipient: p.recipient,
+                amount: p.amount,
+                hours: p.hours,
+                state: p.state,
+                txHash: p.txHash,
+              }))}
+              total={escrow.amount}
+              assetCode={escrow.currency}
             />
           </div>
         )}
@@ -399,7 +452,7 @@ export const EscrowCard = ({
 
           {escrow.transaction_hash && (
             <a
-              href={`https://stellar.expert/explorer/public/tx/${escrow.transaction_hash}`}
+              href={txUrl(escrow.transaction_hash)}
               target="_blank"
               rel="noopener noreferrer"
               className="text-xs font-semibold text-slate-500 hover:text-violet-400 transition-colors self-end md:self-auto"
