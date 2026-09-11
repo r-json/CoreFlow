@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { STELLAR_CONFIG } from '@/lib/config';
+import { contractUrl, explorerNetworkLabel, V1_MAINNET } from '@/lib/explorer';
 import { ShieldCheck, Coins, FileCheck2, Crown, Users, ArrowRight, Lock } from 'lucide-react';
 
 const FEATURES = [
@@ -109,16 +111,50 @@ export default function LandingPage() {
           </Link>
         </section>
 
-        {/* Contract Link */}
-        <div className="text-center mb-16">
-          <a
-            href="https://stellar.expert/explorer/public/contract/CCTF5WBOQR7JP2KPLQT372X7JCGCINHDFRSAPF4YTYRKZXZ3J2XPRFFW"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl font-semibold border border-white/10 bg-slate-900/60 hover:bg-slate-800 text-slate-200 transition-colors text-sm"
-          >
-            View Smart Contract on Stellar Expert
-          </a>
+        {/*
+          Two deployments, stated as two deployments.
+
+          A single link labelled "View Smart Contract" implied that whatever the
+          product does today is what is running on Mainnet. It is not: v1 is the
+          historical Mainnet deployment, and v2 — domain-separated attestations,
+          an admin-managed oracle registry, and the work/amount invariant — is
+          deployed on Testnet only. Presenting one link would claim v2's
+          security properties for Mainnet, which is not true.
+        */}
+        <div className="mb-16">
+          <p className="text-center text-xs uppercase tracking-wider font-bold text-slate-500 mb-4">
+            Verify on-chain
+          </p>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">
+            {STELLAR_CONFIG.isConfigured() && (
+              <a
+                href={contractUrl(STELLAR_CONFIG.contract.id)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex flex-col items-center gap-1 px-5 py-3 rounded-xl border border-sky-500/30 bg-sky-500/5 hover:bg-sky-500/10 text-slate-200 transition-colors text-sm"
+              >
+                <span className="font-semibold">CoreFlow v2 — {explorerNetworkLabel()}</span>
+                <span className="text-[11px] text-sky-300/80">
+                  Hardened contract · active deployment
+                </span>
+              </a>
+            )}
+            <a
+              href={V1_MAINNET.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex flex-col items-center gap-1 px-5 py-3 rounded-xl border border-white/10 bg-slate-900/60 hover:bg-slate-800 text-slate-200 transition-colors text-sm"
+            >
+              <span className="font-semibold">CoreFlow v1 — Mainnet</span>
+              <span className="text-[11px] text-slate-400">
+                Earlier deployment · superseded by v2
+              </span>
+            </a>
+          </div>
+          <p className="mt-4 text-center text-[11px] text-slate-500 max-w-xl mx-auto">
+            v2&rsquo;s security improvements are deployed on Testnet and have not been
+            migrated to Mainnet. The v1 Mainnet contract does not carry them.
+          </p>
         </div>
 
         {/* Features */}

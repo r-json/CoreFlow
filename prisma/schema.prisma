@@ -1,5 +1,17 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// CoreFlow data model.
+//
+// ── Authority, stated once ───────────────────────────────────────────────────
+// THE CHAIN IS AUTHORITATIVE for settlement: token movement, contract
+// authorization, contract state, and final transaction results. This database is
+// a PROJECTION of that truth plus the workflow metadata the chain does not hold
+// (organizations, CSV provenance, assignments, search, audit views).
+//
+// Consequences encoded below:
+//   * `Payment.state` is a projection, never an assertion. Only the indexer —
+//     reading the contract's event log — may move a payment to PAID.
+//   * A disagreement between this database and the chain is recorded as a
+//     `ReconciliationFinding` and surfaced, never silently overwritten.
+//   * Money is BigInt base units only. No Float, no Decimal-as-Float, no cents.
 
 generator client {
   provider = "prisma-client-js"
@@ -13,52 +25,102 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-/// Two-role access control: ADMIN (full access) and EMPLOYEE (restricted).
+// ─── Identity & tenancy ───────────────────────────────────────────────────────
+
+/// Legacy platform-wide role. Retained so existing sessions and the admin
+/// bootstrap path keep working; per-organization authority lives in `OrgRole`.
 enum Role {
   ADMIN
   EMPLOYEE
 }
 
-model Escrow {
-  id              Int       @id @default(autoincrement())
-  onChainId       Int?      @unique // The Soroban contract escrow ID (can be null if pending creation)
-  workerPubKey    String
-  amountCents     Int
-  rateCents       Int
-  currency        String    @default("USDC")
-  tokenAddress    String?   // Stellar Asset Contract address used for custody/settlement
-  status          String    @default("pending_manager") // pending_manager, pending_finance, ready, paid, cancelled, rejected
-  managerApproved Boolean   @default(false)
-  financeApproved Boolean   @default(false)
-  rejectionReason String?   // Reason provided by Admin if hours/escrow rejected
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  timeLogs        TimeLog[]
-
-  @@index([createdAt])
+/// Authority WITHIN an organization. Every payment operation is authorized
+/// against this, never against the platform-wide `Role`.
+///
+/// MANAGER and FINANCE are deliberately separate and neither implies the other:
+/// the product's core claim is separation of duties, and a role that could do
+/// both would make the dual-approval gate vacuous in the same way a single
+/// signer holding both on-chain keys would.
+enum OrgRole {
+  OWNER
+  ADMIN
+  MANAGER
+  FINANCE
+  WORKER
+  VIEWER
 }
 
-model TimeLog {
-  id              Int       @id @default(autoincrement())
-  escrowId        Int
-  escrow          Escrow    @relation(fields: [escrowId], references: [id])
-  hoursLogged     Int
-  paymentId       Int       // Represents the schedule index from Soroban
-  txHash          String    @unique // Enforce uniqueness to prevent double-counting hours off-chain
-  createdAt       DateTime  @default(now())
+/// Membership lifecycle. Only ACTIVE grants any authority.
+///
+/// SUSPENDED is kept distinct from REMOVED so access can be revoked without
+/// destroying the record of who held what — an audit trail that says a role
+/// "never existed" after an incident is worse than no trail at all.
+enum MembershipStatus {
+  INVITED
+  ACTIVE
+  SUSPENDED
+  REMOVED
 }
 
-// ─── Authentication Models ────────────────────────────────────────────────────
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members      OrgMember[]
+  projects     Project[]
+  workers      Worker[]
+  escrows      Escrow[]
+  batches      PayrollBatch[]
+  payments     Payment[]
+  approvals    Approval[]
+  attestations OracleAttestation[]
+  transactions BlockchainTransaction[]
+  auditEvents  AuditEvent[]
+  findings     ReconciliationFinding[]
+  reconciliationRuns ReconciliationRun[]
+  invitations  Invitation[]
+}
+
+model OrgMember {
+  id    String  @id @default(cuid())
+  orgId String
+  org   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   OrgRole @default(VIEWER)
+  status MembershipStatus @default(ACTIVE)
+
+  /// Who granted this membership, for audit.
+  invitedBy String?
+  invitedAt DateTime?
+  activatedAt DateTime?
+  suspendedAt DateTime?
+  removedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// One membership row per user per organization.
+  @@unique([orgId, userId])
+  @@index([userId])
+  @@index([orgId, role])
+  @@index([orgId, status])
+}
 
 model User {
   id            String    @id @default(cuid())
   walletAddress String    @unique
-  /// ADMIN or EMPLOYEE — stored as a Prisma enum for type safety
+  /// Platform-wide role. Organization authority comes from OrgMember.
   role          Role      @default(EMPLOYEE)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-  sessions      Session[]
+
+  sessions     Session[]
+  memberships  OrgMember[]
+  workerProfiles Worker[]
 }
 
 model Session {
@@ -74,62 +136,778 @@ model Session {
   @@index([expiresAt])
 }
 
-model Invitation {
-  id        String    @id @default(cuid())
-  email     String    @unique
-  role      Role      @default(EMPLOYEE)
-  token     String    @unique
-  expiresAt DateTime
-  usedAt    DateTime?
-  createdAt DateTime  @default(now())
+model Project {
+  id        String   @id @default(cuid())
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  name      String
+  code      String
+  archivedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@index([token])
-  @@index([email])
+  escrows  Escrow[]
+  batches  PayrollBatch[]
+  payments Payment[]
+
+  @@unique([orgId, code])
+  @@index([orgId])
+  /// Referenced by composite foreign keys, so a child cannot point at a
+  /// parent in another organization.
+  @@unique([orgId, id])
 }
 
+/// A payee. Distinct from `User`: a worker may be paid without ever signing in,
+/// and the same wallet may be a worker in several organizations.
+model Worker {
+  id          String   @id @default(cuid())
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  /// Optional link to a platform account, when the payee has one.
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  walletAddress String
+  displayName String?
+  email       String?
+  archivedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  payments Payment[]
+
+  @@unique([orgId, walletAddress])
+  @@index([orgId])
+  /// Referenced by composite foreign keys, so a child cannot point at a
+  /// parent in another organization.
+  @@unique([orgId, id])
+}
+
+// ─── Escrow (on-chain custody) ────────────────────────────────────────────────
+
+model Escrow {
+  id        String   @id @default(cuid())
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  projectId String?
+  /// COMPOSITE FOREIGN KEY. Referencing (orgId, id) rather than id alone makes it
+  /// structurally impossible to attach this escrow to a project owned by a
+  /// different organization — a plain FK only checks the row exists.
+  project   Project? @relation(fields: [orgId, projectId], references: [orgId, id], onDelete: NoAction)
+
+  /// The Soroban escrow id. Null only while a creation transaction is in flight.
+  onChainId  Int?    @unique
+  /// Which deployment this escrow lives in. v1 Mainnet and v2 Testnet escrows
+  /// must never be conflated, and escrow ids collide across deployments.
+  contractId String
+  network    String  @default("testnet")
+
+  managerAddress         String
+  financeApproverAddress String
+  oraclePublicKey        String?
+
+  /// Aggregate custody. Per-payment amounts live on Payment.
+  tokenAddress         String?
+  assetDecimals        Int     @default(7)
+  totalAmountBaseUnits BigInt  @default(0)
+
+  /// Projection of contract booleans, written only by the indexer.
+  managerApproved Boolean @default(false)
+  financeApproved Boolean @default(false)
+  cancelled       Boolean @default(false)
+  oracleRotations Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  payments     Payment[]
+  transactions BlockchainTransaction[]
+  auditEvents  AuditEvent[]
+
+  @@index([orgId])
+  @@index([contractId, network])
+  @@index([createdAt])
+  /// Composite-FK target.
+  @@unique([orgId, id])
+}
+
+// ─── Payroll batch (the unit a human uploads and approves) ────────────────────
+
+model PayrollBatch {
+  id        String   @id @default(cuid())
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  projectId String?
+  /// Composite FK — see Escrow.project.
+  project   Project? @relation(fields: [orgId, projectId], references: [orgId, id], onDelete: NoAction)
+
+  /// Human-facing identifier, e.g. CF-00042.
+  reference String
+
+  periodStart DateTime?
+  periodEnd   DateTime?
+
+  /// Provenance for a CSV-originated batch.
+  sourceFilename String?
+  sourceRowCount Int?
+  uploadedBy     String?
+
+  /// Retry key for batch CREATION, supplied by the client as `Idempotency-Key`.
+  ///
+  /// A finance user who double-clicks Create, refreshes after a gateway timeout,
+  /// or has the page open in two tabs must not end up with two payrolls. The
+  /// uniqueness is enforced by the database rather than by a read-then-write in
+  /// the service, because check-then-insert is a race that loses precisely under
+  /// the concurrency it is meant to handle. NULL is allowed and repeatable:
+  /// Postgres treats NULLs as distinct in a unique index, so a batch created
+  /// without a key is unaffected.
+  idempotencyKey String?
+
+  /// SHA-256 of the semantically meaningful parts of the creation request.
+  ///
+  /// Paired with `idempotencyKey` to tell a genuine retry from a key collision.
+  /// A retry carries the same payload and must replay the original outcome; the
+  /// SAME key with a DIFFERENT payload is a client bug, and honouring it would
+  /// silently return a batch that is not the one the caller just asked for. That
+  /// is refused rather than guessed at.
+  idempotencyFingerprint String?
+
+  /// SHA-256 of the uploaded file's bytes.
+  ///
+  /// NOT an idempotency key: uploading a byte-identical file next pay period is
+  /// legitimate, and must not be silently swallowed. It exists so the UI can say
+  /// "you uploaded this same file 4 minutes ago as CF-00041" and let a human
+  /// decide, which is the opposite of guessing on their behalf.
+  sourceChecksum String?
+
+  /// NOTE: there is deliberately no aggregate `status` column. A batch's
+  /// standing is derived from its payments; a stored rollup would be a second
+  /// copy of mutable truth, free to drift from the payments it summarizes.
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  payments     Payment[]
+  auditEvents  AuditEvent[]
+  transactions BlockchainTransaction[]
+
+  @@unique([orgId, reference])
+  /// The constraint that makes a double-submitted payroll impossible rather than
+  /// unlikely. Scoped to the organization: two tenants may reuse a key.
+  @@unique([orgId, idempotencyKey])
+  @@index([orgId])
+  @@index([createdAt])
+  @@index([orgId, sourceChecksum])
+  /// Composite-FK target.
+  @@unique([orgId, id])
+}
+
+// ─── Payment (the atomic financial record) ────────────────────────────────────
+
+/// Lifecycle of a single payment to a single payee.
+///
+/// Defined in full, with valid transitions and responsible actors, in
+/// docs/PAYMENT_STATE_MACHINE.md. The transition table is enforced in code by
+/// src/lib/payments/state-machine.ts — this enum only names the states.
+enum PaymentState {
+  /// Created, not yet validated. Editable.
+  DRAFT
+  /// Undergoing validation (address, amount, asset, hours/rate divisibility).
+  VALIDATING
+  /// Valid and funded on-chain; waiting for an oracle attestation.
+  AWAITING_ORACLE
+  /// An oracle attestation has been verified ON-CHAIN for this payment.
+  ORACLE_VERIFIED
+  /// Waiting for the manager's on-chain approval.
+  AWAITING_MANAGER
+  /// Manager approved; waiting for the distinct finance approver.
+  AWAITING_FINANCE
+  /// Both approvals present on-chain. Settlement may be submitted.
+  READY_TO_SETTLE
+  /// A settlement transaction has been built and signed, submission in flight.
+  SUBMITTING
+  /// Submitted and accepted by the network; awaiting ledger confirmation.
+  CONFIRMING
+  /// Chain-confirmed settlement. Only the indexer may set this.
+  PAID
+
+  // ── Failure and recovery states, each distinct on purpose ──
+  /// An approver explicitly declined.
+  REJECTED
+  /// Cancelled before settlement; on-chain custody refunded.
+  CANCELLED
+  /// The pay period or attestation window lapsed without settlement.
+  EXPIRED
+  /// The transaction never reached the network (build/sign/RPC failure).
+  /// Safe to retry: nothing was submitted.
+  SUBMISSION_FAILED
+  /// The transaction reached the chain and FAILED there. Retry only after
+  /// establishing what the chain actually did.
+  SETTLEMENT_FAILED
+  /// Database and chain disagree. Requires operator resolution; never cleared
+  /// automatically.
+  RECONCILIATION_REQUIRED
+}
+
+model Payment {
+  id    String @id @default(cuid())
+  orgId String
+  org   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  /// EVERY parent relation below is a COMPOSITE foreign key on (orgId, id),
+  /// and every one uses `onDelete: NoAction` rather than `SetNull`.
+  ///
+  /// SetNull is impossible here and was a latent defect: it nulls ALL the FK's
+  /// columns, and `orgId` is NOT NULL — so deleting an Escrow that any payment
+  /// referenced failed with "Null constraint violation on the fields: (orgId)".
+  /// Found by an integration test against real PostgreSQL; `prisma validate` had
+  /// been warning about it, and the unit suite could not see it.
+  ///
+  /// NoAction rather than Restrict because NO ACTION is checked at the END of the
+  /// statement. A cascading delete from Organization removes the parent and the
+  /// child in one statement, which RESTRICT would reject depending on evaluation
+  /// order. The effect for a direct delete is the same: an Escrow, Project or
+  /// Worker still referenced by a payment cannot be removed, which is correct —
+  /// detaching a payment from its context destroys the evidence of what was paid
+  /// for, and a financial record must outlive an attempt to tidy up around it.
+  ///
+  /// A plain `batchId` FK only guarantees the batch exists — not that it belongs
+  /// to this payment's organization. Without the composite key, a bug or a
+  /// crafted request could produce a payment in org A attached to a batch, escrow,
+  /// project or worker in org B, and no database constraint would object. The
+  /// tenant boundary would then depend entirely on the application remembering to
+  /// check, which is exactly what this phase is meant to stop relying on.
+  batchId String
+  batch   PayrollBatch @relation(fields: [orgId, batchId], references: [orgId, id], onDelete: Cascade)
+
+  escrowId String?
+  escrow   Escrow? @relation(fields: [orgId, escrowId], references: [orgId, id], onDelete: NoAction)
+
+  projectId String?
+  project   Project? @relation(fields: [orgId, projectId], references: [orgId, id], onDelete: NoAction)
+
+  workerId String?
+  worker   Worker? @relation(fields: [orgId, workerId], references: [orgId, id], onDelete: NoAction)
+
+  /// The payee wallet, denormalized deliberately: it is the immutable financial
+  /// identity of this payment. Re-pointing a Worker row must never silently
+  /// change who a historical payment was made to.
+  recipientAddress String
+
+  /// Zero-based index of this payment within its escrow's on-chain payments
+  /// vector — the `payment_id` argument the contract takes.
+  onChainPaymentIndex Int?
+
+  /// Settlement asset, and its decimals, captured at creation.
+  assetContractId String?
+  assetCode       String  @default("USDC")
+  assetDecimals   Int     @default(7)
+
+  /// Money, in the asset's base units. BigInt only.
+  amountBaseUnits BigInt
+  rateBaseUnits   BigInt
+  /// Whole hours. v2 requires `hours * rate == amount` exactly; fractional
+  /// hours need a versioned scaled-hours schema (v3) and are NOT rounded here.
+  hours           BigInt
+
+  periodStart DateTime?
+  periodEnd   DateTime?
+
+  /// Free text from the uploader's CSV row, e.g. "Sprint 14".
+  ///
+  /// Stored already neutralized against spreadsheet formula injection (a leading
+  /// apostrophe where the value began with =, +, -, @, tab or CR), because this
+  /// text is re-displayed and can be re-exported. Neutralizing at the ingestion
+  /// boundary means no later renderer or export path has to remember to.
+  sourceReference String?
+
+  state          PaymentState @default(DRAFT)
+  stateUpdatedAt DateTime     @default(now())
+  /// Why the payment is in a failure state, in operator-readable terms.
+  stateReason    String?
+
+  settledAt DateTime?
+  /// Hash of the confirmed settlement transaction. Set only from chain evidence.
+  settlementTxHash String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  approvals    Approval[]
+  attestations OracleAttestation[]
+  transactions BlockchainTransaction[]
+  auditEvents  AuditEvent[]
+  findings     ReconciliationFinding[]
+
+  /// One payment per on-chain slot. This is the constraint that makes indexing
+  /// a three-payee settlement produce exactly three rows, no matter how many
+  /// times the events are replayed.
+  @@unique([escrowId, onChainPaymentIndex])
+  /// Composite-FK target for Approval, transactions, findings and audit rows.
+  @@unique([orgId, id])
+  @@index([orgId, state])
+  @@index([batchId])
+  @@index([escrowId])
+  @@index([recipientAddress])
+  @@index([createdAt])
+}
+
+/// An approval decision, recorded per payment per role.
+model Approval {
+  id        String @id @default(cuid())
+  /// Denormalized tenant owner. An approval reachable only by joining through
+  /// Payment forces every authorization check to remember the join; carrying the
+  /// organization makes the scope explicit and lets the composite FK enforce it.
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  paymentId String
+  payment   Payment @relation(fields: [orgId, paymentId], references: [orgId, id], onDelete: Cascade)
+
+  /// MANAGER or FINANCE. Stored as OrgRole so the separation-of-duties check
+  /// reads against the same vocabulary as membership.
+  role     OrgRole
+  decision ApprovalDecision
+  /// Wallet that signed, as observed on-chain where applicable.
+  actorAddress String
+  reason       String?
+  /// Transaction carrying the on-chain approval, when it had one.
+  txHash    String?
+  createdAt DateTime @default(now())
+
+  /// One decision per role per payment. A second manager approval is a
+  /// duplicate, not a new fact.
+  @@unique([paymentId, role])
+  @@index([paymentId])
+  @@index([orgId])
+}
+
+enum ApprovalDecision {
+  APPROVED
+  REJECTED
+}
+
+// ─── Oracle attestations ──────────────────────────────────────────────────────
+
+model OracleAttestation {
+  id        String  @id @default(cuid())
+  /// Tenant owner. Required: an attestation unlocks settlement, so it must never
+  /// be reachable without an organization scope.
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  paymentId String?
+  payment   Payment? @relation(fields: [orgId, paymentId], references: [orgId, id], onDelete: NoAction)
+
+  /// Identity of the on-chain slot this attestation is bound to.
+  escrowOnChainId     Int
+  onChainPaymentIndex Int
+  contractId          String?
+
+  /// Attestation schema. CFWP-v2 binds network, contract, worker, asset,
+  /// amount and period; v1 bound none of those.
+  schema String @default("CFWP-v2")
+
+  hours BigInt
+  nonce BigInt
+
+  /// sha256 of the 198-byte preimage, so an auditor can confirm what was signed
+  /// without the signature alone having to be trusted.
+  preimageSha256 String?
+  signature      String
+
+  /// Wallet that requested the attestation (the escrow's on-chain manager).
+  createdBy String
+  createdAt DateTime @default(now())
+
+  /// One attestation per (escrow, payment, nonce) — a nonce is single-use, so
+  /// signing it twice is a defect, not a retry.
+  @@unique([escrowOnChainId, onChainPaymentIndex, nonce])
+  @@index([escrowOnChainId])
+  @@index([paymentId])
+  @@index([orgId])
+}
+
+// ─── Blockchain transactions (attempts, including retries) ────────────────────
+
+enum TxKind {
+  INITIALIZE_ESCROW
+  SUBMIT_HOURS_PROOF
+  MANAGER_APPROVE
+  FINANCE_APPROVE
+  PAY_BATCH
+  CANCEL_ESCROW
+  ROTATE_ORACLE_KEY
+  EXTEND_ESCROW_TTL
+}
+
+enum TxStatus {
+  PREPARING
+  SIMULATING
+  AWAITING_SIGNATURE
+  SUBMITTED
+  CONFIRMED
+  FAILED
+  EXPIRED
+  CANCELLED
+}
+
+/// One row per ATTEMPT, not one per payment. A retry after an RPC timeout is a
+/// new attempt against the same idempotency key; recording attempts separately
+/// is what lets reconciliation discover that a "failed" submission actually
+/// landed on chain.
+model BlockchainTransaction {
+  id    String @id @default(cuid())
+  orgId String
+  org   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  paymentId String?
+  payment   Payment? @relation(fields: [orgId, paymentId], references: [orgId, id], onDelete: NoAction)
+  escrowId  String?
+  escrow    Escrow?  @relation(fields: [orgId, escrowId], references: [orgId, id], onDelete: NoAction)
+
+  /// The batch this transaction acts for, where the action is batch-level.
+  ///
+  /// Funding is the case that needs it. `initialize_multi_sig_escrow` creates the
+  /// escrow AND pulls custody in ONE atomic invocation, so submitting it twice
+  /// creates two funded escrows and charges the manager twice. The contract has no
+  /// idempotency of its own, so "has this batch already been funded, or is a
+  /// funding attempt in flight?" must be answerable off-chain — which requires
+  /// knowing which batch an attempt belongs to. `escrowId` cannot serve: it is
+  /// null until the escrow the attempt is creating exists.
+  batchId String?
+  batch   PayrollBatch? @relation(fields: [orgId, batchId], references: [orgId, id], onDelete: NoAction)
+
+  kind   TxKind
+  status TxStatus @default(PREPARING)
+
+  /// Caller-supplied key that makes a mutation retry-safe. A repeated request
+  /// with the same key returns the original attempt instead of submitting a
+  /// second payment — the property that matters most in payroll.
+  idempotencyKey String @unique
+
+  /// Attempt number under this idempotency key.
+  attempt Int @default(1)
+
+  /// Null until submission. Unique when present: the same hash must never be
+  /// recorded twice.
+  hash   String? @unique
+  ledger Int?
+
+  resultCode   String?
+  errorMessage String?
+
+  contractId String?
+  network    String  @default("testnet")
+
+  /// The IMMUTABLE plan this transaction was prepared for.
+  ///
+  /// Captured when the intent is opened, before a wallet is shown, and never
+  /// rewritten. Confirmation compares chain evidence against THIS, not against a
+  /// freshly recomputed plan: configuration can move under a pending transaction
+  /// (a changed settlement asset, a different finance approver, an edited payment),
+  /// and a recomputed plan would quietly agree with whatever the chain happened to
+  /// contain. Money values inside are decimal STRINGS — JSON has no bigint, and a
+  /// Number here would be the rounding this codebase refuses everywhere else.
+  plan Json?
+
+  /// SHA-256 over the canonical form of `plan`.
+  ///
+  /// Lets a stored plan be proven unaltered without re-reading every field, and
+  /// makes any tampering with the JSON detectable rather than merely unlikely.
+  planDigest String?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  submittedAt DateTime?
+  confirmedAt DateTime?
+
+  @@index([orgId, status])
+  @@index([paymentId])
+  @@index([escrowId])
+  @@index([batchId])
+  @@index([hash])
+}
+
+// ─── Audit (append-only history) ──────────────────────────────────────────────
+
+/// Append-only record of what happened. Written on every state transition.
+///
+/// This is the history that a "current status" column cannot provide: it carries
+/// previous and new state together with the actor, so a payment's path can be
+/// reconstructed rather than inferred. Nothing in the application updates or
+/// deletes these rows.
+model AuditEvent {
+  id    String @id @default(cuid())
+  /// REQUIRED. An audit row with no organization belongs to no tenant, which
+  /// means no scoped query can ever return it and no operator can ever see it —
+  /// an audit trail nobody can read is not an audit trail.
+  orgId String
+  org   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  /// Dotted event type, e.g. payment.state.changed, approval.granted.
+  type String
+
+  /// Who acted. `actorSystem` names the non-human actor (indexer, reconciler)
+  /// so a machine transition is never mistaken for a person's decision.
+  actorAddress String?
+  actorUserId  String?
+  actorSystem  String?
+
+  paymentId String?
+  payment   Payment? @relation(fields: [orgId, paymentId], references: [orgId, id], onDelete: NoAction)
+  batchId   String?
+  batch     PayrollBatch? @relation(fields: [orgId, batchId], references: [orgId, id], onDelete: NoAction)
+  escrowId  String?
+  escrow    Escrow?  @relation(fields: [orgId, escrowId], references: [orgId, id], onDelete: NoAction)
+
+  previousState String?
+  newState      String?
+
+  txHash String?
+
+  /// Additional context, as JSON, sufficient to reconstruct the transition.
+  metadata Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([orgId, createdAt])
+  @@index([paymentId])
+  @@index([batchId])
+  @@index([escrowId])
+  @@index([type])
+}
+
+/// Legacy flat audit log, retained so existing admin views and the bootstrap
+/// path keep working. New transitions write `AuditEvent`.
 model AuditLog {
   id        String   @id @default(cuid())
-  action    String   // e.g. role.grant, escrow.create, auth.logout, escrow.reject, invitation.create
-  actor     String?  // wallet address of the actor
-  target    String?  // affected entity (wallet / escrow id / email)
-  metadata  String?  // JSON blob of extra context
+  action    String
+  actor     String?
+  target    String?
+  metadata  String?
   createdAt DateTime @default(now())
 
   @@index([action])
   @@index([createdAt])
 }
 
-// ─── Chain Indexer ────────────────────────────────────────────────────────────
+// ─── Reconciliation ───────────────────────────────────────────────────────────
+
+/// What kind of disagreement was found.
+///
+/// Deliberately granular. A single "MISMATCH" value would be useless: an
+/// unreadable RPC, a settled-but-unrecorded payment, and a database claiming a
+/// payment that never settled demand completely different responses — retry,
+/// catch up, and stop trusting the record respectively. Collapsing them forces an
+/// operator to re-derive the distinction from free text every time.
+enum FindingKind {
+  /// The database claims PAID; independent chain evidence does not support it.
+  /// The most serious finding in the system.
+  DB_PAID_CHAIN_NOT
+  /// The chain settled; the projection has not caught up. Recoverable.
+  CHAIN_PAID_DB_NOT
+  /// Settled amount differs from the recorded amount.
+  AMOUNT_MISMATCH
+  /// Settled asset differs from the recorded asset.
+  ASSET_MISMATCH
+  /// Settled recipient differs from the recorded recipient.
+  RECIPIENT_MISMATCH
+  /// A recorded payment has no corresponding on-chain slot.
+  MISSING_ON_CHAIN
+  /// An on-chain payment has no database row, within a KNOWN organization.
+  ORPHAN_ON_CHAIN
+  /// An on-chain escrow belongs to no organization. Never auto-attributed.
+  UNKNOWN_ON_CHAIN_OBJECT
+  /// A transaction recorded as failed actually succeeded on chain.
+  /// Dangerous: invites a retry that would double-pay.
+  FAILED_TX_ACTUALLY_SUCCEEDED
+  /// The contract reports settlement but no asset transfer was observed.
+  MISSING_PAYMENT_EVENT
+  /// More asset transfers were observed than the payment expects.
+  DUPLICATE_PAYMENT_EVENT
+  /// Chain state could not be read. NOT agreement — see CHAIN_UNREADABLE note.
+  CHAIN_UNREADABLE
+  /// Anything the taxonomy does not yet name. Requires a human.
+  OTHER
+}
+
+/// Lifecycle of a finding. Resolution is auditable, never a silent dismissal.
+enum FindingStatus {
+  OPEN
+  ACKNOWLEDGED
+  INVESTIGATING
+  RESOLVED
+}
+
+/// How urgently a finding needs attention.
+///
+/// CRITICAL is reserved for findings where the product may be making a FALSE
+/// STATEMENT ABOUT MONEY — a payment presented as settled that the chain does not
+/// support. Everything else, however annoying, is a lag or an operational issue.
+enum FindingSeverity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+/// Outcome of comparing one object against independently verified chain facts.
+enum ReconcileOutcome {
+  AGREED
+  CHAIN_AHEAD
+  DATABASE_AHEAD
+  CHAIN_UNREADABLE
+  MISMATCHED
+  UNKNOWN_ON_CHAIN_OBJECT
+  ORPHANED_DATABASE_OBJECT
+}
+
+enum RunStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+  /// Abandoned: the worker holding the lock stopped reporting.
+  STALE
+}
+
+/// One reconciliation pass over a scope.
+///
+/// Exists so an operator can answer two questions that logs cannot: "when did
+/// CoreFlow last reconcile this organization?" and "did that run finish?". A
+/// reconciler whose last run silently died is worse than none, because the absence
+/// of findings reads as health.
+model ReconciliationRun {
+  id    String @id @default(cuid())
+  orgId String
+  org   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  /// Correlation id threaded through every log line for this run.
+  correlationId String @unique
+
+  /// What was examined, e.g. "organization", "payment:<id>".
+  scope      String
+  contractId String?
+  network    String?
+
+  status RunStatus @default(RUNNING)
+
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  /// Refreshed while running. A lock whose holder stopped updating this is stale
+  /// and may be taken over — otherwise one crashed worker blocks reconciliation
+  /// forever.
+  heartbeatAt DateTime  @default(now())
+
+  escrowsExamined  Int @default(0)
+  paymentsExamined Int @default(0)
+  agreed           Int @default(0)
+  mismatched       Int @default(0)
+  unreadable       Int @default(0)
+  chainAhead       Int @default(0)
+  databaseAhead    Int @default(0)
+  findingsOpened   Int @default(0)
+  correctionsApplied Int @default(0)
+
+  errorMessage String?
+
+  findings ReconciliationFinding[]
+
+  @@index([orgId, startedAt])
+  @@index([status])
+}
+
+/// A recorded disagreement between this database and the chain.
+///
+/// Discrepancies are persisted rather than corrected in place. Silently
+/// overwriting the losing side destroys the only evidence that the two ever
+/// diverged, which is exactly what an auditor needs to see.
+model ReconciliationFinding {
+  id    String @id @default(cuid())
+  orgId String
+  org   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  paymentId String?
+  payment   Payment? @relation(fields: [orgId, paymentId], references: [orgId, id], onDelete: NoAction)
+
+  /// The run that most recently observed this finding.
+  runId String?
+  run   ReconciliationRun? @relation(fields: [runId], references: [id], onDelete: SetNull)
+
+  kind     FindingKind
+  status   FindingStatus   @default(OPEN)
+  severity FindingSeverity @default(MEDIUM)
+
+  dbState    String?
+  chainState String?
+  detail     String?
+  /// What an operator should actually do. A finding without this is a puzzle.
+  remediation String?
+  metadata   Json?
+
+  /// Chain references, so an investigation starts from evidence.
+  txHash          String?
+  escrowOnChainId Int?
+  paymentIndex    Int?
+
+  detectedAt    DateTime  @default(now())
+  /// Updated every time a run re-observes the same unresolved finding, so "still
+  /// wrong as of" is answerable without counting duplicate rows.
+  lastObservedAt DateTime @default(now())
+  observationCount Int     @default(1)
+
+  acknowledgedAt DateTime?
+  acknowledgedBy String?
+
+  resolvedAt DateTime?
+  resolvedBy String?
+  resolution String?
+
+  @@index([orgId, status])
+  @@index([orgId, severity, status])
+  @@index([paymentId])
+  @@index([runId])
+}
+
+// ─── Chain indexer ────────────────────────────────────────────────────────────
 
 model IndexerCursor {
-  id         Int      @id @default(1) // single-row table
+  /// One row per (contract, network): a single global cursor would conflate
+  /// deployments, and v1/v2 escrow ids overlap.
+  id         String   @id @default(cuid())
+  contractId String
+  network    String
   lastLedger Int      @default(0)
   updatedAt  DateTime @updatedAt
+
+  @@unique([contractId, network])
 }
 
 model ChainEvent {
-  id              String   @id // RPC paging token — globally unique, used for idempotency
+  /// RPC paging token — globally unique, and the basis of ingest idempotency.
+  id              String   @id
+  contractId      String?
+  network         String   @default("testnet")
   type            String
   ledger          Int
+  txHash          String?
   escrowOnChainId Int?
+  /// Payment slot for per-payment events, null for escrow-level ones.
+  paymentIndex    Int?
+  /// Decoded payload, kept so a projection bug can be fixed by replaying the
+  /// stored log instead of re-reading the chain.
+  payload         Json?
+  /// Whether this event could be attributed to an organization.
+  ///
+  /// The chain knows nothing about CoreFlow organizations. An escrow created
+  /// outside the app — by the CLI, a validation script, or another client — has no
+  /// tenant mapping, and GUESSING one would silently place another party's payroll
+  /// inside a customer's workspace. Such events are recorded with
+  /// `attributed = false` and surfaced for an operator to claim, never attached to
+  /// whichever organization happened to be convenient.
+  attributed      Boolean  @default(true)
   processedAt     DateTime @default(now())
 
   @@index([ledger])
-}
-
-model OracleAttestation {
-  id              String   @id @default(cuid())
-  escrowOnChainId Int      // The Soroban contract escrow ID
-  paymentId       Int      // Payment schedule index
-  hoursLogged     Int
-  nonce           Int      // Must match the on-chain expected nonce
-  signature       String   // base64 Ed25519 signature
-  createdBy       String   // wallet address that requested the attestation
-  createdAt       DateTime @default(now())
-
-  // One attestation per (escrow, payment, nonce) — prevents double-signing a nonce.
-  @@unique([escrowOnChainId, paymentId, nonce])
   @@index([escrowOnChainId])
+  @@index([contractId, network])
+  @@index([attributed])
 }
 
 model AuthChallenge {
@@ -143,4 +921,57 @@ model AuthChallenge {
 
   @@index([walletAddress])
   @@index([expiresAt])
+}
+
+/// An invitation to join ONE organization with ONE role.
+///
+/// `email` is unique PER ORGANIZATION, not globally. A global unique constraint
+/// meant that once org A invited alice@example.com, org B could never invite her
+/// at all — and the failure leaked the fact that some other tenant already had
+/// her. Contractors working for several agencies is the normal case, not an edge.
+model Invitation {
+  id      String @id @default(cuid())
+  /// REQUIRED. An invitation that does not name the organization it grants
+  /// access to cannot be authorized against anything.
+  orgId   String
+  org     Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  email   String
+  /// The organization role this invitation grants. Required, and validated
+  /// server-side against what the inviter is permitted to delegate — an
+  /// invitation is the easiest place to smuggle a privilege escalation.
+  orgRole OrgRole @default(VIEWER)
+  /// Legacy platform role, retained for the pre-organization invite flow.
+  role    Role    @default(EMPLOYEE)
+
+  /// Hash of the token, never the token itself. A leaked database dump must not
+  /// hand over usable invitations.
+  tokenHash String @unique
+
+  expiresAt DateTime
+  usedAt    DateTime?
+  /// Set when an invitation is withdrawn before acceptance. Distinct from
+  /// `usedAt`, so "revoked" is never mistaken for "accepted".
+  revokedAt DateTime?
+  revokedBy String?
+
+  invitedBy String?
+  createdAt DateTime @default(now())
+
+  @@unique([orgId, email])
+  @@index([tokenHash])
+  @@index([orgId])
+  @@index([email])
+}
+
+/// Legacy per-escrow time log. Superseded by Payment.hours + OracleAttestation;
+/// retained so historical rows remain readable.
+model TimeLog {
+  id          Int      @id @default(autoincrement())
+  escrowId    String?
+  hoursLogged Int
+  paymentId   Int
+  txHash      String   @unique
+  createdAt   DateTime @default(now())
+
+  @@index([escrowId])
 }
