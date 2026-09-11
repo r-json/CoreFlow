@@ -113,6 +113,35 @@ marking a funded escrow failed would be worse than waiting.
 attaches nothing to the batch. Someone funded an escrow this batch did not
 describe; adopting it would make the product assert something untrue about money.
 
+## Recovery: the transaction hash is the anchor
+
+A client can submit `initialize_multi_sig_escrow` and then fail to learn which
+escrow it created — a dropped connection, an RPC hiccup, a reload, an unparseable
+return value. That must never require signing again, because signing again funds a
+**second** escrow with the same money.
+
+So the escrow id is **resolved server-side from the transaction hash**, in order of
+durability:
+
+1. **`ChainEvent`** — the indexer'''s own record of the `escrow/created` event,
+   scoped to the attempt'''s contract and network. Survives RPC event retention.
+2. **Soroban RPC** — authoritative, bounded by retention, used while the indexer has
+   not caught up.
+
+| Resolution | Outcome |
+|---|---|
+| exactly one escrow | verification proceeds |
+| none visible yet | `UNVERIFIABLE` — pending, not failed |
+| more than one | `MISMATCH` — ambiguity is refused, never resolved by choosing |
+
+`onChainEscrowId` in the confirm request is **optional and advisory**. The server
+uses what it resolved; a supplied value is only cross-checked, so transaction A
+cannot adopt the escrow created by transaction B. A disagreement is a `MISMATCH`
+with both ids recorded.
+
+Recovery is repeatable: confirming twice yields one escrow, one attempt, one audit
+event. It never creates a new funding attempt.
+
 ## Uncertain transactions — the retry policy
 
 | Situation | Behaviour |
