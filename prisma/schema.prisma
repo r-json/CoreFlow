@@ -285,8 +285,9 @@ model PayrollBatch {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  payments    Payment[]
-  auditEvents AuditEvent[]
+  payments     Payment[]
+  auditEvents  AuditEvent[]
+  transactions BlockchainTransaction[]
 
   @@unique([orgId, reference])
   /// The constraint that makes a double-submitted payroll impossible rather than
@@ -561,6 +562,18 @@ model BlockchainTransaction {
   escrowId  String?
   escrow    Escrow?  @relation(fields: [orgId, escrowId], references: [orgId, id], onDelete: NoAction)
 
+  /// The batch this transaction acts for, where the action is batch-level.
+  ///
+  /// Funding is the case that needs it. `initialize_multi_sig_escrow` creates the
+  /// escrow AND pulls custody in ONE atomic invocation, so submitting it twice
+  /// creates two funded escrows and charges the manager twice. The contract has no
+  /// idempotency of its own, so "has this batch already been funded, or is a
+  /// funding attempt in flight?" must be answerable off-chain — which requires
+  /// knowing which batch an attempt belongs to. `escrowId` cannot serve: it is
+  /// null until the escrow the attempt is creating exists.
+  batchId String?
+  batch   PayrollBatch? @relation(fields: [orgId, batchId], references: [orgId, id], onDelete: NoAction)
+
   kind   TxKind
   status TxStatus @default(PREPARING)
 
@@ -591,6 +604,7 @@ model BlockchainTransaction {
   @@index([orgId, status])
   @@index([paymentId])
   @@index([escrowId])
+  @@index([batchId])
   @@index([hash])
 }
 
