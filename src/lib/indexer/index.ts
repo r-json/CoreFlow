@@ -214,6 +214,14 @@ async function openFinding(
 
 export interface ApplyResult {
   paymentsCreated: number;
+  /**
+   * Payments the application already had, advanced by observed chain evidence.
+   *
+   * Distinct from `paymentsCreated`: a payroll uploaded as a CSV and then funded
+   * produces rows the indexer RECOGNISES rather than invents, and conflating the
+   * two would make a funded batch look like an indexer-discovered one.
+   */
+  paymentsAdvanced: number;
   paymentsPaid: number;
   findings: number;
   /** False when no organization could be resolved for the event's escrow. */
@@ -234,7 +242,13 @@ export async function applyEvent(
   ev: CoreFlowEvent,
   meta: { txHash?: string; ledger: number }
 ): Promise<ApplyResult> {
-  const out: ApplyResult = { paymentsCreated: 0, paymentsPaid: 0, findings: 0, attributed: true };
+  const out: ApplyResult = {
+    paymentsCreated: 0,
+    paymentsAdvanced: 0,
+    paymentsPaid: 0,
+    findings: 0,
+    attributed: true,
+  };
 
   // Resolve the owning organization from the application's own record. An event
   // for an escrow we have no mapping for is recorded and skipped — never guessed
@@ -295,6 +309,25 @@ export async function applyEvent(
           });
           out.findings++;
         }
+
+        // A payment the APPLICATION created and then funded. The CSV produced the
+        // row; the funding bridge linked it to this on-chain slot; this event is the
+        // chain evidence that custody exists for it. So advance it — the payment is
+        // waiting for an attestation now, not for funding.
+        //
+        // Without this, a payment created from a payroll file would sit in
+        // VALIDATING forever: the create branch below sets AWAITING_ORACLE, but it
+        // only runs for rows the indexer itself invents.
+        if (existing.state === PaymentState.VALIDATING) {
+          const advanced = await applyTransition(tx, {
+            paymentId: existing.id,
+            orgId,
+            to: PaymentState.AWAITING_ORACLE,
+            actor: { kind: 'indexer', system: 'indexer' },
+          });
+          if (advanced.ok && advanced.changed) out.paymentsAdvanced++;
+        }
+
         return out;
       }
 
