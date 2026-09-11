@@ -144,6 +144,8 @@ export function FundingPanel({ batchId, orgId, onFunded }: FundingPanelProps) {
     void load();
   }, [load]);
 
+
+
   /** Open (or recover) the intent, freezing the plan, then disclose it. */
   async function beginFunding() {
     setBusy(true);
@@ -321,6 +323,28 @@ export function FundingPanel({ batchId, orgId, onFunded }: FundingPanelProps) {
     },
     [batchId, orgId, onFunded, load],
   );
+
+  /**
+   * Resolve a known-but-unverified transaction automatically, once.
+   *
+   * A submitted attempt whose outcome we do not know is the state a user is most
+   * likely to land in after a reload or a dropped connection, and the one where the
+   * wrong instinct — sign again — costs real money. Since the server can resolve the
+   * escrow from the hash alone, attempting it on arrival means the common case
+   * resolves itself with no action and no second signature.
+   *
+   * Guarded by a ref so a re-render cannot re-enter it, and deliberately not retried
+   * on a loop: repeated verification of a genuinely pending transaction is noise, and
+   * `Check status` remains available.
+   */
+  const autoRecovered = useRef(false);
+  useEffect(() => {
+    if (autoRecovered.current) return;
+    if (phase !== 'VERIFYING') return;
+    if (!attemptId || !txHash) return;
+    autoRecovered.current = true;
+    void verify(attemptId, escrowId ?? undefined);
+  }, [phase, attemptId, txHash, escrowId, verify]);
 
   async function checkStatus() {
     // Verification only needs the attempt: the escrow is resolved from the
