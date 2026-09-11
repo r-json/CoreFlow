@@ -138,9 +138,13 @@ export function payeeWallet(tag: string): string {
 /** A CSV whose rows satisfy the contract's hours x rate == amount invariant. */
 export function payrollCsv(
   rows: { tag: string; amount: string; hours: number; rate: string }[],
+  period: { start: string; end: string } = { start: '2026-09-01', end: '2026-09-15' },
 ): string {
   return [
-    'recipient,amount,asset,hours,rate',
-    ...rows.map((r) => `${wallet(r.tag)},${r.amount},USDC,${r.hours},${r.rate}`),
+    'recipient,amount,asset,hours,rate,period_start,period_end',
+    ...rows.map(
+      (r) =>
+        `${wallet(r.tag)},${r.amount},USDC,${r.hours},${r.rate},${period.start},${period.end}`,
+    ),
   ].join('\n');
 }

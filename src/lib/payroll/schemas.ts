@@ -175,3 +175,52 @@ export function zodIssues(error: z.ZodError): FieldIssue[] {
     message: i.message,
   }));
 }
+
+// ── Funding ─────────────────────────────────────────────────────────────────
+//
+// None of these carries an amount, a recipient, an asset, a manager or a finance
+// approver. All of that comes from the plan the server froze when the intent was
+// opened. A client that could restate them could fund something other than what
+// was reviewed.
+
+/** Open (or recover) the funding intent for a batch. */
+export const fundingIntentRequest = z.object({ orgId }).strict();
+
+/** A Stellar transaction hash: 32 bytes, lower-case hex. */
+const transactionHash = z
+  .string()
+  .regex(/^[0-9a-f]{64}$/, 'A transaction hash must be 64 lower-case hexadecimal characters.');
+
+/** Record that a signed transaction reached the network. */
+export const fundingSubmittedRequest = z
+  .object({
+    orgId,
+    attemptId: id('attemptId'),
+    transactionHash,
+  })
+  .strict();
+
+/** Verify a submitted transaction against the stored plan. */
+export const fundingConfirmRequest = z
+  .object({
+    orgId,
+    attemptId: id('attemptId'),
+    /**
+     * The escrow id the contract returned. Untrusted: verification reads this
+     * escrow and refuses it unless it matches the frozen plan, so naming someone
+     * else's escrow produces a MISMATCH rather than an adoption.
+     */
+    onChainEscrowId: z.coerce.number().int().positive().max(2_147_483_647),
+  })
+  .strict();
+
+/** Abandon an attempt that never reached the network. */
+export const fundingAbandonRequest = z
+  .object({
+    orgId,
+    attemptId: id('attemptId'),
+    reason: shortText('reason', 500),
+    /** True when the signer declined in their wallet. */
+    userRejected: z.boolean().optional(),
+  })
+  .strict();
