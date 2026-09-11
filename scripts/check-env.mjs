@@ -252,8 +252,55 @@ if (!env.DATABASE_URL) errors.push('DATABASE_URL is unset.');
   }
 }
 
+// --- The combination invariant ----------------------------------------------
+//
+// Each variable can be individually valid while the COMBINATION is wrong, and the
+// combination is what decides whether a mistake costs money. Only two are allowed:
+//
+//   LOCAL        local database + Testnet + CoreFlow v2
+//   PRODUCTION   production database + Mainnet + CoreFlow v1
+//
+// Anything else is mixed, and mixed is how local development came to be pointed at
+// the production database and Mainnet v1 on 2026-09-11.
+{
+  const dbIsLocal = Object.keys(dbHosts).length > 0 &&
+    Object.values(dbHosts).every((h) => LOCAL_DB_HOSTS.has(h));
+  const contractVersion = known
+    ? known.network === 'public' ? 'v1' : 'v2'
+    : null;
+
+  const profile =
+    dbIsLocal && !isMainnet && contractVersion === 'v2'
+      ? 'LOCAL'
+      : !dbIsLocal && isMainnet && contractVersion === 'v1'
+        ? 'PRODUCTION'
+        : 'MIXED';
+
+  if (profile === 'MIXED') {
+    const overridden = allowMainnet || allowRemoteDb || allowUnknownContract;
+    // An explicit override means the operator said they meant it, so this becomes a
+    // loud note rather than a refusal. Without one it is an error — and it must be
+    // reachable in both cases, or it is not a control at all.
+    (overridden ? notes : errors).push(
+      'This is neither a valid LOCAL nor a valid PRODUCTION environment:\n' +
+        '      database: ' + (dbIsLocal ? 'local' : 'non-local') + '\n' +
+        '      network:  ' + (isMainnet ? 'Mainnet' : 'Testnet') + '\n' +
+        '      contract: ' + (contractVersion ?? 'unrecognized') + '\n' +
+        '    Only two combinations are permitted:\n' +
+        '      LOCAL       local database + Testnet + CoreFlow v2\n' +
+        '      PRODUCTION  production database + Mainnet + CoreFlow v1\n' +
+        '    A mixed environment is how development came to be pointed at the\n' +
+        '    production database and Mainnet v1.',
+    );
+  }
+
+  // Surfaced in the report so the profile is visible even when it is valid.
+  globalThis.__coreflowProfile = profile;
+}
+
 // --- Report ----------------------------------------------------------------
 console.log('CoreFlow env preflight');
+console.log('  profile:  ' + (globalThis.__coreflowProfile ?? 'unknown'));
 console.log('  network:  ' + (isMainnet ? 'MAINNET' : network || 'testnet (default)'));
 console.log('  contract: ' + (contractId || '(unset)') + (known ? '  [' + known.label + ']' : ''));
 console.log('  asset:    ' + (tokenId || '(unset)'));
@@ -271,4 +318,6 @@ if (errors.length > 0) {
   for (const e of errors) console.error('  - ' + e + '\n');
   process.exit(1);
 }
-console.log('\nOK: local database + Testnet v2.');
+console.log('\nOK: ' + (globalThis.__coreflowProfile === 'PRODUCTION'
+  ? 'production database + Mainnet v1.'
+  : 'local database + Testnet v2.'));
