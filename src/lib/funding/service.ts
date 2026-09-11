@@ -54,14 +54,21 @@ export function fundingIdempotencyKey(batchId: string, attempt: number): string 
   return attempt <= 1 ? `fund:batch:${batchId}` : `fund:batch:${batchId}:retry:${attempt}`;
 }
 
-/** A single row as the contract will receive it. */
+/**
+ * A single row as the contract will receive it.
+ *
+ * Money is a decimal STRING, not a bigint: a plan is a transport object that
+ * crosses into JSON, and `NextResponse.json` cannot serialize a bigint — it throws.
+ * The authoritative bigint values live in the database and in the stored plan; the
+ * browser converts back exactly once, when building contract arguments.
+ */
 export interface FundingScheduleRow {
   paymentId: string;
   worker: string;
   /** SAC address. Never inferred from an asset symbol. */
   token: string;
-  amountBaseUnits: bigint;
-  rateBaseUnits: bigint;
+  amountBaseUnits: string;
+  rateBaseUnits: string;
   /** Unix seconds, as the contract's u64 fields. */
   startDate: number;
   endDate: number;
@@ -146,8 +153,8 @@ export function serializePlan(
       token: r.token,
       // Strings: JSON has no bigint, and a Number would be the rounding this
       // codebase refuses everywhere else.
-      amountBaseUnits: r.amountBaseUnits.toString(),
-      rateBaseUnits: r.rateBaseUnits.toString(),
+      amountBaseUnits: r.amountBaseUnits,
+      rateBaseUnits: r.rateBaseUnits,
       startDate: r.startDate,
       endDate: r.endDate,
     })),
@@ -221,6 +228,8 @@ export function readStoredPlan(record: {
 export interface FundingAttemptView {
   id: string;
   status: TxStatus;
+  /** Digest of the frozen plan, so the UI can show a quotable plan reference. */
+  planDigest: string | null;
   attempt: number;
   hash: string | null;
   errorMessage: string | null;
@@ -435,6 +444,7 @@ function viewAttempt(tx: any): FundingAttemptView {
   return {
     id: tx.id,
     status: tx.status,
+    planDigest: tx.planDigest ?? null,
     attempt: tx.attempt,
     hash: tx.hash ?? null,
     errorMessage: tx.errorMessage ?? null,
@@ -461,8 +471,8 @@ export function buildFundingPlan(input: {
     // The CONFIGURED SAC, not whatever was stored on the row: a payment row's
     // assetContractId can be null for a draft created before the asset was wired.
     token: asset.contractId,
-    amountBaseUnits: p.amountBaseUnits,
-    rateBaseUnits: p.rateBaseUnits,
+    amountBaseUnits: p.amountBaseUnits.toString(),
+    rateBaseUnits: p.rateBaseUnits.toString(),
     // Eligibility has already refused a payment without a period, so these are
     // present. Asserted rather than defaulted: a fabricated pay period would be
     // signed by the oracle as though someone had stated it.
