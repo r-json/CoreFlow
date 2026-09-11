@@ -459,6 +459,12 @@ Recorded because each looked like a product bug and was not:
   `READY_TO_SETTLE → PAID` and expected one winner. Both succeeded, correctly: the
   table allows `SUBMITTING → PAID`, because a confirmation can arrive before our own
   update lands. Re-aimed at a genuinely incompatible pair.
+- A concurrency assertion listed only two of the three legitimate refusal codes and
+  failed about **half the time**. The missing one was `TERMINAL`: when the CANCELLED
+  side won, the other transition was refused because nothing leaves a terminal state.
+  Found by running the suite ten times rather than accepting eight green runs. The
+  flake was the test's, not the product's — and a flaky financial test is exactly the
+  kind that gets silenced instead of understood.
 - A test expected `Argument \`orgId\` is missing`. Prisma reports the missing
   **relation**: `Argument \`org\` is missing`. Worth recording, since grepping logs
   for the column name would never surface that failure.

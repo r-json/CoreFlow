@@ -299,10 +299,24 @@ describe('Concurrency on a real row', () => {
     expect(losers).toHaveLength(1);
 
     // The loser is told its work was not applied, rather than overwriting the
-    // winner's transition.
+    // winner's transition. Which refusal it gets depends on how the race resolved,
+    // and all three are correct:
+    //
+    //   CONCURRENT_MODIFICATION  both read READY_TO_SETTLE; the compare-and-swap
+    //                            matched zero rows because the winner moved first
+    //   INVALID_TRANSITION       the loser read SUBMITTING, and SUBMITTING has no
+    //                            path to CANCELLED
+    //   TERMINAL                 the loser read CANCELLED, which nothing leaves
+    //
+    // This assertion originally listed only the first two and failed about half the
+    // time. The missing case was TERMINAL — the product was right, the test was
+    // incomplete. Worth keeping as a comment: a flaky financial test invites being
+    // silenced, and the reason it flaked is the interesting part.
     const loser = losers[0];
     if (!loser.ok) {
-      expect(['CONCURRENT_MODIFICATION', 'INVALID_TRANSITION']).toContain(loser.code);
+      expect(['CONCURRENT_MODIFICATION', 'INVALID_TRANSITION', 'TERMINAL']).toContain(
+        loser.code,
+      );
     }
 
     const final = await stateOf();
