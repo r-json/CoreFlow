@@ -62,20 +62,36 @@ const DB_URL_VARS = ['DATABASE_URL', 'DIRECT_URL', 'PRISMA_DATABASE_URL', 'POSTG
 
 // ---------------------------------------------------------------------------
 
+function parseEnvFile(file) {
+  const out = {};
+  if (!existsSync(file)) return out;
+  for (const line of readFileSync(file, 'utf8').split('\n')) {
+    const m = /^([A-Z_][A-Z0-9_]*)=(.*)$/.exec(line.trim());
+    if (m) out[m[1]] = m[2].trim().replace(/^["']|["']$/g, '');
+  }
+  return out;
+}
+
 /** Next.js precedence: .env.local overrides .env. Mirror it, then real env wins. */
 function loadEnvFiles() {
-  const merged = {};
-  for (const file of ['.env', '.env.local']) {
-    if (!existsSync(file)) continue;
-    for (const line of readFileSync(file, 'utf8').split('\n')) {
-      const m = /^([A-Z_][A-Z0-9_]*)=(.*)$/.exec(line.trim());
-      if (m) merged[m[1]] = m[2].trim().replace(/^["']|["']$/g, '');
-    }
-  }
-  return { ...merged, ...process.env };
+  return { ...parseEnvFile('.env'), ...parseEnvFile('.env.local'), ...process.env };
 }
 
 const env = loadEnvFiles();
+
+/**
+ * What a PRISMA-importing process sees.
+ *
+ * Prisma Client loads `.env` and only `.env`. So a script, test or migration that
+ * imports Prisma inherits `.env`'s values no matter what `.env.local` says — and
+ * `next dev` hides this, because Next loads `.env.local` into process.env first and
+ * dotenv never overwrites an existing variable.
+ *
+ * That asymmetry put a live Testnet funding test on Mainnet v1 while this preflight,
+ * which merged the files the way Next.js does, reported OK. Both views are checked
+ * now.
+ */
+const envOnly = parseEnvFile('.env');
 const errors = [];
 const notes = [];
 const allowMainnet = env.COREFLOW_ALLOW_MAINNET === '1';
@@ -196,6 +212,45 @@ if (remote.length > 0) {
   }
 }
 if (!env.DATABASE_URL) errors.push('DATABASE_URL is unset.');
+
+// --- The .env-only view, as Prisma and any plain script see it ---------------
+{
+  const net = (envOnly.NEXT_PUBLIC_STELLAR_NETWORK ?? '').trim().toLowerCase();
+  const contract = (envOnly.NEXT_PUBLIC_STELLAR_CONTRACT_ID ?? '').trim();
+  const known = KNOWN_CONTRACTS.get(contract);
+  const mainnetThere =
+    net === 'public' || net === 'mainnet' || (known && known.network === 'public');
+
+  if (mainnetThere && !allowMainnet) {
+    errors.push(
+      '.env itself still names Mainnet, even if .env.local does not:\n' +
+        '      NEXT_PUBLIC_STELLAR_NETWORK=' + (net || '(unset)') + '\n' +
+        '      NEXT_PUBLIC_STELLAR_CONTRACT_ID=' + (contract || '(unset)') + '\n' +
+        '    Prisma Client loads .env and ONLY .env, so every script, test and\n' +
+        '    migration that imports Prisma would act against Mainnet — while the app\n' +
+        '    itself looks correct, because Next.js loads .env.local first.\n' +
+        '    Fix: correct these values in .env, not only in .env.local.',
+    );
+  }
+
+  for (const name of DB_URL_VARS) {
+    const raw = envOnly[name];
+    if (!raw || isProductionBuild) continue;
+    let host;
+    try {
+      host = new URL(raw).hostname;
+    } catch {
+      continue;
+    }
+    if (!LOCAL_DB_HOSTS.has(host) && !allowRemoteDb) {
+      errors.push(
+        '.env itself points ' + name + ' at a non-local host (' + host + ').\n' +
+          '    Prisma reads .env directly, so migrations and database tests would use\n' +
+          '    it regardless of .env.local.',
+      );
+    }
+  }
+}
 
 // --- Report ----------------------------------------------------------------
 console.log('CoreFlow env preflight');
