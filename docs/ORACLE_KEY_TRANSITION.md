@@ -115,8 +115,52 @@ one. It does **not** complete the 🔴 outstanding secret rotation: `AUTH_SECRET
 `BOOTSTRAP_SECRET`, the cron/indexer secrets and the database credential are
 separate, and remain the owner's to rotate. See [BACKLOG.md](BACKLOG.md).
 
+## Execution
+
+One reproducible pass, which emits the evidence record itself rather than relying on
+a narrated summary afterwards:
+
+```bash
+# read-only checks only
+node scripts/oracle-key-transition.mjs --new <NEW> --old <OLD> --confirm-mapping --dry-run
+
+# execute
+node scripts/oracle-key-transition.mjs --new <NEW> --old <OLD> --confirm-mapping
+```
+
+[`scripts/oracle-key-transition.mjs`](../scripts/oracle-key-transition.mjs) refuses
+unless both keys are named AND `--confirm-mapping` is passed, so it cannot run by
+accident. It verifies `get_admin` matches the signing identity, registers before
+revoking, reads chain state after each step rather than trusting the CLI exit code,
+and stops — writing the record — if the new key is not registered after registration
+or if the final state is not `new=registered, old=not registered`.
+
+**Verified:** it refuses without `--confirm-mapping` (exit 1) and refuses a
+malformed key. The dry-run path is deliberately unexercised, because running it would
+mean asserting a key mapping that has not been confirmed.
+
 ## Evidence to record on completion
 
-Appended to [`evidence/testnet-v2-live-funding.json`](evidence/testnet-v2-live-funding.json):
-old public key, new public key, registration transaction hash, revocation
-transaction hash, and the verified final registry state for both keys.
+Written to `docs/evidence/oracle-key-transition.json` by the script:
+
+```
+Network:   Stellar Testnet
+Contract:  CDN4FIKL…VAQRG5F4
+Admin:     <public address>
+
+Old oracle:  f42a…
+New oracle:  3b9d…
+
+Registration TX:     <hash>
+Post-registration:   new = registered
+                     old = registered
+
+Revocation TX:       <hash>
+Post-revocation:     new = registered
+                     old = not registered
+```
+
+Both post-states are read from the contract, so the record states what the chain
+says rather than what the commands were asked to do. The intermediate
+post-registration state is captured deliberately: it is the evidence that there was
+never a window in which no oracle key was registered.
