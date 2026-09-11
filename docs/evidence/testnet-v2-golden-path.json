@@ -1,0 +1,153 @@
+{
+  "version": "v2",
+  "network": "testnet",
+  "contractId": "CDN4FIKLJ72WYNPBIKWYSDJWDZG22QNPLWI37VTUAE4EKKIBVAQRG5F4",
+  "steps": [
+    {
+      "name": "balances_before",
+      "at": "2026-09-10T19:58:38.331Z",
+      "manager": "799800000000",
+      "workers": [
+        "70000000000",
+        "67200000000",
+        "63000000000"
+      ]
+    },
+    {
+      "name": "escrow_created",
+      "at": "2026-09-10T19:58:51.520Z",
+      "escrowId": 8,
+      "custodyBaseUnits": "28600000000"
+    },
+    {
+      "name": "oracle_attestations",
+      "at": "2026-09-10T19:59:19.235Z",
+      "schema": "CFWP-v2",
+      "attestations": [
+        {
+          "paymentId": 0,
+          "hours": "40",
+          "nonce": "0",
+          "preimageSha256": "d496f441702fc3b0c37928a039f8d43395a53ac884c2ab7f68ec4e7c774672f5",
+          "signature": "5fRedsKW5IPJq9Xtz4XV1Y30yQZGDTH0zLQCMMUAR/DXTdyfPyehcGLK8ypKqJoC/Ro3sD3i0OPVT8ZxSN5jAw=="
+        },
+        {
+          "paymentId": 1,
+          "hours": "32",
+          "nonce": "1",
+          "preimageSha256": "ab18ef15eb13c82b745e0266730d5854b754b178cae492e7cc22cea86d1c3940",
+          "signature": "WIsjqLx6coqhddyJ2uh26WYt+BXokIjgEoqQXhhoBMJYyeNgq8wfjLbjBggC1jIo6r79aAgj4yfObmX7NUEFCA=="
+        },
+        {
+          "paymentId": 2,
+          "hours": "45",
+          "nonce": "2",
+          "preimageSha256": "a3509223a4d036851e7afce73d45e3d41747605060b6bf42768973abd8321978",
+          "signature": "Maj7+i/L14DJbRk79iozY5ENCIez55OAc8b2UIOUGqmjBPEVDJc5c08PpYj89VX4qwyiYVA/HGEYJpEWKPMXBw=="
+        }
+      ]
+    },
+    {
+      "name": "replay_rejected",
+      "at": "2026-09-10T19:59:20.332Z",
+      "paymentId": 0,
+      "nonce": "0",
+      "rejected": true
+    },
+    {
+      "name": "dual_approval",
+      "at": "2026-09-10T19:59:45.473Z",
+      "blockedNoApprovals": true,
+      "blockedOneApproval": true,
+      "manager": "GCQR4PEWRAKH4IB4NUDU77WOU326UUQORNVBIHOZ5XD3ZK2FN5SJKSSY",
+      "finance": "GAW6IYXANCROLFIO6TAN5SZJBUTBGTLRYH2GEZUBGRC3HHPAJ5O3GMAI"
+    },
+    {
+      "name": "settlement",
+      "at": "2026-09-10T19:59:58.350Z",
+      "custodyAfter": "0",
+      "paid": [
+        {
+          "paymentId": 0,
+          "worker": "GDHMEB2U2XQHSEB5JFYOOZDH7FHB7SUPCYLXFWVP5U5IRKKJKBCBRBQQ",
+          "receivedBaseUnits": "10000000000"
+        },
+        {
+          "paymentId": 1,
+          "worker": "GA7Q23T4I2CAQXCMVN3EQ7VSI7ZVGIGDDKBZQU65MUK66YL7OPPG5YMH",
+          "receivedBaseUnits": "9600000000"
+        },
+        {
+          "paymentId": 2,
+          "worker": "GCFTJIXCBQR6LVSD5EL27JPIN24OJSNJRQDCZCDH6EDZHW3GHTMHGN67",
+          "receivedBaseUnits": "9000000000"
+        }
+      ]
+    },
+    {
+      "name": "double_settlement_rejected",
+      "at": "2026-09-10T19:59:59.105Z",
+      "rejected": true
+    },
+    {
+      "name": "final_state",
+      "at": "2026-09-10T19:59:59.992Z",
+      "escrowId": 8,
+      "escrow": {
+        "cancelled": false,
+        "finance_approved": true,
+        "finance_approver": "GAW6IYXANCROLFIO6TAN5SZJBUTBGTLRYH2GEZUBGRC3HHPAJ5O3GMAI",
+        "manager": "GCQR4PEWRAKH4IB4NUDU77WOU326UUQORNVBIHOZ5XD3ZK2FN5SJKSSY",
+        "manager_approved": true,
+        "oracle_pubkey": "f42a48839e48d58e6628f5d096ee859e635b056be580bdcc68d620e2a2badae0",
+        "oracle_rotations": 0,
+        "payments": [
+          {
+            "amount": "10000000000",
+            "end_date": 1789070312,
+            "hours_logged": "40",
+            "id": 1,
+            "proof_verified": true,
+            "rate_per_hour": "250000000",
+            "start_date": 1787860712,
+            "status": 3,
+            "token": "CBW2ZKFBHLHNNVCZ7JP4AXHQOOC3S6NLAMORXOAIWQNWMKUVJS743Q5M",
+            "worker": "GDHMEB2U2XQHSEB5JFYOOZDH7FHB7SUPCYLXFWVP5U5IRKKJKBCBRBQQ"
+          },
+          {
+            "amount": "9600000000",
+            "end_date": 1789070312,
+            "hours_logged": "32",
+            "id": 2,
+            "proof_verified": true,
+            "rate_per_hour": "300000000",
+            "start_date": 1787860712,
+            "status": 3,
+            "token": "CBW2ZKFBHLHNNVCZ7JP4AXHQOOC3S6NLAMORXOAIWQNWMKUVJS743Q5M",
+            "worker": "GA7Q23T4I2CAQXCMVN3EQ7VSI7ZVGIGDDKBZQU65MUK66YL7OPPG5YMH"
+          },
+          {
+            "amount": "9000000000",
+            "end_date": 1789070312,
+            "hours_logged": "45",
+            "id": 3,
+            "proof_verified": true,
+            "rate_per_hour": "200000000",
+            "start_date": 1787860712,
+            "status": 3,
+            "token": "CBW2ZKFBHLHNNVCZ7JP4AXHQOOC3S6NLAMORXOAIWQNWMKUVJS743Q5M",
+            "worker": "GCFTJIXCBQR6LVSD5EL27JPIN24OJSNJRQDCZCDH6EDZHW3GHTMHGN67"
+          }
+        ]
+      }
+    }
+  ],
+  "escrowId": 8,
+  "assetContract": "CBW2ZKFBHLHNNVCZ7JP4AXHQOOC3S6NLAMORXOAIWQNWMKUVJS743Q5M",
+  "totalSettledBaseUnits": "28600000000",
+  "completedAt": "2026-09-10T19:59:59.992Z",
+  "explorer": {
+    "contract": "https://stellar.expert/explorer/testnet/contract/CDN4FIKLJ72WYNPBIKWYSDJWDZG22QNPLWI37VTUAE4EKKIBVAQRG5F4",
+    "asset": "https://stellar.expert/explorer/testnet/contract/CBW2ZKFBHLHNNVCZ7JP4AXHQOOC3S6NLAMORXOAIWQNWMKUVJS743Q5M"
+  }
+}

@@ -57,7 +57,8 @@ export class CoreFlowClient {
   private networkPassphrase: string;
 
   constructor() {
-    this.contractAddress = STELLAR_CONFIG.contract.id;
+    // Throws when unset rather than defaulting to a mainnet address.
+    this.contractAddress = STELLAR_CONFIG.requireContractId();
     this.networkPassphrase = STELLAR_CONFIG.getNetworkPassphrase();
   }
 
@@ -389,6 +390,117 @@ export class CoreFlowClient {
       sdk.nativeToScVal(escrowId, { type: 'u32' }),
       sdk.nativeToScVal(bytes, { type: 'bytes' }),
     ]);
+  }
+
+  /**
+   * Ask the contract for the exact bytes the oracle must sign (read-only).
+   *
+   * The contract is the single source of truth for the attestation preimage.
+   * A signer that reads it here cannot drift from the verifier, which is the
+   * failure mode every reimplementation of a message format eventually hits.
+   */
+  async getProofPreimage(
+    escrowId: number,
+    paymentId: number,
+    hours: bigint,
+    nonce: bigint
+  ): Promise<Buffer> {
+    const sdk = await this.loadSDK();
+    const readAddress = STELLAR_CONFIG.addresses.readAddress;
+    if (!readAddress) {
+      throw new Error('NEXT_PUBLIC_STELLAR_READ_ADDRESS not configured');
+    }
+
+    const rpcClient = new sdk.rpc.Server(STELLAR_CONFIG.getRpcUrl());
+    const contract = new sdk.Contract(this.contractAddress);
+    const sourceAccount = await rpcClient.getAccount(readAddress);
+
+    const transaction = new sdk.TransactionBuilder(sourceAccount, {
+      fee: sdk.BASE_FEE,
+      networkPassphrase: this.networkPassphrase,
+    })
+      .addOperation(
+        contract.call(
+          'proof_preimage',
+          sdk.nativeToScVal(escrowId, { type: 'u32' }),
+          sdk.nativeToScVal(paymentId, { type: 'u32' }),
+          sdk.nativeToScVal(hours, { type: 'i128' }),
+          sdk.nativeToScVal(nonce, { type: 'u64' })
+        )
+      )
+      .setTimeout(300)
+      .build();
+
+    const simulated = await rpcClient.simulateTransaction(transaction);
+    if (sdk.rpc.Api.isSimulationError(simulated)) {
+      throw new Error(`Failed to read proof preimage: ${simulated.error}`);
+    }
+    if (!simulated.result?.retval) {
+      throw new Error('No preimage returned from simulation');
+    }
+    return Buffer.from(sdk.scValToNative(simulated.result.retval));
+  }
+
+  /**
+   * Register an oracle signing key as platform-trusted (contract admin only).
+   *
+   * Escrows may only name a registered key, so a manager cannot install their
+   * own oracle and attest to their own work.
+   */
+  async submitRegisterOracleKey(pubkeyHex: string): Promise<SubmitResult> {
+    const sdk = await this.loadSDK();
+    const bytes = Buffer.from(pubkeyHex, 'hex');
+    if (bytes.length !== 32) {
+      throw new Error(`Oracle public key must be exactly 32 bytes (got ${bytes.length})`);
+    }
+    return this.submitTransaction('register_oracle_key', [
+      sdk.nativeToScVal(bytes, { type: 'bytes' }),
+    ]);
+  }
+
+  /** Revoke a registered oracle key (contract admin only). */
+  async submitRevokeOracleKey(pubkeyHex: string): Promise<SubmitResult> {
+    const sdk = await this.loadSDK();
+    const bytes = Buffer.from(pubkeyHex, 'hex');
+    if (bytes.length !== 32) {
+      throw new Error(`Oracle public key must be exactly 32 bytes (got ${bytes.length})`);
+    }
+    return this.submitTransaction('revoke_oracle_key', [
+      sdk.nativeToScVal(bytes, { type: 'bytes' }),
+    ]);
+  }
+
+  /** True if the contract admin has registered this oracle key (read-only). */
+  async isOracleKeyRegistered(pubkeyHex: string): Promise<boolean> {
+    const sdk = await this.loadSDK();
+    const readAddress = STELLAR_CONFIG.addresses.readAddress;
+    if (!readAddress) {
+      throw new Error('NEXT_PUBLIC_STELLAR_READ_ADDRESS not configured');
+    }
+    const bytes = Buffer.from(pubkeyHex, 'hex');
+    if (bytes.length !== 32) {
+      throw new Error(`Oracle public key must be exactly 32 bytes (got ${bytes.length})`);
+    }
+
+    const rpcClient = new sdk.rpc.Server(STELLAR_CONFIG.getRpcUrl());
+    const contract = new sdk.Contract(this.contractAddress);
+    const sourceAccount = await rpcClient.getAccount(readAddress);
+
+    const transaction = new sdk.TransactionBuilder(sourceAccount, {
+      fee: sdk.BASE_FEE,
+      networkPassphrase: this.networkPassphrase,
+    })
+      .addOperation(
+        contract.call('is_oracle_key_registered', sdk.nativeToScVal(bytes, { type: 'bytes' }))
+      )
+      .setTimeout(300)
+      .build();
+
+    const simulated = await rpcClient.simulateTransaction(transaction);
+    if (sdk.rpc.Api.isSimulationError(simulated)) {
+      throw new Error(`Failed to read oracle registry: ${simulated.error}`);
+    }
+    return Boolean(sdk.scValToNative(simulated.result!.retval));
   }
 
   /**

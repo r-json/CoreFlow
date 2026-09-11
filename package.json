@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "npm run check:env",
     "dev": "next dev --experimental-https --experimental-https-key ./certs/localhost-key.pem --experimental-https-cert ./certs/localhost.pem",
+    "predev:http": "npm run check:env",
     "dev:http": "next dev",
     "build": "export DIRECT_URL=\"${DIRECT_URL:-$DATABASE_URL}\" && prisma generate && next build",
     "vercel-build": "export DIRECT_URL=\"${DIRECT_URL:-$DATABASE_URL}\" && prisma generate && next build",
@@ -16,12 +18,16 @@
     "typecheck": "tsc --noEmit",
     "e2e": "playwright test",
     "postinstall": "export DIRECT_URL=\"${DIRECT_URL:-$DATABASE_URL}\" && prisma generate",
+    "predb:migrate": "npm run check:env",
     "db:migrate": "prisma migrate dev",
+    "predb:deploy": "npm run check:env",
     "db:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
     "contract:build": "cd contracts/core-flow && cargo build --target wasm32v1-none --release",
     "contract:test": "cd contracts/core-flow && cargo test",
-    "db:seed": "prisma db seed"
+    "predb:seed": "npm run check:env",
+    "db:seed": "prisma db seed",
+    "check:env": "node scripts/check-env.mjs"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

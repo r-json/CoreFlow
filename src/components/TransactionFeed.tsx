@@ -2,6 +2,7 @@
 
 import { ArrowUpRight, Check, Clock, FileText, X } from 'lucide-react';
 import { STELLAR_CONFIG } from '@/lib/config';
+import { txUrl } from '@/lib/explorer';
 
 export interface Transaction {
   id: string;
@@ -31,8 +32,8 @@ export const TransactionFeed = ({ transactions }: TransactionFeedProps) => {
   const getExplorerUrl = (hash: string) => {
     const network = STELLAR_CONFIG.contract.network;
     return network === 'public'
-      ? `https://stellar.expert/explorer/public/tx/${hash}`
-      : `https://stellar.expert/explorer/testnet/tx/${hash}`;
+      ? txUrl(hash)
+      : txUrl(hash);
   };
 
   return (

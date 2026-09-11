@@ -1,8 +1,9 @@
 #![no_std]
 use soroban_sdk::token::TokenClient;
+use soroban_sdk::xdr::ToXdr;
 use soroban_sdk::{
     contract, contracterror, contractimpl, contracttype, symbol_short, Address, Bytes, BytesN, Env,
-    Vec,
+    String, Vec,
 };
 
 // ========== ENUMS & ERRORS ==========
@@ -26,6 +27,20 @@ pub enum ContractError {
     ProofMissing = 13,
     NonceOverflow = 14,
     SignersNotDistinct = 15,
+    /// The oracle public key is not on the admin-managed registry.
+    OracleKeyNotRegistered = 16,
+    /// Attested hours x rate_per_hour does not equal the escrowed amount.
+    AmountHoursMismatch = 17,
+    /// end_date is not strictly after start_date.
+    InvalidPeriod = 18,
+    /// Batch exceeds MAX_BATCH_SIZE payments.
+    BatchTooLarge = 19,
+    /// This WASM pins an expected admin and the supplied address is not it.
+    AdminMismatch = 20,
+    /// No admin transfer is pending, or the caller is not the proposed admin.
+    NoPendingAdmin = 21,
+    /// `upgrade` requires the contract to be paused first.
+    NotPaused = 22,
 }
 
 #[contracttype]
@@ -83,7 +98,11 @@ pub enum DataKey {
     Escrow(u32),
     Nonce(u32),
     Admin,
+    /// Proposed next admin, awaiting acceptance (two-step handover).
+    PendingAdmin,
     Paused,
+    /// Registered oracle signing keys. Presence => trusted by the platform admin.
+    OracleKey(BytesN<32>),
 }
 
 // Storage TTL constants (in ledgers)
@@ -92,6 +111,45 @@ const INSTANCE_TTL_THRESHOLD: u32 = 17280; // Extend when below 1 day
 const INSTANCE_TTL_EXTEND: u32 = 17280 * 30; // Extend to 30 days
 const PERSISTENT_TTL_THRESHOLD: u32 = 17280; // Extend when below 1 day
 const PERSISTENT_TTL_EXTEND: u32 = 17280 * 90; // Extend to 90 days
+
+/// Upper bound on payments per escrow. Every entry point loads and rewrites the
+/// whole escrow, so an unbounded Vec is a denial-of-service vector: a batch big
+/// enough to exceed the ledger resource limits would make its own escrow
+/// permanently uncallable, stranding custody. 100 matches the API batch cap.
+const MAX_BATCH_SIZE: u32 = 100;
+
+// ===== Oracle attestation domain separation (schema v2) =====
+//
+// v1 signed only `escrow_id || payment_id || hours || nonce`. That message said
+// nothing about WHICH chain, WHICH contract, WHICH worker or HOW MUCH, so one
+// signature was valid on every deployment of this contract on every network for
+// the same tuple -- a Testnet attestation replayed verbatim against Mainnet.
+//
+// v2 binds the attestation to its full context. Every field below is read from
+// STORED escrow state rather than from caller arguments, so a caller cannot
+// shift the message onto a payment the oracle never saw.
+const PROOF_MAGIC: [u8; 4] = *b"CFWP"; // CoreFlow Work Proof
+const PROOF_VERSION: u16 = 2;
+
+/// Build-time admin pin — the fix for `init_admin` front-running.
+///
+/// THE PROBLEM: `init_admin` is first-caller-wins, and a Stellar transaction may
+/// carry only ONE Soroban operation, so deploy and initialize cannot be bundled
+/// atomically. That leaves a window in which anyone watching the ledger can call
+/// `init_admin` first, become admin, and then `upgrade` the contract to
+/// arbitrary code that drains every escrow's custody.
+///
+/// THE FIX: a production build bakes the expected admin address into the WASM
+/// (`COREFLOW_ADMIN=G... cargo build ...`). `init_admin` then refuses any other
+/// address, so winning the race gains an attacker nothing — the window still
+/// exists, but there is nothing to win.
+///
+/// Builds without the pin (tests, local development) keep the old first-caller
+/// behaviour, because test addresses are generated at runtime and cannot be
+/// known at compile time. `scripts/deploy-testnet.sh` refuses to deploy an
+/// unpinned WASM, and `expected_admin()` lets anyone verify a deployment's pin
+/// on-chain after the fact.
+const PINNED_ADMIN: Option<&str> = option_env!("COREFLOW_ADMIN");
 
 // ========== CONTRACT ==========
 
@@ -109,12 +167,77 @@ impl CoreFlowContract {
         if env.storage().instance().has(&DataKey::Admin) {
             return Err(ContractError::AdminAlreadySet);
         }
+
+        // Front-running guard. When this WASM was built with COREFLOW_ADMIN set,
+        // only that address may claim the role — so losing the race to call
+        // `init_admin` first costs nothing.
+        if let Some(pinned) = PINNED_ADMIN {
+            let expected = Address::from_string(&String::from_str(&env, pinned));
+            if admin != expected {
+                return Err(ContractError::AdminMismatch);
+            }
+        }
+
         admin.require_auth();
         env.storage().instance().set(&DataKey::Admin, &admin);
         env.storage()
             .instance()
             .extend_ttl(INSTANCE_TTL_THRESHOLD, INSTANCE_TTL_EXTEND);
+        env.events()
+            .publish((symbol_short!("admin"), symbol_short!("init")), admin);
         Ok(())
+    }
+
+    /// The admin address baked into this WASM at build time, if any.
+    ///
+    /// Read-only, so an operator (or an auditor) can confirm after deploy that
+    /// the running code is pinned to the key they expect, rather than trusting
+    /// that the deploy script was run correctly.
+    pub fn expected_admin(env: Env) -> Option<Address> {
+        PINNED_ADMIN.map(|p| Address::from_string(&String::from_str(&env, p)))
+    }
+
+    /// Propose a new admin (current admin only). Step 1 of 2.
+    ///
+    /// Handover is two-step because a single-step transfer to a mistyped or
+    /// uncontrolled address permanently destroys the ability to pause, upgrade,
+    /// or manage the oracle registry. The proposed key must prove it can sign.
+    pub fn propose_admin(env: Env, new_admin: Address) -> Result<(), ContractError> {
+        Self::require_admin(&env)?;
+        env.storage()
+            .instance()
+            .set(&DataKey::PendingAdmin, &new_admin);
+        env.storage()
+            .instance()
+            .extend_ttl(INSTANCE_TTL_THRESHOLD, INSTANCE_TTL_EXTEND);
+        env.events()
+            .publish((symbol_short!("admin"), symbol_short!("propose")), new_admin);
+        Ok(())
+    }
+
+    /// Accept a pending admin handover (proposed admin only). Step 2 of 2.
+    pub fn accept_admin(env: Env) -> Result<(), ContractError> {
+        let pending: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::PendingAdmin)
+            .ok_or(ContractError::NoPendingAdmin)?;
+
+        pending.require_auth();
+
+        env.storage().instance().set(&DataKey::Admin, &pending);
+        env.storage().instance().remove(&DataKey::PendingAdmin);
+        env.storage()
+            .instance()
+            .extend_ttl(INSTANCE_TTL_THRESHOLD, INSTANCE_TTL_EXTEND);
+        env.events()
+            .publish((symbol_short!("admin"), symbol_short!("accept")), pending);
+        Ok(())
+    }
+
+    /// The currently configured admin, if one has been set.
+    pub fn get_admin(env: Env) -> Option<Address> {
+        env.storage().instance().get(&DataKey::Admin)
     }
 
     /// Pause or unpause state-changing operations (admin only). `cancel_escrow`
@@ -141,6 +264,27 @@ impl CoreFlowContract {
     /// the contract address or migrating escrow funds.
     pub fn upgrade(env: Env, new_wasm_hash: BytesN<32>) -> Result<(), ContractError> {
         Self::require_admin(&env)?;
+
+        // Upgrading is the one admin power that can drain every escrow at once:
+        // it replaces the code holding custody. Requiring the contract to be
+        // paused first makes that a deliberate two-transaction sequence with an
+        // observable `paused` event in between, rather than something that can
+        // happen silently while the system looks healthy. It does not stop a
+        // malicious admin -- nothing at this layer can -- but it removes the
+        // silent path and gives monitoring something to alert on.
+        if !env
+            .storage()
+            .instance()
+            .get(&DataKey::Paused)
+            .unwrap_or(false)
+        {
+            return Err(ContractError::NotPaused);
+        }
+
+        env.events().publish(
+            (symbol_short!("admin"), symbol_short!("upgrade")),
+            new_wasm_hash.clone(),
+        );
         env.deployer().update_current_contract_wasm(new_wasm_hash);
         Ok(())
     }
@@ -167,7 +311,133 @@ impl CoreFlowContract {
         Ok(())
     }
 
+    // ===== Oracle key registry (admin-managed) =====
+
+    /// Register an oracle signing key as trusted by the platform (admin only).
+    ///
+    /// WHY A REGISTRY: previously the manager passed any `oracle_pubkey` they
+    /// liked into `initialize_multi_sig_escrow`, so a manager could install
+    /// their own key and sign their own "verified work" attestations. The
+    /// proof-of-work gate was therefore manager-attestable -- procedural, not
+    /// cryptographic. Escrows may now only name a key the admin has registered,
+    /// which makes the oracle an independent party by construction.
+    pub fn register_oracle_key(env: Env, pubkey: BytesN<32>) -> Result<(), ContractError> {
+        Self::require_admin(&env)?;
+        env.storage()
+            .persistent()
+            .set(&DataKey::OracleKey(pubkey.clone()), &true);
+        env.storage().persistent().extend_ttl(
+            &DataKey::OracleKey(pubkey.clone()),
+            PERSISTENT_TTL_THRESHOLD,
+            PERSISTENT_TTL_EXTEND,
+        );
+        env.events()
+            .publish((symbol_short!("oracle"), symbol_short!("reg")), pubkey);
+        Ok(())
+    }
+
+    /// Revoke a previously registered oracle key (admin only).
+    ///
+    /// Existing escrows already naming this key keep functioning -- revoking is
+    /// not retroactive, because silently invalidating in-flight attestations
+    /// would strand funded escrows. It stops the key being named by NEW escrows
+    /// and NEW rotations. To retire a key from a live escrow, the manager calls
+    /// `rotate_oracle_key`, which revokes that escrow's verified proofs.
+    pub fn revoke_oracle_key(env: Env, pubkey: BytesN<32>) -> Result<(), ContractError> {
+        Self::require_admin(&env)?;
+        env.storage()
+            .persistent()
+            .remove(&DataKey::OracleKey(pubkey.clone()));
+        env.events()
+            .publish((symbol_short!("oracle"), symbol_short!("revoke")), pubkey);
+        Ok(())
+    }
+
+    /// True if `pubkey` is on the admin-managed registry.
+    pub fn is_oracle_key_registered(env: Env, pubkey: BytesN<32>) -> bool {
+        env.storage()
+            .persistent()
+            .get(&DataKey::OracleKey(pubkey))
+            .unwrap_or(false)
+    }
+
+    /// Bootstrap exception: if no admin was ever configured, the contract has no
+    /// registry authority and the registry check cannot be satisfied by anyone.
+    /// Rather than bricking such a deployment, an admin-less contract accepts any
+    /// key -- exactly the v1 trust model, and no weaker. Once `init_admin` runs,
+    /// the registry is enforced from that point on.
+    fn require_registered_oracle(env: &Env, pubkey: &BytesN<32>) -> Result<(), ContractError> {
+        if !env.storage().instance().has(&DataKey::Admin) {
+            return Ok(());
+        }
+        if env
+            .storage()
+            .persistent()
+            .get(&DataKey::OracleKey(pubkey.clone()))
+            .unwrap_or(false)
+        {
+            Ok(())
+        } else {
+            Err(ContractError::OracleKeyNotRegistered)
+        }
+    }
+
     // ===== Oracle primitives =====
+
+    /// SHA-256 of an address's XDR serialization.
+    ///
+    /// Addresses serialize to a variable number of bytes (an account ScAddress
+    /// and a contract ScAddress differ in length), so hashing each to a fixed 32
+    /// bytes keeps the proof preimage fixed-width and trivially reproducible
+    /// off-chain. `scripts/oracle-cli.mjs` and `src/lib/oracle/index.ts` build
+    /// the identical digest; `test_cli_generated_signature_is_accepted_onchain`
+    /// fails if the two ever drift.
+    fn addr_digest(env: &Env, addr: &Address) -> BytesN<32> {
+        env.crypto().sha256(&addr.clone().to_xdr(env))
+    }
+
+    /// Build the domain-separated attestation preimage (schema v2, 198 bytes).
+    ///
+    ///   magic        "CFWP"                4
+    ///   version      u16 BE                2
+    ///   network_id   sha256(passphrase)   32   <- binds to Testnet vs Mainnet
+    ///   contract     sha256(addr xdr)     32   <- binds to THIS deployment
+    ///   worker       sha256(addr xdr)     32   <- binds to the payee
+    ///   token        sha256(addr xdr)     32   <- binds to the asset
+    ///   escrow_id    u32 BE                4
+    ///   payment_id   u32 BE                4
+    ///   amount       i128 BE              16   <- binds to how much moves
+    ///   hours        i128 BE              16
+    ///   start_date   u64 BE                8
+    ///   end_date     u64 BE                8   <- binds to the pay period
+    ///   nonce        u64 BE                8
+    ///
+    /// `worker`, `token`, `amount` and the period come from the STORED payment
+    /// row, never from caller arguments.
+    fn build_proof_message(
+        env: &Env,
+        escrow_id: u32,
+        payment_id: u32,
+        payment: &PaymentSchedule,
+        hours: i128,
+        nonce: u64,
+    ) -> Bytes {
+        let mut m = Bytes::new(env);
+        m.extend_from_array(&PROOF_MAGIC);
+        m.extend_from_array(&PROOF_VERSION.to_be_bytes());
+        m.extend_from_array(&env.ledger().network_id().to_array());
+        m.extend_from_array(&Self::addr_digest(env, &env.current_contract_address()).to_array());
+        m.extend_from_array(&Self::addr_digest(env, &payment.worker).to_array());
+        m.extend_from_array(&Self::addr_digest(env, &payment.token).to_array());
+        m.extend_from_array(&escrow_id.to_be_bytes());
+        m.extend_from_array(&payment_id.to_be_bytes());
+        m.extend_from_array(&payment.amount.to_be_bytes());
+        m.extend_from_array(&hours.to_be_bytes());
+        m.extend_from_array(&payment.start_date.to_be_bytes());
+        m.extend_from_array(&payment.end_date.to_be_bytes());
+        m.extend_from_array(&nonce.to_be_bytes());
+        m
+    }
 
     /// Verify an Ed25519 oracle attestation over `payload`.
     ///
@@ -222,6 +492,9 @@ impl CoreFlowContract {
             .ok_or(ContractError::InvalidPaymentId)?;
 
         escrow.manager.require_auth();
+
+        // Rotation cannot be used to escape the registry.
+        Self::require_registered_oracle(&env, &new_pubkey)?;
 
         if escrow.cancelled {
             return Err(ContractError::EscrowCancelled);
@@ -284,6 +557,13 @@ impl CoreFlowContract {
         if payments.is_empty() {
             return Err(ContractError::InvalidAmount);
         }
+        if payments.len() > MAX_BATCH_SIZE {
+            return Err(ContractError::BatchTooLarge);
+        }
+
+        // The oracle must be one the platform admin trusts, not one the manager
+        // chose. See `register_oracle_key`.
+        Self::require_registered_oracle(&env, &oracle_pubkey)?;
 
         // Guard amounts/rates. `total_amount` is for the event only — custody is
         // now funded per asset, since a batch may mix e.g. USDC and native XLM.
@@ -292,6 +572,17 @@ impl CoreFlowContract {
             let p = payments.get(i).unwrap();
             if p.amount <= 0 || p.rate_per_hour <= 0 {
                 return Err(ContractError::InvalidAmount);
+            }
+            // A zero-width or inverted period would make the attested pay period
+            // meaningless, and the period is a signed field of the proof.
+            if p.end_date <= p.start_date {
+                return Err(ContractError::InvalidPeriod);
+            }
+            // The amount must be reachable by whole attested hours at this rate,
+            // otherwise `submit_hours_proof`'s `hours x rate == amount` check can
+            // never be satisfied and the escrow is funded but unsettleable.
+            if p.amount % p.rate_per_hour != 0 {
+                return Err(ContractError::AmountHoursMismatch);
             }
             total_amount += p.amount;
         }
@@ -383,17 +674,45 @@ impl CoreFlowContract {
             (escrow_id, manager, total_amount),
         );
 
+        // One event PER PAYMENT, carrying that payment's full financial identity.
+        //
+        // WHY THIS EXISTS: the escrow-level events above say only how much moved
+        // in aggregate. An indexer given just those cannot reconstruct who was
+        // paid what, so it would have to read `get_escrow` at index time — which
+        // returns CURRENT state, not the state at that ledger. That makes the
+        // projection non-deterministic and unreplayable: re-indexing from
+        // scratch after later activity would produce different rows.
+        //
+        // Emitting per-payment events makes the event stream self-sufficient, so
+        // the off-chain projection is a pure function of the log. `payment_index`
+        // is the zero-based Vec index, matching the `payment_id` argument that
+        // `submit_hours_proof` and `proof_preimage` take.
+        for i in 0..payments.len() {
+            let p = payments.get(i).unwrap();
+            env.events().publish(
+                (symbol_short!("payment"), symbol_short!("add")),
+                (
+                    escrow_id,
+                    i,
+                    p.worker.clone(),
+                    p.token.clone(),
+                    p.amount,
+                    p.rate_per_hour,
+                    p.start_date,
+                    p.end_date,
+                ),
+            );
+        }
+
         Ok(escrow_id)
     }
 
-    /// Submit hours proof verified by Ed25519 oracle signature.
+    /// Submit hours proof verified by an Ed25519 oracle signature.
     ///
-    /// The oracle signs a 32-byte message:
-    ///   escrow_id (4 bytes BE) || payment_id (4 bytes BE) ||
-    ///   hours_logged (16 bytes BE) || nonce (8 bytes BE)
-    ///
-    /// The contract verifies the signature against the escrow's stored oracle public key
-    /// and checks the nonce matches the expected value to prevent replay attacks.
+    /// The oracle signs the 198-byte domain-separated preimage documented on
+    /// `build_proof_message` (schema v2). The contract rebuilds that preimage
+    /// from stored state, verifies it against the escrow's oracle public key,
+    /// enforces `hours x rate == amount`, and consumes the next expected nonce.
     pub fn submit_hours_proof(
         env: Env,
         escrow_id: u32,
@@ -424,13 +743,25 @@ impl CoreFlowContract {
             return Err(ContractError::InvalidPaymentId);
         }
 
-        // Construct the 32-byte message the oracle should have signed
-        let mut msg_data = [0u8; 32];
-        msg_data[0..4].copy_from_slice(&escrow_id.to_be_bytes());
-        msg_data[4..8].copy_from_slice(&payment_id.to_be_bytes());
-        msg_data[8..24].copy_from_slice(&hours_logged.to_be_bytes());
-        msg_data[24..32].copy_from_slice(&nonce.to_be_bytes());
-        let message = Bytes::from_slice(&env, &msg_data);
+        let mut payment = escrow.payments.get(payment_id).unwrap();
+
+        // The attested work must justify the escrowed amount exactly. Without
+        // this, `hours_logged` was decorative: the oracle could attest to any
+        // number of hours while `amount` -- fixed at creation and already funded
+        // into custody -- paid out regardless. Tying them makes "verified work
+        // determines payment" an on-chain invariant rather than a description.
+        let earned = hours_logged
+            .checked_mul(payment.rate_per_hour)
+            .ok_or(ContractError::InvalidAmount)?;
+        if earned != payment.amount {
+            return Err(ContractError::AmountHoursMismatch);
+        }
+
+        // Domain-separated preimage (schema v2). Built from stored payment state,
+        // so a caller cannot retarget a signature onto a different payee, asset,
+        // amount, period, contract or network.
+        let message =
+            Self::build_proof_message(&env, escrow_id, payment_id, &payment, hours_logged, nonce);
 
         // Signature first, then nonce. Verification traps on a bad signature, so
         // consuming the nonce beforehand would let an attacker burn the escrow's
@@ -438,9 +769,7 @@ impl CoreFlowContract {
         Self::verify_oracle_work(&env, &message, &signature, &escrow.oracle_pubkey);
         Self::track_nonce(&env, escrow_id, nonce)?;
 
-        // Update the payment schedule with hours logged and mark the payment as
-        // carrying a verified proof — `pay_batch` requires this flag.
-        let mut payment = escrow.payments.get(payment_id).unwrap();
+        // Mark the payment as carrying a verified proof — `pay_batch` requires it.
         payment.hours_logged = hours_logged;
         payment.proof_verified = true;
 
@@ -605,6 +934,22 @@ impl CoreFlowContract {
             p.status = PaymentStatus::Finalized;
             TokenClient::new(&env, &p.token).transfer(&contract_addr, &p.worker, &p.amount);
             total_amount += p.amount;
+
+            // Per-payment settlement event, emitted AFTER the transfer for this
+            // payee. A trapping transfer reverts the whole batch, so an emitted
+            // `paid` event always corresponds to value that actually moved.
+            env.events().publish(
+                (symbol_short!("payment"), symbol_short!("paid")),
+                (
+                    escrow_id,
+                    i,
+                    p.worker.clone(),
+                    p.token.clone(),
+                    p.amount,
+                    p.hours_logged,
+                ),
+            );
+
             finalized_payments.push_back(p);
         }
 
@@ -695,6 +1040,12 @@ impl CoreFlowContract {
         for i in 0..escrow.payments.len() {
             let mut p = escrow.payments.get(i).unwrap();
             p.status = PaymentStatus::Cancelled;
+            // Per-payment cancellation, so the off-chain projection can move
+            // each payment to a terminal state from the log alone.
+            env.events().publish(
+                (symbol_short!("payment"), symbol_short!("cancel")),
+                (escrow_id, i),
+            );
             cancelled_payments.push_back(p);
         }
         escrow.payments = cancelled_payments;
@@ -718,6 +1069,104 @@ impl CoreFlowContract {
             .persistent()
             .get(&DataKey::Escrow(escrow_id))
             .ok_or(ContractError::InvalidPaymentId)
+    }
+
+    /// Extend an escrow's storage lifetime. Anyone may call this.
+    ///
+    /// Persistent entries that run out of rent are archived to the Expired
+    /// State Stack and can be restored; they are not deleted. The failure this
+    /// avoids is a funded escrow becoming temporarily unusable until someone
+    /// pays to restore it.
+    //
+    // ── The Soroban storage lifecycle, precisely ────────────────────────────
+    // Escrow state and its nonce watermark live in PERSISTENT storage. When a
+    // persistent entry runs out of rent it is removed from the live ledger and
+    // placed on the Expired State Stack, from which it can be restored with a
+    // Stellar Core `RestoreFootprint` operation. Persistent entries are NOT
+    // permanently deleted -- that is the behaviour of TEMPORARY storage, which
+    // this contract deliberately does not use for anything.
+    //
+    // So the failure mode is a funded escrow becoming temporarily *unusable*
+    // (every entry point loads the escrow first, so all of them fail) until
+    // someone pays to restore it. Recoverable, not fund loss. Still worth
+    // avoiding: an escrow needing an out-of-band restore before a worker can be
+    // paid is an operational incident.
+    //
+    // ── Why anyone may call this ────────────────────────────────────────────
+    // Requiring the manager's authorization would tie an escrow's survival to
+    // one key remaining available and willing. The party with the strongest
+    // interest in keeping a funded escrow alive is often the WORKER awaiting
+    // payment, and they hold no authority over it. Keeping this open lets the
+    // worker, the platform, or a keeper bot pay the rent. There is nothing to
+    // abuse: the only effect is paying to keep someone else's data alive, and
+    // the caller funds the transaction.
+    //
+    // Both keys are extended together. Letting the nonce watermark and the
+    // escrow diverge in lifetime would mean restoring one without the other.
+    pub fn extend_escrow_ttl(env: Env, escrow_id: u32) -> Result<(), ContractError> {
+        // Confirm the escrow exists before charging anyone rent for a key that
+        // holds nothing.
+        if !env
+            .storage()
+            .persistent()
+            .has(&DataKey::Escrow(escrow_id))
+        {
+            return Err(ContractError::InvalidPaymentId);
+        }
+
+        // Extend to the network maximum: the caller has explicitly chosen to pay
+        // for longevity, so buying the least possible would be a strange default.
+        let max = env.storage().max_ttl();
+
+        env.storage()
+            .persistent()
+            .extend_ttl(&DataKey::Escrow(escrow_id), max, max);
+        env.storage()
+            .persistent()
+            .extend_ttl(&DataKey::Nonce(escrow_id), max, max);
+        env.storage().persistent().extend_ttl(
+            &DataKey::EscrowCount,
+            max,
+            max,
+        );
+        // The contract instance carries Admin and Paused; if it lapses, nothing
+        // works regardless of how healthy an individual escrow is.
+        env.storage().instance().extend_ttl(max, max);
+
+        env.events().publish(
+            (symbol_short!("escrow"), symbol_short!("ttl")),
+            (escrow_id, max),
+        );
+
+        Ok(())
+    }
+
+    /// Return the exact bytes the oracle must sign for this payment.
+    ///
+    /// Read-only. Exposing the preimage makes the CONTRACT the single source of
+    /// truth for the message format: an off-chain signer can simulate this call
+    /// and sign the returned bytes verbatim instead of reimplementing the layout
+    /// and hoping the two agree. Every historical mismatch between a signer and
+    /// a verifier is a bug this removes by construction.
+    pub fn proof_preimage(
+        env: Env,
+        escrow_id: u32,
+        payment_id: u32,
+        hours: i128,
+        nonce: u64,
+    ) -> Result<Bytes, ContractError> {
+        let escrow: CoreFlowEscrow = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Escrow(escrow_id))
+            .ok_or(ContractError::InvalidPaymentId)?;
+        if payment_id >= escrow.payments.len() {
+            return Err(ContractError::InvalidPaymentId);
+        }
+        let payment = escrow.payments.get(payment_id).unwrap();
+        Ok(Self::build_proof_message(
+            &env, escrow_id, payment_id, &payment, hours, nonce,
+        ))
     }
 
     /// Return the next expected oracle nonce for an escrow.

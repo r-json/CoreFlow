@@ -32,6 +32,24 @@
 
 ## 🔗 Deployed Contract
 
+> ## Two deployments — read this first
+>
+> CoreFlow has **two distinct on-chain deployments** with **different security properties**:
+>
+> | | Network | Contract | Status |
+> |---|---|---|---|
+> | **v2** (hardened) | **Testnet** | `CDN4FIKLJ72WYNPBIKWYSDJWDZG22QNPLWI37VTUAE4EKKIBVAQRG5F4` | Active. Domain-separated attestations, admin-managed oracle registry, work/amount invariant, pinned admin. |
+> | **v1** (historical) | Mainnet | `CCTF5WBOQR7JP2KPLQT372X7JCGCINHDFRSAPF4YTYRKZXZ3J2XPRFFW` | Deployed earlier. Carries **none** of v2's hardening. |
+>
+> **v2's security improvements are NOT deployed on Mainnet.** Mainnet activity
+> referenced below was produced against **v1**. Full detail:
+> [`docs/DEPLOYMENTS.md`](docs/DEPLOYMENTS.md) ·
+> [`docs/evidence/REVIEWER_EVIDENCE.md`](docs/evidence/REVIEWER_EVIDENCE.md)
+>
+> Testnet activity is labelled **Testnet validated**; Mainnet contract calls are
+> labelled **v1 Mainnet deployed**. Neither is revenue, pilot usage, or a
+> commercial deployment.
+
 > **Live on Stellar Mainnet** — View and verify the deployed CoreFlow smart contract on Stellar Expert:
 >
 > 🔗 **[View Deployed Contract on Stellar Expert](https://stellar.expert/explorer/public/contract/CCTF5WBOQR7JP2KPLQT372X7JCGCINHDFRSAPF4YTYRKZXZ3J2XPRFFW)**
