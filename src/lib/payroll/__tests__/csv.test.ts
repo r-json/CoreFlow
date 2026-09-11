@@ -31,10 +31,24 @@ function addrN(n: number): string {
   return ('G' + body).padEnd(56, 'A');
 }
 
-const HEADER = 'recipient,amount,asset,hours,rate';
+const HEADER = 'recipient,amount,asset,hours,rate,period_start,period_end';
+const PERIOD = '2026-09-01,2026-09-15';
 
+/**
+ * Build a file from rows, supplying a pay period where the row does not state one.
+ *
+ * The period is a REQUIRED column (the oracle attests to it), so most fixtures care
+ * about the other five fields. A row that already carries seven fields is left
+ * exactly as written, which keeps the deliberately-malformed fixtures malformed.
+ */
 function csv(...rows: string[]): string {
-  return [HEADER, ...rows].join('\n');
+  const withPeriod = rows.map((r) => {
+    // Field count via the real parser, not by counting commas: a quoted amount
+    // like "$1,250.00" contains one, and a naive count silently skipped the period.
+    const fields = parseCsvText(r)[0]?.length ?? 0;
+    return fields === 5 ? `${r},${PERIOD}` : r;
+  });
+  return [HEADER, ...withPeriod].join('\n');
 }
 
 /** Issue codes present, for concise assertions. */
@@ -142,7 +156,8 @@ describe('parsePayrollCsv - golden path', () => {
 
   it('is case-insensitive about headers and asset codes', () => {
     const result = parsePayrollCsv(
-      'Recipient,Amount,ASSET,Hours,Rate\n' + `${addr('case')},100,usdc,10,10`,
+      'Recipient,Amount,ASSET,Hours,Rate,Period_Start,Period_End\n' +
+        `${addr('case')},100,usdc,10,10,2026-09-01,2026-09-15`,
     );
     expect(result.issues).toEqual([]);
     expect(result.rows[0].asset).toBe('USDC');
@@ -187,8 +202,8 @@ describe('parsePayrollCsv - file-level limits', () => {
 
   it('rejects an over-long field', () => {
     const result = parsePayrollCsv(
-      'recipient,amount,asset,hours,rate,reference\n' +
-        `${addr('long')},100,USDC,10,10,${'a'.repeat(MAX_FIELD_LENGTH + 1)}`,
+      'recipient,amount,asset,hours,rate,period_start,period_end,reference\n' +
+        `${addr('long')},100,USDC,10,10,2026-09-01,2026-09-15,${'a'.repeat(MAX_FIELD_LENGTH + 1)}`,
     );
     expect(codes(result.issues)).toContain('FIELD_TOO_LONG');
     expect(result.rows).toEqual([]);
@@ -198,18 +213,19 @@ describe('parsePayrollCsv - file-level limits', () => {
 describe('parsePayrollCsv - header validation', () => {
   it('names every missing required column and stops before row errors', () => {
     const result = parsePayrollCsv('recipient,amount\nGXXX,nonsense');
-    expect(codes(result.issues).sort()).toEqual([
-      'MISSING_COLUMN',
-      'MISSING_COLUMN',
-      'MISSING_COLUMN',
-    ]);
+    // asset, hours, rate, period_start, period_end.
+    expect(codes(result.issues)).toEqual(Array(5).fill('MISSING_COLUMN'));
+    expect(
+      result.issues.map((i) => i.column).sort(),
+    ).toEqual(['asset', 'hours', 'period_end', 'period_start', 'rate']);
     expect(result.issues.every((i) => i.line === 1)).toBe(true);
     expect(result.rows).toEqual([]);
   });
 
   it('flags a duplicated column instead of silently picking one', () => {
     const result = parsePayrollCsv(
-      'recipient,amount,asset,hours,rate,amount\n' + `${addr('dup')},100,USDC,10,10,999`,
+      'recipient,amount,asset,hours,rate,period_start,period_end,amount\n' +
+        `${addr('dup')},100,USDC,10,10,2026-09-01,2026-09-15,999`,
     );
     expect(codes(result.issues)).toContain('DUPLICATE_COLUMN');
   });
@@ -358,8 +374,8 @@ describe('parsePayrollCsv - period validation', () => {
     'rejects the ambiguous or non-ISO date "%s"',
     (date) => {
       const result = parsePayrollCsv(
-        'recipient,amount,asset,hours,rate,period_start\n' +
-          `${addr('d')},100,USDC,10,10,${date}`,
+        'recipient,amount,asset,hours,rate,period_start,period_end\n' +
+          `${addr('d')},100,USDC,10,10,${date},2026-12-31`,
       );
       expect(codes(result.issues)).toContain('INVALID_PERIOD');
     },
@@ -367,8 +383,8 @@ describe('parsePayrollCsv - period validation', () => {
 
   it('rejects a date that is well-formed but not real', () => {
     const result = parsePayrollCsv(
-      'recipient,amount,asset,hours,rate,period_start\n' +
-        `${addr('d')},100,USDC,10,10,2026-02-30`,
+      'recipient,amount,asset,hours,rate,period_start,period_end\n' +
+        `${addr('d')},100,USDC,10,10,2026-02-30,2026-12-31`,
     );
     expect(codes(result.issues)).toContain('INVALID_PERIOD');
   });
@@ -382,22 +398,33 @@ describe('parsePayrollCsv - period validation', () => {
     expect(result.rows).toEqual([]);
   });
 
-  it('treats absent periods as absent, not as an error', () => {
+  it('refuses an absent period rather than assuming one', () => {
     const result = parsePayrollCsv(
       'recipient,amount,asset,hours,rate,period_start,period_end\n' +
         `${addr('d')},100,USDC,10,10,,`,
     );
-    expect(result.issues).toEqual([]);
-    expect(result.rows[0].periodStart).toBeNull();
-    expect(result.rows[0].periodEnd).toBeNull();
+    // The period is signed by the oracle, so it cannot be supplied on the
+    // uploader's behalf — and discovering that at the wallet prompt, after a
+    // payroll has been approved, would be far worse than being told here.
+    expect(codes(result.issues)).toContain('PERIOD_REQUIRED');
+    expect(result.issues.some((i) => i.message.includes('oracle attests'))).toBe(true);
+    expect(result.rows).toEqual([]);
+  });
+
+  it('names the period columns as missing when the header omits them', () => {
+    const result = parsePayrollCsv(
+      'recipient,amount,asset,hours,rate\n' + `${addr('d')},100,USDC,10,10`,
+    );
+    const missing = result.issues.filter((i) => i.code === 'MISSING_COLUMN');
+    expect(missing.map((i) => i.column).sort()).toEqual(['period_end', 'period_start']);
   });
 });
 
 describe('parsePayrollCsv - hostile input', () => {
   it('neutralizes a formula in a reference before it is ever stored', () => {
     const result = parsePayrollCsv(
-      'recipient,amount,asset,hours,rate,reference\n' +
-        `${addr('inj')},100,USDC,10,10,"=HYPERLINK(""http://evil"",""click"")"`,
+      'recipient,amount,asset,hours,rate,period_start,period_end,reference\n' +
+        `${addr('inj')},100,USDC,10,10,2026-09-01,2026-09-15,"=HYPERLINK(""http://evil"",""click"")"`,
     );
     expect(result.issues).toEqual([]);
     expect(result.rows[0].reference?.startsWith("'=")).toBe(true);
@@ -408,8 +435,8 @@ describe('parsePayrollCsv - hostile input', () => {
     const bell = String.fromCharCode(7);
     const esc = String.fromCharCode(27);
     const result = parsePayrollCsv(
-      'recipient,amount,asset,hours,rate,reference\n' +
-        `${addr('ctrl')},100,USDC,10,10,"Sprint${nul}${bell}${esc}14"`,
+      'recipient,amount,asset,hours,rate,period_start,period_end,reference\n' +
+        `${addr('ctrl')},100,USDC,10,10,2026-09-01,2026-09-15,"Sprint${nul}${bell}${esc}14"`,
     );
     expect(result.issues).toEqual([]);
     expect(result.rows[0].reference).toBe('Sprint14');
@@ -418,7 +445,8 @@ describe('parsePayrollCsv - hostile input', () => {
   it('strips control characters from a header name so the column still resolves', () => {
     const bell = String.fromCharCode(7);
     const result = parsePayrollCsv(
-      `recipient${bell},amount,asset,hours,rate\n` + `${addr('hdr')},100,USDC,10,10`,
+      `recipient${bell},amount,asset,hours,rate,period_start,period_end\n` +
+        `${addr('hdr')},100,USDC,10,10,2026-09-01,2026-09-15`,
     );
     expect(codes(result.issues)).not.toContain('MISSING_COLUMN');
   });

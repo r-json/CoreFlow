@@ -187,8 +187,8 @@ describe('CSV to persisted payroll', () => {
   it('stores a neutralized reference so a formula cannot reach a spreadsheet', async () => {
     signedInAs(orgA, OrgRole.ADMIN);
     const csv = [
-      'recipient,amount,asset,hours,rate,reference',
-      `${payeeWallet('inj')},100,USDC,10,10,"=HYPERLINK(""http://evil"",""click"")"`,
+      'recipient,amount,asset,hours,rate,period_start,period_end,reference',
+      `${payeeWallet('inj')},100,USDC,10,10,2026-09-01,2026-09-15,"=HYPERLINK(""http://evil"",""click"")"`,
     ].join('\n');
     await createBatchRoute(post(URL_BATCHES, { csv }, { 'x-organization-id': orgA.orgId }));
 

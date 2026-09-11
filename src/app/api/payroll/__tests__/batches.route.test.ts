@@ -48,12 +48,14 @@ function addr(tag: string): string {
   return ('G' + tag.toUpperCase().replace(/[^A-Z2-7]/g, '')).padEnd(56, 'A');
 }
 
-const HEADER = 'recipient,amount,asset,hours,rate';
+const HEADER = 'recipient,amount,asset,hours,rate,period_start,period_end';
+/** A pay period, required because the oracle attests to it. */
+const PERIOD = '2026-09-01,2026-09-15';
 const GOOD_CSV = [
   HEADER,
-  `${addr('alice')},1000,USDC,40,25`,
-  `${addr('bob')},1600,USDC,80,20`,
-  `${addr('carol')},260,USDC,20,13`,
+  `${addr('alice')},1000,USDC,40,25,${PERIOD}`,
+  `${addr('bob')},1600,USDC,80,20,${PERIOD}`,
+  `${addr('carol')},260,USDC,20,13,${PERIOD}`,
 ].join('\n');
 
 /** Seed an organization and a member. */
@@ -249,10 +251,10 @@ describe('POST /api/payroll/batches — CSV validation', () => {
   it('returns 422 with per-row errors for an invalid file, and writes nothing', async () => {
     const csv = [
       HEADER,
-      `${addr('ok')},1000,USDC,40,25`,
-      'NOTANADDRESS,100,USDC,10,10',
-      `${addr('sci')},1e3,USDC,10,10`,
-      `${addr('frac')},100,USDC,7.5,10`,
+      `${addr('ok')},1000,USDC,40,25,${PERIOD}`,
+      `NOTANADDRESS,100,USDC,10,10,${PERIOD}`,
+      `${addr('sci')},1e3,USDC,10,10,${PERIOD}`,
+      `${addr('frac')},100,USDC,7.5,10,${PERIOD}`,
     ].join('\n');
 
     const res = await createBatchRoute(post(URL_BATCHES, { csv }, { 'x-organization-id': ORG_A }));
@@ -270,7 +272,7 @@ describe('POST /api/payroll/batches — CSV validation', () => {
   });
 
   it('rejects an asset this deployment cannot settle', async () => {
-    const csv = [HEADER, `${addr('x')},100,XLM,10,10`].join('\n');
+    const csv = [HEADER, `${addr('x')},100,XLM,10,10,${PERIOD}`].join('\n');
     const res = await createBatchRoute(post(URL_BATCHES, { csv }, { 'x-organization-id': ORG_A }));
     expect(res.status).toBe(422);
     const body = await res.json();
@@ -279,7 +281,7 @@ describe('POST /api/payroll/batches — CSV validation', () => {
   });
 
   it('rejects a row whose amount does not equal hours x rate', async () => {
-    const csv = [HEADER, `${addr('x')},1000,USDC,40,20`].join('\n');
+    const csv = [HEADER, `${addr('x')},1000,USDC,40,20,${PERIOD}`].join('\n');
     const res = await createBatchRoute(post(URL_BATCHES, { csv }, { 'x-organization-id': ORG_A }));
     expect(res.status).toBe(422);
     expect((await res.json()).details.errors[0].code).toBe('HOURS_RATE_MISMATCH');
@@ -335,7 +337,7 @@ describe('POST /api/payroll/batches — idempotency', () => {
     const headers = { 'x-organization-id': ORG_A, 'idempotency-key': KEY };
     await createBatchRoute(post(URL_BATCHES, { csv: GOOD_CSV }, headers));
 
-    const differentCsv = [HEADER, `${addr('dave')},500,USDC,25,20`].join('\n');
+    const differentCsv = [HEADER, `${addr('dave')},500,USDC,25,20,${PERIOD}`].join('\n');
     const res = await createBatchRoute(post(URL_BATCHES, { csv: differentCsv }, headers));
 
     expect(res.status).toBe(409);
@@ -397,7 +399,7 @@ describe('POST /api/payroll/batches/validate', () => {
   });
 
   it('returns 200 with structured row errors for an invalid file', async () => {
-    const csv = [HEADER, 'BADADDRESS,100,USDC,10,10'].join('\n');
+    const csv = [HEADER, `BADADDRESS,100,USDC,10,10,${PERIOD}`].join('\n');
     const res = await validateCsvRoute(
       post(URL_VALIDATE, { csv }, { 'x-organization-id': ORG_A }),
     );

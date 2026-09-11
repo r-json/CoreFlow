@@ -25,6 +25,8 @@ vi.mock('@/lib/oracle', () => ({ getOraclePublicKeyHex: () => 'ab'.repeat(32) })
 
 import { createFakeDb, type FakeDb } from '@/lib/payments/__tests__/fake-db';
 import {
+  planDigest,
+  readStoredPlan,
   openFundingIntent,
   recordFundingSubmitted,
   failFundingIntent,
@@ -291,6 +293,7 @@ describe('submission and abandonment', () => {
       attemptId: opened.attempt.id,
       reason: 'User declined the signature in Freighter',
       userRejected: true,
+      batchId: BATCH.id,
     });
 
     expect(attempt.status).toBe(TxStatus.CANCELLED);
@@ -301,10 +304,11 @@ describe('submission and abandonment', () => {
 
   it('does NOT rewind payments when a transaction was already submitted', async () => {
     const opened = await openFundingIntent(db, ctxFor(), BATCH);
-    await recordFundingSubmitted(db, ctxFor(), { attemptId: opened.attempt.id, transactionHash: HASH });
+    await recordFundingSubmitted(db, ctxFor(), { attemptId: opened.attempt.id, transactionHash: HASH, batchId: BATCH.id });
     await failFundingIntent(db, ctxFor(), {
       attemptId: opened.attempt.id,
       reason: 'RPC timed out while polling',
+      batchId: BATCH.id,
     });
 
     // The money may have moved. Quietly marking the batch editable again would
@@ -318,6 +322,7 @@ describe('submission and abandonment', () => {
       attemptId: first.attempt.id,
       reason: 'declined',
       userRejected: true,
+      batchId: BATCH.id,
     });
     const second = await openFundingIntent(db, ctxFor(), BATCH);
 
@@ -330,14 +335,19 @@ describe('submission and abandonment', () => {
 
   it('refuses to abandon a confirmed attempt', async () => {
     const opened = await openFundingIntent(db, ctxFor(), BATCH);
-    await recordFundingSubmitted(db, ctxFor(), { attemptId: opened.attempt.id, transactionHash: HASH });
+    await recordFundingSubmitted(db, ctxFor(), { attemptId: opened.attempt.id, transactionHash: HASH, batchId: BATCH.id });
     await confirmFunding(db, ctxFor(), agreeingVerifier(), {
-      attemptId: opened.attempt.id,
-      onChainEscrowId: 9,
-    });
+        attemptId: opened.attempt.id,
+        onChainEscrowId: 9,
+        batchId: BATCH.id,
+      });
 
     await expect(
-      failFundingIntent(db, ctxFor(), { attemptId: opened.attempt.id, reason: 'changed my mind' }),
+      failFundingIntent(db, ctxFor(), {
+        attemptId: opened.attempt.id,
+        reason: 'changed my mind',
+        batchId: BATCH.id,
+      }),
     ).rejects.toMatchObject({ status: 409 });
   });
 });
@@ -345,16 +355,13 @@ describe('submission and abandonment', () => {
 describe('confirmFunding', () => {
   async function submitted() {
     const opened = await openFundingIntent(db, ctxFor(), BATCH);
-    await recordFundingSubmitted(db, ctxFor(), { attemptId: opened.attempt.id, transactionHash: HASH });
+    await recordFundingSubmitted(db, ctxFor(), { attemptId: opened.attempt.id, transactionHash: HASH, batchId: BATCH.id });
     return opened.attempt.id;
   }
 
   it('records funding only after the chain agrees', async () => {
     const attemptId = await submitted();
-    const result = await confirmFunding(db, ctxFor(), agreeingVerifier(), {
-      attemptId,
-      onChainEscrowId: 9,
-    });
+    const result = await confirmFunding(db, ctxFor(), agreeingVerifier(), { attemptId, onChainEscrowId: 9, batchId: BATCH.id });
 
     expect(result.outcome).toBe('CONFIRMED');
     if (result.outcome !== 'CONFIRMED') return;
@@ -396,10 +403,7 @@ describe('confirmFunding', () => {
   it('replays a confirmation instead of recording it twice', async () => {
     const attemptId = await submitted();
     await confirmFunding(db, ctxFor(), agreeingVerifier(), { attemptId, onChainEscrowId: 9 });
-    const again = await confirmFunding(db, ctxFor(), agreeingVerifier(), {
-      attemptId,
-      onChainEscrowId: 9,
-    });
+    const again = await confirmFunding(db, ctxFor(), agreeingVerifier(), { attemptId, onChainEscrowId: 9, batchId: BATCH.id });
 
     expect(again.outcome).toBe('CONFIRMED');
     expect(db.__tables.escrow.rows).toHaveLength(1);
@@ -557,14 +561,240 @@ describe('confirmFunding', () => {
       createdAt: new Date(),
     });
 
-    const result = await confirmFunding(db, ctxFor(), agreeingVerifier(), {
-      attemptId,
-      onChainEscrowId: 9,
-    });
+    const result = await confirmFunding(db, ctxFor(), agreeingVerifier(), { attemptId, onChainEscrowId: 9, batchId: BATCH.id });
 
     expect(result.outcome).toBe('CONFIRMED');
     // onChainId is unique: whoever got there first wins and the other links to it.
     expect(db.__tables.escrow.rows).toHaveLength(1);
     expect(db.__tables.payment.rows.every((p) => p.escrowId === 'esc_indexer')).toBe(true);
+  });
+});
+
+describe('the stored plan is the authority', () => {
+  async function submitted() {
+    const opened = await openFundingIntent(db, ctxFor(), BATCH);
+    await recordFundingSubmitted(db, ctxFor(), { attemptId: opened.attempt.id, transactionHash: HASH, batchId: BATCH.id });
+    return opened.attempt.id;
+  }
+
+  it('persists the plan and its digest when the intent is opened', async () => {
+    await openFundingIntent(db, ctxFor(), BATCH);
+    const tx = db.__tables.blockchainTransaction.rows[0];
+
+    expect(tx.plan).toBeDefined();
+    expect(tx.planDigest).toMatch(/^[0-9a-f]{64}$/);
+    expect(planDigest(tx.plan)).toBe(tx.planDigest);
+
+    // Money inside the JSON is a decimal string, never a Number.
+    expect(tx.plan.totalBaseUnits).toBe(TOTAL.toString());
+    expect(tx.plan.rows).toHaveLength(3);
+    for (const row of tx.plan.rows) {
+      expect(typeof row.amountBaseUnits).toBe('string');
+      expect(typeof row.rateBaseUnits).toBe('string');
+    }
+    expect(tx.plan.manager).toBe(MANAGER);
+    expect(tx.plan.financeApprover).toBe(FINANCE);
+    expect(tx.plan.custodyDestination).toBe(CONTRACT);
+    expect(tx.plan.network).toBe('testnet');
+  });
+
+  it('refuses a plan whose digest no longer matches it', async () => {
+    const attemptId = await submitted();
+    const tx = db.__tables.blockchainTransaction.rows[0];
+    // Somebody edited the stored JSON to pay a different wallet.
+    tx.plan = { ...tx.plan, rows: [{ ...tx.plan.rows[0], worker: wallet('attacker') }, ...tx.plan.rows.slice(1)] };
+
+    await expect(
+      confirmFunding(db, ctxFor(), agreeingVerifier(), { attemptId, onChainEscrowId: 9 }),
+    ).rejects.toMatchObject({ status: 409 });
+    expect(db.__tables.escrow.rows).toHaveLength(0);
+  });
+
+  it('refuses to verify an attempt that stored no plan', async () => {
+    const attemptId = await submitted();
+    const tx = db.__tables.blockchainTransaction.rows[0];
+    tx.plan = null;
+    tx.planDigest = null;
+
+    await expect(
+      confirmFunding(db, ctxFor(), agreeingVerifier(), { attemptId, onChainEscrowId: 9 }),
+    ).rejects.toMatchObject({ status: 409 });
+  });
+
+  it('detects an escrow paying a recipient the plan never named', async () => {
+    const attemptId = await submitted();
+    const base = agreeingVerifier();
+    const result = await confirmFunding(
+      db,
+      ctxFor(),
+      {
+        ...base,
+        readEscrow: async (id: number) => {
+          const r = await base.readEscrow(id);
+          if (!r.ok) return r;
+          const payments = [...r.value.payments];
+          payments[1] = { ...payments[1], worker: wallet('attacker') };
+          return { ok: true, value: { ...r.value, payments } };
+        },
+      },
+      { attemptId, onChainEscrowId: 9 },
+    );
+
+    expect(result.outcome).toBe('MISMATCH');
+    if (result.outcome !== 'MISMATCH') return;
+    expect(result.differences.some((d) => d.includes('the plan says'))).toBe(true);
+    expect(db.__tables.escrow.rows).toHaveLength(0);
+  });
+
+  it('detects an escrow whose finance approver is not the planned one', async () => {
+    const attemptId = await submitted();
+    const base = agreeingVerifier();
+    const result = await confirmFunding(
+      db,
+      ctxFor(),
+      {
+        ...base,
+        readEscrow: async (id: number) => {
+          const r = await base.readEscrow(id);
+          if (!r.ok) return r;
+          return { ok: true, value: { ...r.value, financeApprover: wallet('someoneelse') } };
+        },
+      },
+      { attemptId, onChainEscrowId: 9 },
+    );
+    expect(result.outcome).toBe('MISMATCH');
+  });
+
+  it('detects an escrow whose manager and finance approver are the same key', async () => {
+    const attemptId = await submitted();
+    const base = agreeingVerifier();
+    const result = await confirmFunding(
+      db,
+      ctxFor(),
+      {
+        ...base,
+        readEscrow: async (id: number) => {
+          const r = await base.readEscrow(id);
+          if (!r.ok) return r;
+          return { ok: true, value: { ...r.value, financeApprover: MANAGER } };
+        },
+      },
+      { attemptId, onChainEscrowId: 9 },
+    );
+    // Dual control is vacuous if one key holds both halves; the contract refuses it
+    // at creation, and an escrow that somehow had it must not be adopted.
+    expect(result.outcome).toBe('MISMATCH');
+  });
+
+  it('detects a payment edited after the plan was frozen', async () => {
+    const attemptId = await submitted();
+    // The chain still matches the plan, but the database no longer does.
+    db.__tables.payment.rows[0].amountBaseUnits = 99_999_999_999n;
+
+    const result = await confirmFunding(db, ctxFor(), agreeingVerifier(), { attemptId, onChainEscrowId: 9, batchId: BATCH.id });
+
+    expect(result.outcome).toBe('MISMATCH');
+    if (result.outcome !== 'MISMATCH') return;
+    expect(result.differences.some((d) => d.includes('altered since the plan'))).toBe(true);
+    // Adopting it would attach an escrow to payments nobody authorised.
+    expect(db.__tables.escrow.rows).toHaveLength(0);
+  });
+
+  it('detects a payment removed from the batch after the plan was frozen', async () => {
+    const attemptId = await submitted();
+    db.__tables.payment.rows.splice(2, 1);
+
+    const result = await confirmFunding(db, ctxFor(), agreeingVerifier(), { attemptId, onChainEscrowId: 9, batchId: BATCH.id });
+    expect(result.outcome).toBe('MISMATCH');
+  });
+
+  it('opens a CRITICAL finding on mismatch, preserving the evidence', async () => {
+    const attemptId = await submitted();
+    const base = agreeingVerifier();
+    await confirmFunding(
+      db,
+      ctxFor(),
+      {
+        ...base,
+        readEscrow: async (id: number) => {
+          const r = await base.readEscrow(id);
+          if (!r.ok) return r;
+          return { ok: true, value: { ...r.value, payments: [] } };
+        },
+      },
+      { attemptId, onChainEscrowId: 9 },
+    );
+
+    const findings = db.__tables.reconciliationFinding.rows;
+    expect(findings).toHaveLength(1);
+    expect(findings[0].severity).toBe('CRITICAL');
+    expect(findings[0].detail).toContain('was NOT adopted');
+    expect(findings[0].chainState).toBe('escrow:9');
+  });
+
+  it('verifies custody against the plan asset, not current configuration', async () => {
+    const attemptId = await submitted();
+    // The operator switches the settlement asset while the transaction is pending.
+    process.env.NEXT_PUBLIC_SETTLEMENT_ASSET_CODE = 'EURC';
+    try {
+      const result = await confirmFunding(db, ctxFor(), agreeingVerifier(), { attemptId, onChainEscrowId: 9, batchId: BATCH.id });
+      // The plan said USDC, the chain says USDC, so this confirms — a recomputed
+      // plan would have disagreed with both.
+      expect(result.outcome).toBe('CONFIRMED');
+      expect(db.__tables.escrow.rows[0].tokenAddress).toBe(TOKEN);
+    } finally {
+      process.env.NEXT_PUBLIC_SETTLEMENT_ASSET_CODE = 'USDC';
+    }
+  });
+
+  it('readStoredPlan round-trips a plan it considers valid', async () => {
+    await openFundingIntent(db, ctxFor(), BATCH);
+    const tx = db.__tables.blockchainTransaction.rows[0];
+    const plan = readStoredPlan({ plan: tx.plan, planDigest: tx.planDigest });
+    expect(plan.rows.map((r) => r.worker)).toEqual(ROWS.map((r) => r.recipient));
+    expect(BigInt(plan.totalBaseUnits)).toBe(TOTAL);
+  });
+});
+
+describe('an attempt is scoped to its batch', () => {
+  it('is not actionable through a different batch', async () => {
+    db.__tables.payrollBatch.rows.push({
+      id: 'bat_other',
+      orgId: ORG,
+      reference: 'CF-00002',
+      createdAt: new Date(),
+    });
+    const opened = await openFundingIntent(db, ctxFor(), BATCH);
+
+    // The attempt exists and belongs to this organization, but not to this batch.
+    // Without the batch filter, naming its id on another batch's route would act on
+    // it — and the tests would not have noticed, because tsconfig excludes test
+    // files from typechecking and `where: { batchId: undefined }` means "no filter".
+    await expect(
+      recordFundingSubmitted(db, ctxFor(), {
+        attemptId: opened.attempt.id,
+        transactionHash: HASH,
+        batchId: 'bat_other',
+      }),
+    ).rejects.toMatchObject({ status: 404 });
+
+    await expect(
+      failFundingIntent(db, ctxFor(), {
+        attemptId: opened.attempt.id,
+        reason: 'wrong batch',
+        batchId: 'bat_other',
+      }),
+    ).rejects.toMatchObject({ status: 404 });
+
+    await expect(
+      confirmFunding(db, ctxFor(), agreeingVerifier(), {
+        attemptId: opened.attempt.id,
+        onChainEscrowId: 9,
+        batchId: 'bat_other',
+      }),
+    ).rejects.toMatchObject({ status: 404 });
+
+    // Untouched.
+    expect(db.__tables.blockchainTransaction.rows[0].status).toBe(TxStatus.AWAITING_SIGNATURE);
   });
 });
