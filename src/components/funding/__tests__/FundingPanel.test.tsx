@@ -310,3 +310,65 @@ describe('a mismatched transaction', () => {
     expect(screen.queryByText('Fund escrow')).toBeNull();
   });
 });
+
+describe('recovery through the page (mandatory regression)', () => {
+  it('resolves the escrow from the hash on mount and becomes funded, creating nothing new', async () => {
+    // The state a user lands in after a reload or a dropped connection: a submitted
+    // transaction, a known hash, and no escrow id.
+    let confirmed = false;
+    routes = {
+      '/funding/confirm': () => {
+        confirmed = true;
+        return {
+          outcome: 'CONFIRMED',
+          attempt: attempt({ status: 'CONFIRMED', hash: HASH, confirmedAt: new Date().toISOString() }),
+          escrow: { id: 'esc_1', onChainId: 9 },
+        };
+      },
+      '/funding': () =>
+        confirmed
+          ? state({
+              attempt: attempt({ status: 'CONFIRMED', hash: HASH }),
+              escrow: { id: 'esc_1', onChainId: 9 },
+            })
+          : state({ attempt: attempt({ status: 'SUBMITTED', hash: HASH }) }),
+    };
+
+    render(<FundingPanel batchId="bat_1" />);
+
+    // Recovery happens without the user doing anything.
+    await waitFor(() => expect(screen.getByText('Escrow funded')).toBeDefined());
+    expect(screen.getByText('#9')).toBeDefined();
+
+    // The confirm call carried NO escrow id: the server resolved it from the hash.
+    const confirmCall = calls.find((c) => c.includes('/confirm'));
+    expect(confirmCall).toBeDefined();
+
+    // Nothing new was created, and no signature was requested.
+    expect(calls.filter((c) => c.includes('/intent'))).toHaveLength(0);
+    expect(calls.filter((c) => c.includes('/submitted'))).toHaveLength(0);
+    expect(calls.filter((c) => c.includes('/abandon'))).toHaveLength(0);
+    expect(screen.queryByText('Fund escrow')).toBeNull();
+    expect(screen.queryByText('Review and fund')).toBeNull();
+  });
+
+  it('attempts recovery once, not in a loop, when it stays unresolved', async () => {
+    routes = {
+      '/funding/confirm': () => ({
+        outcome: 'UNVERIFIABLE',
+        attempt: attempt({ status: 'SUBMITTED', hash: HASH }),
+        reason: 'No escrow/created event has been observed yet.',
+      }),
+      '/funding': () => state({ attempt: attempt({ status: 'SUBMITTED', hash: HASH }) }),
+    };
+
+    render(<FundingPanel batchId="bat_1" />);
+    await waitFor(() => expect(screen.getByText('Check status')).toBeDefined());
+    await new Promise((r) => setTimeout(r, 60));
+
+    // One automatic attempt. Re-verifying a genuinely pending transaction on a loop
+    // is noise, and "Check status" remains available.
+    expect(calls.filter((c) => c.includes('/confirm'))).toHaveLength(1);
+    expect(screen.getByText('Do not fund this payroll again.')).toBeDefined();
+  });
+});

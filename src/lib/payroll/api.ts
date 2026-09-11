@@ -500,6 +500,51 @@ function inferRole(role: OrgRole): OrgRole {
 // Reads
 // ---------------------------------------------------------------------------
 
+/**
+ * Audit events for a batch, newest last, as the activity timeline.
+ *
+ * Rendered from real `AuditEvent` rows and nothing else. The timeline will look
+ * sparse early in a batch's life — created, funded, approved — and that is correct.
+ * Padding it with plausible-sounding entries nobody recorded would make the one
+ * screen whose job is to show what actually happened the least trustworthy in the
+ * product.
+ */
+export function presentActivity(events: readonly any[]) {
+  return events.map((e) => ({
+    id: e.id,
+    type: e.type,
+    at: e.createdAt?.toISOString() ?? null,
+    actor: e.actorAddress
+      ? { kind: 'user' as const, address: e.actorAddress }
+      : e.actorSystem
+        ? { kind: 'system' as const, system: e.actorSystem }
+        : null,
+    previousState: e.previousState ?? null,
+    newState: e.newState ?? null,
+    txHash: e.txHash ?? null,
+    paymentId: e.paymentId ?? null,
+    // Metadata is operator-facing detail, already free of secrets by construction:
+    // every writer passes explicit fields, never a whole request or config object.
+    metadata: (e.metadata ?? null) as Record<string, unknown> | null,
+  }));
+}
+
+/** Open reconciliation findings for a batch's payments. */
+export function presentFindings(findings: readonly any[]) {
+  return findings.map((f) => ({
+    id: f.id,
+    kind: f.kind,
+    severity: f.severity,
+    status: f.status,
+    detail: f.detail,
+    paymentId: f.paymentId ?? null,
+    firstDetectedAt: f.detectedAt?.toISOString() ?? null,
+    lastObservedAt: f.lastObservedAt?.toISOString() ?? null,
+    observationCount: f.observationCount ?? null,
+    remediation: f.remediation ?? null,
+  }));
+}
+
 /** Shape a batch for the detail view, including its derived standing. */
 export function presentBatch(batch: any) {
   const payments: any[] = batch.payments ?? [];
@@ -544,6 +589,10 @@ export function presentBatch(batch: any) {
         recipient: p.recipientAddress,
         amount: formatAmountWithSeparators(p.amountBaseUnits, p.assetDecimals),
         amountBaseUnits: p.amountBaseUnits.toString(),
+        // Formatted server-side for the same reason the amount is: a rate rendered
+        // from base units in the browser either reads as 250000000 or requires the
+        // browser to divide, and neither belongs on a payroll screen.
+        rate: formatAmountWithSeparators(p.rateBaseUnits, p.assetDecimals),
         rateBaseUnits: p.rateBaseUnits.toString(),
         hours: p.hours.toString(),
         asset: p.assetCode,

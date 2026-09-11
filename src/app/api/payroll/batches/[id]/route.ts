@@ -10,7 +10,7 @@ import prisma from '@/lib/db/prisma';
 import { withTenant, denialResponse } from '@/lib/tenancy/http';
 import { findBatch } from '@/lib/tenancy/resolve';
 import { handleRouteError } from '@/lib/api/errors';
-import { presentBatch } from '@/lib/payroll/api';
+import { presentBatch, presentActivity, presentFindings } from '@/lib/payroll/api';
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   return withTenant(request, { permission: 'payroll:read', parseBody: false }, async ({ ctx }) => {
@@ -29,7 +29,30 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       });
       if (!found.ok) return denialResponse(found);
 
-      return NextResponse.json({ batch: presentBatch(found.value) });
+      // The activity timeline and any findings, both tenant-scoped by the same
+      // organization filter the batch itself was resolved with.
+      const [events, findings] = await Promise.all([
+        prisma.auditEvent.findMany({
+          where: { orgId: ctx.orgId, batchId: found.value.id },
+          orderBy: [{ createdAt: 'asc' }],
+          take: 200,
+        }),
+        prisma.reconciliationFinding.findMany({
+          where: {
+            orgId: ctx.orgId,
+            status: { not: 'RESOLVED' },
+            paymentId: { in: found.value.payments.map((p: { id: string }) => p.id) },
+          },
+          orderBy: [{ detectedAt: 'desc' }],
+          take: 50,
+        }),
+      ]);
+
+      return NextResponse.json({
+        batch: presentBatch(found.value),
+        activity: presentActivity(events),
+        findings: presentFindings(findings),
+      });
     } catch (e) {
       return handleRouteError('payroll.batch.GET', e);
     }
