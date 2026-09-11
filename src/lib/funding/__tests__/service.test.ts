@@ -118,6 +118,8 @@ function seed() {
 function agreeingVerifier(over: Partial<ChainVerifier> = {}): ChainVerifier {
   return {
     readTransactionSucceeded: async () => ({ ok: true, value: true }),
+    // The recovery anchor: which escrow did this transaction create?
+    findEscrowsCreatedByTransaction: async () => ({ ok: true, value: [9] }),
     readEscrow: async (onChainId: number) => ({
       ok: true,
       value: {
@@ -824,5 +826,161 @@ describe('the funding state is JSON-serializable', () => {
     const state = await getFundingState(db, ctxFor(), BATCH);
     expect(() => JSON.stringify(state)).not.toThrow();
     expect(JSON.parse(JSON.stringify(state)).plan).toBeNull();
+  });
+});
+
+describe('recovering the escrow from the transaction hash', () => {
+  async function submitted() {
+    const opened = await openFundingIntent(db, ctxFor(), BATCH);
+    await recordFundingSubmitted(db, ctxFor(), {
+      attemptId: opened.attempt.id,
+      transactionHash: HASH,
+      batchId: BATCH.id,
+    });
+    return opened.attempt.id;
+  }
+
+  /**
+   * The mandatory case: the transaction was accepted, the return value could not be
+   * read, and the user must NOT have to sign again. The hash is the durable anchor.
+   */
+  it('confirms with no escrow id supplied, resolving it from the transaction', async () => {
+    const attemptId = await submitted();
+
+    const result = await confirmFunding(db, ctxFor(), agreeingVerifier(), {
+      attemptId,
+      batchId: BATCH.id,
+      // Deliberately absent, as when `scValToNative` on the return value fails.
+    });
+
+    expect(result.outcome).toBe('CONFIRMED');
+    if (result.outcome !== 'CONFIRMED') return;
+    expect(result.escrow.onChainId).toBe(9);
+
+    // One escrow, one attempt, one transaction record. Recovery created nothing new.
+    expect(db.__tables.escrow.rows).toHaveLength(1);
+    expect(db.__tables.blockchainTransaction.rows).toHaveLength(1);
+    expect(db.__tables.payment.rows.map((p) => p.onChainPaymentIndex)).toEqual([0, 1, 2]);
+
+    const audit = db.__tables.auditEvent.rows.find((e) => e.type === 'funding.confirmed');
+    expect(audit.metadata.escrowResolvedFrom).toBe('chain-event');
+  });
+
+  it('prefers the indexer record over RPC, and works when RPC is unreadable', async () => {
+    const attemptId = await submitted();
+    db.__tables.chainEvent.rows.push({
+      id: 'cev_1',
+      txHash: HASH,
+      type: 'created',
+      contractId: CONTRACT,
+      network: 'testnet',
+      escrowOnChainId: 9,
+      ledger: 100,
+    });
+
+    const result = await confirmFunding(
+      db,
+      ctxFor(),
+      agreeingVerifier({
+        // RPC event history has aged out; the indexed record still answers.
+        findEscrowsCreatedByTransaction: async () => ({
+          ok: false,
+          error: { kind: 'UNREADABLE', reason: 'event retention exceeded' },
+        }),
+      }),
+      { attemptId, batchId: BATCH.id },
+    );
+
+    expect(result.outcome).toBe('CONFIRMED');
+    const audit = db.__tables.auditEvent.rows.find((e) => e.type === 'funding.confirmed');
+    expect(audit.metadata.escrowResolvedFrom).toBe('indexed-event');
+  });
+
+  it('is UNVERIFIABLE, not FAILED, while no escrow/created event is visible yet', async () => {
+    const attemptId = await submitted();
+    const result = await confirmFunding(
+      db,
+      ctxFor(),
+      agreeingVerifier({ findEscrowsCreatedByTransaction: async () => ({ ok: true, value: [] }) }),
+      { attemptId, batchId: BATCH.id },
+    );
+
+    expect(result.outcome).toBe('UNVERIFIABLE');
+    // The attempt keeps blocking a second one, which is the point.
+    expect(db.__tables.blockchainTransaction.rows[0].status).toBe(TxStatus.SUBMITTED);
+    expect(db.__tables.escrow.rows).toHaveLength(0);
+  });
+
+  it('is repeatable: recovery twice yields one escrow and one attempt', async () => {
+    const attemptId = await submitted();
+    const first = await confirmFunding(db, ctxFor(), agreeingVerifier(), {
+      attemptId,
+      batchId: BATCH.id,
+    });
+    const second = await confirmFunding(db, ctxFor(), agreeingVerifier(), {
+      attemptId,
+      batchId: BATCH.id,
+    });
+
+    expect(first.outcome).toBe('CONFIRMED');
+    expect(second.outcome).toBe('CONFIRMED');
+    expect(db.__tables.escrow.rows).toHaveLength(1);
+    expect(db.__tables.blockchainTransaction.rows).toHaveLength(1);
+    expect(
+      db.__tables.auditEvent.rows.filter((e) => e.type === 'funding.confirmed'),
+    ).toHaveLength(1);
+  });
+
+  it('refuses a client-supplied escrow id the transaction did not create', async () => {
+    const attemptId = await submitted();
+    const result = await confirmFunding(db, ctxFor(), agreeingVerifier(), {
+      attemptId,
+      batchId: BATCH.id,
+      // Transaction A pointed at an escrow from transaction B.
+      onChainEscrowId: 777,
+    });
+
+    expect(result.outcome).toBe('MISMATCH');
+    if (result.outcome !== 'MISMATCH') return;
+    expect(result.differences[0]).toContain('777');
+    expect(db.__tables.escrow.rows).toHaveLength(0);
+  });
+
+  it('refuses ambiguity rather than choosing an escrow', async () => {
+    const attemptId = await submitted();
+    const result = await confirmFunding(
+      db,
+      ctxFor(),
+      agreeingVerifier({
+        findEscrowsCreatedByTransaction: async () => ({ ok: true, value: [9, 10] }),
+      }),
+      { attemptId, batchId: BATCH.id },
+    );
+
+    expect(result.outcome).toBe('MISMATCH');
+    expect(db.__tables.escrow.rows).toHaveLength(0);
+  });
+
+  it('ignores an indexed event from another contract or network', async () => {
+    const attemptId = await submitted();
+    db.__tables.chainEvent.rows.push({
+      id: 'cev_other',
+      txHash: HASH,
+      type: 'created',
+      contractId: 'C' + 'Z'.repeat(55),
+      network: 'testnet',
+      escrowOnChainId: 4242,
+      ledger: 100,
+    });
+
+    const result = await confirmFunding(db, ctxFor(), agreeingVerifier(), {
+      attemptId,
+      batchId: BATCH.id,
+    });
+
+    // Falls through to the chain, which names escrow 9 — not the foreign 4242.
+    expect(result.outcome).toBe('CONFIRMED');
+    if (result.outcome !== 'CONFIRMED') return;
+    expect(result.escrow.onChainId).toBe(9);
   });
 });

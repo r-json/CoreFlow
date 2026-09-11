@@ -100,6 +100,21 @@ export interface ChainVerifier {
   ): Promise<Verified<ObservedTransfer[]>>;
   /** Whether a specific transaction succeeded. */
   readTransactionSucceeded(hash: string): Promise<Verified<boolean>>;
+  /**
+   * Escrow ids created by a specific transaction, from the contract's own
+   * `escrow/created` events.
+   *
+   * The recovery anchor for funding. A client that submits
+   * `initialize_multi_sig_escrow` and then fails to parse the return value still
+   * knows the transaction hash, and the hash is enough to learn which escrow that
+   * transaction created — so nobody has to sign a second one to find out.
+   *
+   * Returns every match so the caller can refuse ambiguity rather than pick.
+   */
+  findEscrowsCreatedByTransaction(
+    hash: string,
+    opts: { fromLedger?: number }
+  ): Promise<Verified<number[]>>;
   /** Current ledger, for bounding windows. */
   latestLedger(): Promise<Verified<number>>;
 }
@@ -159,6 +174,57 @@ export function createRpcVerifier(): ChainVerifier {
         if (/InvalidPaymentId|Error\(Contract, #4\)/.test(msg)) {
           return { ok: false, error: { kind: 'NOT_FOUND', reason: msg } };
         }
+        return { ok: false, error: unreadable(e) };
+      }
+    },
+
+    async findEscrowsCreatedByTransaction(hash, opts) {
+      try {
+        const sdk: any = await loadSdk();
+        const rpc = new sdk.rpc.Server(STELLAR_CONFIG.getRpcUrl());
+        const contractId = STELLAR_CONFIG.requireContractId();
+
+        let startLedger = opts.fromLedger;
+        if (startLedger === undefined) {
+          const latest = await rpc.getLatestLedger();
+          startLedger = Math.max(1, latest.sequence - DEFAULT_TRANSFER_LOOKBACK_LEDGERS);
+        }
+
+        const found: number[] = [];
+        let cursor: string | undefined;
+
+        for (let page = 0; page < 20; page++) {
+          const res = await rpc.getEvents({
+            ...(cursor ? { cursor } : { startLedger }),
+            filters: [{ type: 'contract', contractIds: [contractId] }],
+            limit: 200,
+          });
+          const events = res.events ?? [];
+          for (const ev of events) {
+            if (ev.txHash !== hash) continue;
+            const topics: string[] = (ev.topic ?? []).map((t: any) => {
+              try {
+                return String(sdk.scValToNative(t));
+              } catch {
+                return '';
+              }
+            });
+            if (topics[0] !== 'escrow' || topics[1] !== 'created') continue;
+            try {
+              // (escrow_id, manager, total_amount)
+              const value = sdk.scValToNative(ev.value);
+              const id = Number(Array.isArray(value) ? value[0] : value);
+              if (Number.isInteger(id) && id > 0 && !found.includes(id)) found.push(id);
+            } catch {
+              // An undecodable event is not evidence; skip it rather than guess.
+            }
+          }
+          cursor = res.cursor;
+          if (!cursor || events.length === 0) break;
+        }
+
+        return { ok: true, value: found };
+      } catch (e) {
         return { ok: false, error: unreadable(e) };
       }
     },

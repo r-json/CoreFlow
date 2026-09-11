@@ -206,11 +206,16 @@ export const fundingConfirmRequest = z
     orgId,
     attemptId: id('attemptId'),
     /**
-     * The escrow id the contract returned. Untrusted: verification reads this
-     * escrow and refuses it unless it matches the frozen plan, so naming someone
-     * else's escrow produces a MISMATCH rather than an adoption.
+     * The escrow id the client believes the contract returned. OPTIONAL and
+     * advisory.
+     *
+     * The server resolves the escrow from the transaction hash itself, so
+     * confirmation works when the client could not parse the return value — nobody
+     * has to sign a second funding transaction to discover the id. When supplied it
+     * is only cross-checked: a value that disagrees with the transaction's own
+     * event is a MISMATCH, so transaction A cannot adopt an escrow from B.
      */
-    onChainEscrowId: z.coerce.number().int().positive().max(2_147_483_647),
+    onChainEscrowId: z.coerce.number().int().positive().max(2_147_483_647).optional(),
   })
   .strict();
 

@@ -757,6 +757,97 @@ export async function failFundingIntent(
 // Chain verification
 // ---------------------------------------------------------------------------
 
+export type EscrowResolution =
+  | { ok: true; onChainEscrowId: number; source: 'indexed-event' | 'chain-event' }
+  | { ok: false; reason: 'PENDING'; detail: string }
+  | { ok: false; reason: 'AMBIGUOUS'; detail: string };
+
+/**
+ * Which escrow did this transaction create?
+ *
+ * The transaction hash is the durable anchor. A client that submitted
+ * `initialize_multi_sig_escrow` and then failed to parse the return value — a
+ * dropped connection, an RPC hiccup, a reload — still knows the hash, and the hash
+ * is enough. Nobody should have to sign a second funding transaction, moving the
+ * money again, just to learn the id of the escrow the first one already created.
+ *
+ * Two sources, in order of durability:
+ *
+ *   1. `ChainEvent` — the indexer's own record. Survives RPC event retention.
+ *   2. Soroban RPC — authoritative but bounded by retention, used while the
+ *      indexer has not caught up.
+ *
+ * Ambiguity is refused rather than resolved. One transaction creating two escrows
+ * is not a situation to guess about.
+ */
+export async function resolveEscrowFromTransaction(
+  db: any,
+  verifier: ChainVerifier,
+  input: { txHash: string; contractId: string; network: string },
+): Promise<EscrowResolution> {
+  // 1. The indexer's record, scoped to the contract and network the attempt names.
+  const indexed = await db.chainEvent.findMany({
+    where: {
+      txHash: input.txHash,
+      type: 'created',
+      contractId: input.contractId,
+      network: input.network,
+    },
+    select: { escrowOnChainId: true },
+  });
+  const fromIndex = Array.from(
+    new Set(
+      indexed
+        .map((e: any) => e.escrowOnChainId)
+        .filter((id: unknown): id is number => typeof id === 'number' && id > 0),
+    ),
+  ) as number[];
+
+  if (fromIndex.length === 1) {
+    return { ok: true, onChainEscrowId: fromIndex[0], source: 'indexed-event' };
+  }
+  if (fromIndex.length > 1) {
+    return {
+      ok: false,
+      reason: 'AMBIGUOUS',
+      detail:
+        `Transaction ${input.txHash} is recorded as creating more than one escrow ` +
+        `(${fromIndex.join(', ')}). Refusing to choose.`,
+    };
+  }
+
+  // 2. The chain itself, for a transaction the indexer has not reached yet.
+  const onChain = await verifier.findEscrowsCreatedByTransaction(input.txHash, {});
+  if (!onChain.ok) {
+    return {
+      ok: false,
+      reason: 'PENDING',
+      detail:
+        `The escrow created by ${input.txHash} could not be read yet ` +
+        `(${onChain.error.reason}).`,
+    };
+  }
+  if (onChain.value.length === 1) {
+    return { ok: true, onChainEscrowId: onChain.value[0], source: 'chain-event' };
+  }
+  if (onChain.value.length > 1) {
+    return {
+      ok: false,
+      reason: 'AMBIGUOUS',
+      detail:
+        `Transaction ${input.txHash} created more than one escrow ` +
+        `(${onChain.value.join(', ')}). Refusing to choose.`,
+    };
+  }
+  return {
+    ok: false,
+    reason: 'PENDING',
+    detail:
+      `No escrow/created event has been observed for ${input.txHash} yet. ` +
+      'It may still be confirming, or the indexer may not have caught up.',
+  };
+}
+
 export type FundingConfirmation =
   | { outcome: 'CONFIRMED'; attempt: FundingAttemptView; escrow: { id: string; onChainId: number } }
   | { outcome: 'UNVERIFIABLE'; attempt: FundingAttemptView; reason: string }
@@ -779,7 +870,18 @@ export async function confirmFunding(
   db: any,
   ctx: TenantContext,
   verifier: ChainVerifier,
-  input: { attemptId: string; onChainEscrowId: number; batchId: string },
+  input: {
+    attemptId: string;
+    /**
+     * What the client believes the contract returned. ADVISORY ONLY.
+     *
+     * The server resolves the escrow from the transaction hash itself and uses that.
+     * If this disagrees, it is a mismatch — a client must not be able to point a
+     * funded batch at an escrow from some other transaction.
+     */
+    onChainEscrowId?: number;
+    batchId: string;
+  },
 ): Promise<FundingConfirmation> {
   const record = await db.blockchainTransaction.findFirst({
     where: {
@@ -826,6 +928,61 @@ export async function confirmFunding(
     return { outcome: 'FAILED', attempt: after, reason: 'The transaction failed on-chain. No funds moved.' };
   }
 
+  // ── 1b. Which escrow did THIS transaction create? ──
+  //
+  // Resolved from the hash, never taken from the caller. A client-supplied id is
+  // only cross-checked: tx A must not be able to adopt an escrow from tx B.
+  const resolution = await resolveEscrowFromTransaction(db, verifier, {
+    txHash: record.hash,
+    contractId: record.contractId ?? '',
+    network: record.network,
+  });
+
+  if (!resolution.ok) {
+    if (resolution.reason === 'AMBIGUOUS') {
+      await recordAuditEvent(db, {
+        orgId: ctx.orgId,
+        type: 'funding.mismatch',
+        actor: { kind: 'reconciler', system: 'funding-verifier' },
+        batchId: record.batchId,
+        txHash: record.hash,
+        metadata: { reason: resolution.reason, detail: resolution.detail },
+      });
+      return {
+        outcome: 'MISMATCH',
+        attempt: viewAttempt(record),
+        differences: [resolution.detail],
+      };
+    }
+    // PENDING: not a failure. The transaction may be fine and simply not yet
+    // observable, and asserting failure here would be a claim about money.
+    return { outcome: 'UNVERIFIABLE', attempt: viewAttempt(record), reason: resolution.detail };
+  }
+
+  const onChainEscrowId = resolution.onChainEscrowId;
+
+  if (input.onChainEscrowId !== undefined && input.onChainEscrowId !== onChainEscrowId) {
+    await recordAuditEvent(db, {
+      orgId: ctx.orgId,
+      type: 'funding.mismatch',
+      actor: { kind: 'reconciler', system: 'funding-verifier' },
+      batchId: record.batchId,
+      txHash: record.hash,
+      metadata: {
+        claimedEscrowId: input.onChainEscrowId,
+        resolvedEscrowId: onChainEscrowId,
+      },
+    });
+    return {
+      outcome: 'MISMATCH',
+      attempt: viewAttempt(record),
+      differences: [
+        `the escrow reported by the client (${input.onChainEscrowId}) is not the escrow ` +
+          `transaction ${record.hash} created (${onChainEscrowId})`,
+      ],
+    };
+  }
+
   // ── 2. Does the escrow match what we PLANNED — not what we would plan now? ──
   //
   // The comparison is against the stored plan. Configuration can move under a
@@ -835,12 +992,12 @@ export async function confirmFunding(
   // is precisely the agreement that must not be manufactured.
   const plan = readStoredPlan(record);
 
-  const onChain = await verifier.readEscrow(input.onChainEscrowId);
+  const onChain = await verifier.readEscrow(onChainEscrowId);
   if (!onChain.ok) {
     return {
       outcome: 'UNVERIFIABLE',
       attempt: viewAttempt(record),
-      reason: `Escrow ${input.onChainEscrowId} could not be read (${onChain.error.reason}).`,
+      reason: `Escrow ${onChainEscrowId} could not be read (${onChain.error.reason}).`,
     };
   }
 
@@ -941,7 +1098,7 @@ export async function confirmFunding(
       batchId: record.batchId,
       txHash: record.hash,
       metadata: {
-        onChainEscrowId: input.onChainEscrowId,
+        onChainEscrowId,
         differences,
         planDigest: record.planDigest,
       },
@@ -954,12 +1111,12 @@ export async function confirmFunding(
         kind: 'UNKNOWN_ON_CHAIN_OBJECT',
         severity: 'CRITICAL',
         detail:
-          `Funding transaction ${record.hash} produced escrow ${input.onChainEscrowId}, ` +
+          `Funding transaction ${record.hash} produced escrow ${onChainEscrowId}, ` +
           `which does not match the plan prepared for batch ${plan.reference}. ` +
           'The escrow was NOT adopted. ' +
           differences.join('; '),
         dbState: `plan:${record.planDigest}`,
-        chainState: `escrow:${input.onChainEscrowId}`,
+        chainState: `escrow:${onChainEscrowId}`,
         metadata: { differences, txHash: record.hash } as any,
       },
     });
@@ -1007,14 +1164,14 @@ export async function confirmFunding(
     // The indexer may already have created this escrow from `escrow/created`.
     // onChainId is unique, so whoever is first wins and the other links to it.
     let row = await tx.escrow.findFirst({
-      where: { orgId: ctx.orgId, onChainId: input.onChainEscrowId },
+      where: { orgId: ctx.orgId, onChainId: onChainEscrowId },
       select: { id: true, onChainId: true },
     });
     if (!row) {
       row = await tx.escrow.create({
         data: {
           orgId: ctx.orgId,
-          onChainId: input.onChainEscrowId,
+          onChainId: onChainEscrowId,
           contractId: record.contractId ?? custody,
           network: record.network,
           managerAddress: facts.manager,
@@ -1063,8 +1220,9 @@ export async function confirmFunding(
       escrowId: row!.id,
       txHash: record.hash!,
       metadata: {
-        onChainEscrowId: input.onChainEscrowId,
+        onChainEscrowId,
         totalBaseUnits: expectedTotal.toString(),
+        escrowResolvedFrom: resolution.source,
         asset: plan.assetCode,
         assetContractId: plan.assetContractId,
         planDigest: record.planDigest,
@@ -1085,7 +1243,7 @@ export async function confirmFunding(
   return {
     outcome: 'CONFIRMED',
     attempt: viewAttempt(after),
-    escrow: { id: escrow.id, onChainId: input.onChainEscrowId },
+    escrow: { id: escrow.id, onChainId: onChainEscrowId },
   };
 }
 

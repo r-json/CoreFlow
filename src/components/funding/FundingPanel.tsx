@@ -226,13 +226,11 @@ export function FundingPanel({ batchId, orgId, onFunded }: FundingPanelProps) {
 
       const returned = Number(result.returnValue);
       if (!Number.isInteger(returned) || returned <= 0) {
-        // The transaction went out but we cannot name the escrow it created, so we
-        // cannot verify it. Emphatically not a failure.
-        setPhase('VERIFYING');
-        setMessage(
-          'The transaction was submitted but the escrow it created could not be read ' +
-            'from the result. Your funds may already be in escrow.',
-        );
+        // The return value was unreadable. The hash is recorded, and the server can
+        // resolve the escrow from it, so verification still proceeds — signing again
+        // is never the recovery.
+        setPhase('CONFIRMING');
+        await verify(attemptId);
         return;
       }
 
@@ -277,11 +275,13 @@ export function FundingPanel({ batchId, orgId, onFunded }: FundingPanelProps) {
 
   /** Ask the server to verify against the frozen plan, and reflect the verdict. */
   const verify = useCallback(
-    async (attempt: string, onChainEscrowId: number) => {
+    async (attempt: string, onChainEscrowId?: number) => {
       setBusy(true);
       try {
         const result: ConfirmResult = await confirmFunding(batchId, {
           attemptId: attempt,
+          // May be undefined: the server resolves the escrow from the transaction
+          // hash, so a return value we could not parse does not block recovery.
           onChainEscrowId,
           orgId,
         });
@@ -323,8 +323,11 @@ export function FundingPanel({ batchId, orgId, onFunded }: FundingPanelProps) {
   );
 
   async function checkStatus() {
-    if (attemptId && escrowId) {
-      await verify(attemptId, escrowId);
+    // Verification only needs the attempt: the escrow is resolved from the
+    // transaction hash server-side. Passing the id when we have it lets the server
+    // cross-check the two agree.
+    if (attemptId) {
+      await verify(attemptId, escrowId ?? undefined);
     } else {
       await load();
     }

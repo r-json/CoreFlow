@@ -118,13 +118,18 @@ export function recordSubmitted(
 /** Ask the server to verify the transaction against the frozen plan. */
 export function confirmFunding(
   batchId: string,
-  input: { attemptId: string; onChainEscrowId: number; orgId?: string },
+  input: { attemptId: string; onChainEscrowId?: number; orgId?: string },
 ): Promise<ConfirmResult> {
   return request<ConfirmResult>(`${base(batchId)}/confirm`, {
     method: 'POST',
     body: JSON.stringify({
       attemptId: input.attemptId,
-      onChainEscrowId: input.onChainEscrowId,
+      // Omitted when the client could not read it. The server resolves the escrow
+      // from the transaction hash, so a missing id is a recoverable gap, not a
+      // reason to sign again.
+      ...(input.onChainEscrowId !== undefined
+        ? { onChainEscrowId: input.onChainEscrowId }
+        : {}),
       ...(input.orgId ? { orgId: input.orgId } : {}),
     }),
   });
