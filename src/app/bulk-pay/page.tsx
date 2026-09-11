@@ -38,7 +38,15 @@ interface ChainState {
   allProofsVerified: boolean;
 }
 
-const ESCROW_ID = 1;
+/**
+ * Which escrow this console operates on.
+ *
+ * Was hard-coded to 1. That escrow is now settled, so the page pointed at spent
+ * state and every action failed with PaymentAlreadyFinalized. Escrow selection
+ * belongs in the Bulk Pay workflow proper (staged upload -> preview -> batch ->
+ * approvals); until that lands, this is configurable rather than pinned.
+ */
+const ESCROW_ID = Number(process.env.NEXT_PUBLIC_BULK_PAY_ESCROW_ID ?? '1');
 const EXPERT = 'https://stellar.expert/explorer/testnet/tx';
 const G_ADDRESS = /^G[A-Z2-7]{55}$/;
 
@@ -109,12 +117,60 @@ export default function BulkPayPage() {
 
   useEffect(() => { void refresh(); }, [refresh]);
 
+  // Restore an existing CoreFlow session on mount, so a signed-in operator
+  // does not have to re-sign the auth challenge on every page load.
+  useEffect(() => {
+    void (async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) setWallet((await res.json()).user.walletAddress);
+      } catch { /* unauthenticated — the connect button handles it */ }
+    })();
+  }, []);
+
+  /**
+   * Connect Freighter AND establish a CoreFlow session.
+   *
+   * Connecting the wallet alone is not enough: /api/submit-batch issues the
+   * oracle attestations that unlock settlement, so it requires a verified
+   * session (challenge -> Freighter signature -> server-side Ed25519 verify)
+   * and checks the caller against the escrow's on-chain manager. Proving
+   * control of the key is what authorizes attestation, not merely naming it.
+   */
   const connect = async () => {
     setError(null);
+    setBusy('connect');
     try {
-      setWallet(await STELLAR_CONFIG.freighter.connect());
-    } catch {
-      setError('Could not connect Freighter. Is the extension unlocked and set to Testnet?');
+      const address = await STELLAR_CONFIG.freighter.connect();
+
+      const challengeRes = await fetch('/api/auth/challenge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ walletAddress: address }),
+      });
+      if (!challengeRes.ok) throw new Error('Could not start sign-in.');
+      const { challenge } = await challengeRes.json();
+
+      const signature = await STELLAR_CONFIG.freighter.signMessage(challenge);
+
+      const verifyRes = await fetch('/api/auth/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ walletAddress: address, signature }),
+      });
+      if (!verifyRes.ok) {
+        throw new Error((await verifyRes.json()).error || 'Signature verification failed.');
+      }
+
+      setWallet(address);
+    } catch (err) {
+      setError(
+        err instanceof Error && err.message !== 'Freighter wallet not found'
+          ? err.message
+          : 'Could not connect Freighter. Is the extension unlocked and set to Testnet?'
+      );
+    } finally {
+      setBusy(null);
     }
   };
 

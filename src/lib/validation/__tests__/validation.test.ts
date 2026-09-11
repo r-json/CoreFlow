@@ -12,15 +12,15 @@ describe('parseBody / schemas', () => {
   it('accepts a valid escrow body and rejects bad amounts', () => {
     const ok = parseBody(createEscrowSchema, {
       workerPubKey: 'GWORKER',
-      amountCents: 4200,
-      rateCents: 250,
+      amountBaseUnits: '42000000000',
+      rateBaseUnits: '25000000',
     });
     expect(ok.ok).toBe(true);
 
     const bad = parseBody(createEscrowSchema, {
       workerPubKey: 'GWORKER',
-      amountCents: -1,
-      rateCents: 250,
+      amountBaseUnits: '-1',
+      rateBaseUnits: '25000000',
     });
     expect(bad.ok).toBe(false);
   });
@@ -29,8 +29,8 @@ describe('parseBody / schemas', () => {
     const r = parseBody(createEscrowSchema, {
       onChainId: 0,
       workerPubKey: 'GWORKER',
-      amountCents: 10,
-      rateCents: 1,
+      amountBaseUnits: '10',
+      rateBaseUnits: '100000',
     });
     expect(r.ok).toBe(false);
   });
