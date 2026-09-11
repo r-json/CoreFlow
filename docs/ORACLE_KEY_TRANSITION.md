@@ -18,14 +18,51 @@ The contract trusts the deployment-time key and not the current environment's. T
 is consistent with the oracle secret having been rotated locally without the new
 public key being registered.
 
-**Which key is the post-rotation one cannot be determined from here.** The naming
-suggests an answer and the naming is not evidence. If `f42a4883…` is the key
+**Which key is the post-rotation one cannot be determined from the registry
+alone.** The naming suggests an answer and the naming is not evidence. A cheaper
+question may be decidable from evidence on disk — see the next section — but it
+does not change who authorizes the transaction. If `f42a4883…` is the key
 `prodenv.txt` exposed, then registering `3b9d395a…` is correct and revoking
 `f42a4883…` is urgent. If the mapping is the other way round, registering
 `3b9d395a…` would authorize a credential an attacker may hold to sign work
 attestations — precisely the attack the admin-managed registry exists to prevent.
 
 So this waits. A manager cannot install their own oracle; neither can an agent.
+
+## A determination that may not need anyone's memory
+
+The section above asks the wrong question. "Which key is *newer*" is a fact about
+history, recoverable only from whoever performed the rotation. But the action does
+not depend on age — it depends on **which key is exposed**, and that is a fact
+about a file still sitting on disk.
+
+`prodenv.txt` contains exactly one `ORACLE_SECRET_KEY` line, and the public half
+is derived from it deterministically
+([`src/lib/oracle/index.ts:74`](../src/lib/oracle/index.ts)). Deriving that public
+key names the exposed key from evidence rather than from naming.
+
+**The owner runs this, not an agent** — the secret would otherwise pass through an
+agent's process, and the standing rule is that it does not. Load the
+`ORACLE_SECRET_KEY` value from `prodenv.txt` into a shell variable, then derive
+and print only the **public** key with `Keypair.fromRawEd25519Seed`, exactly as
+`getOraclePublicKeyHex()` does. Nothing secret is displayed.
+
+Read the single line it prints:
+
+| Output | Meaning | Action |
+|---|---|---|
+| `f42a4883…` | The **registered** key is the exposed one. The local environment holds a different secret — a replacement was generated and never registered. | Register `3b9d395a…`, then revoke `f42a4883…`. The urgency is real: an exposed key is currently trusted. |
+| `3b9d395a…` | The **local environment's** key is the exposed one. | Do **not** register `3b9d395a…`. Generate a fresh oracle secret, register its public key, revoke both. |
+| neither | A third key is in production; this file settles nothing about the two candidates. | Still owner-gated. Treat both as suspect and prefer a fresh key. |
+
+Note which way the risk falls. `prodenv.txt` is a **production** dump, and
+production is Mainnet v1 while this blocker concerns the v2 Testnet contract, so
+"neither" is a realistic outcome — the two deployments need not share an oracle.
+That makes this a cheap check rather than a guaranteed answer: one command either
+decides it or eliminates the file from consideration.
+
+In every branch the decision stays the owner's, and in none of them does guessing
+from key names become acceptable.
 
 ## Order, and why
 
