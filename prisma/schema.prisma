@@ -262,6 +262,15 @@ model PayrollBatch {
   /// without a key is unaffected.
   idempotencyKey String?
 
+  /// SHA-256 of the semantically meaningful parts of the creation request.
+  ///
+  /// Paired with `idempotencyKey` to tell a genuine retry from a key collision.
+  /// A retry carries the same payload and must replay the original outcome; the
+  /// SAME key with a DIFFERENT payload is a client bug, and honouring it would
+  /// silently return a batch that is not the one the caller just asked for. That
+  /// is refused rather than guessed at.
+  idempotencyFingerprint String?
+
   /// SHA-256 of the uploaded file's bytes.
   ///
   /// NOT an idempotency key: uploading a byte-identical file next pay period is

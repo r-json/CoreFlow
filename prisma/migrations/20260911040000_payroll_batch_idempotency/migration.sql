@@ -10,6 +10,11 @@
 ALTER TABLE "PayrollBatch" ADD COLUMN "idempotencyKey" TEXT;
 ALTER TABLE "PayrollBatch" ADD COLUMN "sourceChecksum" TEXT;
 
+-- Distinguishes a genuine retry (same key, same payload) from a key collision
+-- (same key, different payload). The latter is refused: returning the original
+-- batch would hand back something other than what the caller just described.
+ALTER TABLE "PayrollBatch" ADD COLUMN "idempotencyFingerprint" TEXT;
+
 CREATE UNIQUE INDEX "PayrollBatch_orgId_idempotencyKey_key"
   ON "PayrollBatch"("orgId", "idempotencyKey");
 
