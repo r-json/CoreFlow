@@ -469,6 +469,50 @@ Recorded because each looked like a product bug and was not:
   **relation**: `Argument \`org\` is missing`. Worth recording, since grepping logs
   for the column name would never surface that failure.
 
+### Live Testnet funding validation — ATTEMPTED, BLOCKED
+
+**No transaction was submitted. No funds moved.** Recorded in
+[`testnet-v2-live-funding.json`](testnet-v2-live-funding.json).
+
+This is a live-infrastructure attempt, separate from the unit and integration suites
+and separate from the historical v1 Mainnet activity. It is **not** evidence of
+adoption or of anything settling.
+
+The run stopped at transaction **simulation** with `Error(Contract, #16)` —
+`OracleKeyNotRegistered`. The v2 contract refused to create the escrow because the
+oracle public key supplied is not in its admin-managed registry. Because simulation
+failed, nothing reached the network.
+
+| Read-only check | Result |
+|---|---|
+| `is_oracle_key_registered(3b9d395a…)` — the key in the local environment | **false** |
+| `is_oracle_key_registered(f42a4883…)` — the key recorded at deployment | **true** |
+
+The contract trusts the key from deployment time and does not trust the one now in
+the local environment — consistent with the oracle secret having been rotated
+locally without the new public key being registered on-chain.
+
+**No key was registered or revoked.** Which key is the post-rotation one is a fact
+only the operator holds, and registering the wrong one would re-authorize a
+credential that may be compromised — exactly what the admin registry exists to
+prevent. This is therefore an operator action, and the 🔴 outstanding secret rotation
+is now on the critical path rather than deferred.
+
+What the run did establish before stopping:
+
+| Stage | Result |
+|---|---|
+| Environment preflight | local PostgreSQL + CoreFlow v2 Testnet |
+| Payroll from a real CSV through the real parser and batch service | 1 batch, 3 payments |
+| Exact base units persisted | 10000000 + 15000000 + 5000000 = 30000000 (3.00 test USDC) |
+| Dual approval as real `Approval` rows, two distinct wallets | 6 rows |
+| Funding intent opened, plan frozen, digest verified against its content | ✅ |
+| Manager Testnet balance | 77,120 test USDC — funds were not the blocker |
+
+The contract refusing an unregistered oracle is the security control working. A
+manager cannot install their own oracle, which is the defect this phase's
+attestation registry was built to close — and it held against a real transaction.
+
 ## 4. Instawards SOW deliverables
 
 | # | Deliverable | Implementation | Test | Live evidence |

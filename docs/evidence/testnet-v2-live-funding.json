@@ -1,0 +1,53 @@
+{
+  "title": "Live Testnet funding validation \u2014 ATTEMPTED, BLOCKED",
+  "version": "v2",
+  "network": "testnet",
+  "attemptedAt": "2026-09-11",
+  "outcome": "BLOCKED_BEFORE_SUBMISSION",
+  "transactionSubmitted": false,
+  "fundsMoved": false,
+  "blocker": {
+    "contractError": "Error(Contract, #16)",
+    "name": "OracleKeyNotRegistered",
+    "stage": "transaction simulation",
+    "meaning": "The v2 contract refused to create the escrow because the oracle public key supplied is not in its admin-managed registry. Simulation failed, so nothing was submitted and no custody moved.",
+    "oracleKeyInLocalEnv": "3b9d395a725ba0be4c476a0504540fb8dd70a278fac140a20e0d74cd7f41ae44",
+    "oracleKeyInLocalEnvRegistered": false,
+    "oracleKeyRegisteredOnContract": "f42a48839e48d58e6628f5d096ee859e635b056be580bdcc68d620e2a2badae0",
+    "oracleKeyRegisteredOnContractIsFromDeployment": true
+  },
+  "interpretation": [
+    "The contract trusts the oracle key recorded at deployment time, and does not trust the key now in the local environment.",
+    "This is consistent with the oracle secret having been rotated locally without the new public key being registered on the contract.",
+    "Registering a key is an admin action, and which key is the post-rotation one is a fact only the operator holds. Registering the wrong one would re-authorize a credential that may be compromised, which is precisely what the admin registry exists to prevent. No key was registered or revoked."
+  ],
+  "verifiedReadOnly": [
+    {
+      "call": "is_oracle_key_registered(3b9d395a...)",
+      "result": false
+    },
+    {
+      "call": "is_oracle_key_registered(f42a4883...)",
+      "result": true
+    }
+  ],
+  "whatDidWork": [
+    "Environment preflight: local PostgreSQL + CoreFlow v2 Testnet",
+    "Organization, members, project and a 3-payment payroll created from a real CSV through the real parser and batch service",
+    "Exact base units persisted: 10000000 + 15000000 + 5000000 = 30000000 (3.00 test USDC)",
+    "Both halves of the approval gate recorded as real Approval rows by two distinct wallets",
+    "Funding intent opened; plan frozen and its SHA-256 digest verified to match its content",
+    "Manager Testnet balance confirmed sufficient: 77120 test USDC"
+  ],
+  "prerequisiteForRetry": [
+    "Operator confirms which oracle keypair is current (post-rotation).",
+    "Admin calls register_oracle_key(<current public key>) on CDN4FIKLJ72WYNPBIKWYSDJWDZG22QNPLWI37VTUAE4EKKIBVAQRG5F4.",
+    "Admin calls revoke_oracle_key(f42a4883...) if that key is the exposed one.",
+    "Re-run: COREFLOW_LIVE_TESTNET=1 npx vitest run src/lib/funding/__tests__/live-funding.test.ts"
+  ],
+  "contract": "CDN4FIKLJ72WYNPBIKWYSDJWDZG22QNPLWI37VTUAE4EKKIBVAQRG5F4",
+  "settlementAsset": "CBW2ZKFBHLHNNVCZ7JP4AXHQOOC3S6NLAMORXOAIWQNWMKUVJS743Q5M",
+  "explorer": {
+    "contract": "https://stellar.expert/explorer/testnet/contract/CDN4FIKLJ72WYNPBIKWYSDJWDZG22QNPLWI37VTUAE4EKKIBVAQRG5F4"
+  }
+}
