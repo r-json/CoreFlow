@@ -94,7 +94,15 @@ records are per-payment. A v3 contract decision.
 `hours` is an integer and the contract enforces `hours × rate == amount`. Fractional
 hours need a versioned scaled-hours schema. Refused rather than rounded.
 
-## 7. 🔴 Secret rotation outstanding
+## 7. 🔴 Secret rotation outstanding — now on the critical path
+
+The oracle half of this is blocking the live Testnet funding run: the contract trusts
+the deployment-time oracle key and not the one in the local environment, so escrow
+creation is refused with `OracleKeyNotRegistered`. Prepared, unexecuted runbook:
+[ORACLE_KEY_TRANSITION.md](ORACLE_KEY_TRANSITION.md). It waits on the owner
+confirming which public key is post-rotation — a fact that cannot be inferred from
+here, and guessing it could re-authorize an exposed credential.
+
 
 Everything exposed by `prodenv.txt` — the oracle signing key, `AUTH_SECRET`,
 `BOOTSTRAP_SECRET`, cron/indexer secrets, the database credential. Owner-operated;
