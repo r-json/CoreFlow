@@ -186,7 +186,11 @@ describe('getFundingState', () => {
     expect(plan.network).toEqual({ id: 'testnet', label: 'Stellar Testnet', isMainnet: false });
     expect(plan.schedule).toHaveLength(3);
     expect(plan.schedule.map((r) => r.worker)).toEqual(ROWS.map((r) => r.recipient));
-    expect(plan.schedule.map((r) => r.amountBaseUnits)).toEqual(ROWS.map((r) => r.amount));
+    // Decimal strings on the wire: a plan crosses into JSON, which has no bigint.
+    expect(plan.schedule.map((r) => r.amountBaseUnits)).toEqual(
+      ROWS.map((r) => r.amount.toString()),
+    );
+    expect(plan.schedule.every((r) => typeof r.amountBaseUnits === 'string')).toBe(true);
     // Periods as unix seconds, from the stored dates.
     expect(plan.schedule[0].startDate).toBe(Math.floor(Date.UTC(2026, 8, 1) / 1000));
     expect(plan.schedule[0].endDate).toBe(Math.floor(Date.UTC(2026, 8, 15) / 1000));
@@ -796,5 +800,29 @@ describe('an attempt is scoped to its batch', () => {
 
     // Untouched.
     expect(db.__tables.blockchainTransaction.rows[0].status).toBe(TxStatus.AWAITING_SIGNATURE);
+  });
+});
+
+describe('the funding state is JSON-serializable', () => {
+  it('survives JSON.stringify, as the GET route requires', async () => {
+    const state = await getFundingState(db, ctxFor(), BATCH);
+    // NextResponse.json throws "Do not know how to serialize a BigInt", so a bigint
+    // anywhere in this payload is a 500 at runtime and nothing catches it earlier.
+    expect(() => JSON.stringify(state)).not.toThrow();
+
+    const round = JSON.parse(JSON.stringify(state));
+    expect(round.assessment.totalBaseUnits).toBe(TOTAL.toString());
+    expect(round.plan.schedule).toHaveLength(3);
+    for (const row of round.plan.schedule) {
+      expect(typeof row.amountBaseUnits).toBe('string');
+      expect(typeof row.rateBaseUnits).toBe('string');
+    }
+  });
+
+  it('survives stringify when the batch is not fundable', async () => {
+    db.__tables.payment.rows[0].periodStart = null;
+    const state = await getFundingState(db, ctxFor(), BATCH);
+    expect(() => JSON.stringify(state)).not.toThrow();
+    expect(JSON.parse(JSON.stringify(state)).plan).toBeNull();
   });
 });

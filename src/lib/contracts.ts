@@ -88,7 +88,20 @@ export class CoreFlowClient {
   /**
    * Helper to build, simulate, sign via Freighter, and submit a transaction
    */
-  private async submitTransaction(method: string, args: any[]): Promise<SubmitResult> {
+  /**
+   * Invoke a contract method: simulate, sign with Freighter, submit, then poll.
+   *
+   * `onSubmitted` fires the INSTANT the network accepts the transaction, before
+   * polling begins. That matters for funding: `initialize_multi_sig_escrow` moves
+   * custody and is not idempotent, so if polling then fails, the caller must still
+   * know the hash — otherwise the only record of a transaction that may already
+   * have moved money is lost, and the obvious recovery is to sign a second one.
+   */
+  private async submitTransaction(
+    method: string,
+    args: any[],
+    onSubmitted?: (hash: string) => void | Promise<void>
+  ): Promise<SubmitResult> {
     try {
       const sdk = await this.loadSDK();
       const signingAddress = await this.getSigningAddress();
@@ -116,6 +129,17 @@ export class CoreFlowClient {
       );
 
       if (response.status === 'PENDING') {
+        // Report the hash before waiting on confirmation. A failure inside the
+        // callback must not lose the hash either, so it is isolated.
+        if (onSubmitted) {
+          try {
+            await onSubmitted(response.hash);
+          } catch {
+            // The caller's bookkeeping failed; the transaction is still in flight
+            // and the hash is still returned below.
+          }
+        }
+
         const resultStatus = await this.pollForResult(rpcClient, response.hash);
         
         // Fetch transaction details to parse return value if needed
@@ -271,7 +295,9 @@ export class CoreFlowClient {
     managerAddress: string,
     financeAddress: string,
     oraclePubkeyHex: string,
-    payments: PaymentScheduleInput[]
+    payments: PaymentScheduleInput[],
+    /** Called as soon as the network accepts the transaction. See submitTransaction. */
+    onSubmitted?: (hash: string) => void | Promise<void>
   ): Promise<SubmitResult> {
     const sdk = await this.loadSDK();
 
@@ -301,12 +327,11 @@ export class CoreFlowClient {
     const oraclePubkeyScVal = sdk.nativeToScVal(oracleBytes, { type: 'bytes' });
     const paymentsScVal = sdk.nativeToScVal(mappedPayments);
 
-    return this.submitTransaction('initialize_multi_sig_escrow', [
-      managerScVal,
-      financeScVal,
-      oraclePubkeyScVal,
-      paymentsScVal,
-    ]);
+    return this.submitTransaction(
+      'initialize_multi_sig_escrow',
+      [managerScVal, financeScVal, oraclePubkeyScVal, paymentsScVal],
+      onSubmitted
+    );
   }
 
   /**
