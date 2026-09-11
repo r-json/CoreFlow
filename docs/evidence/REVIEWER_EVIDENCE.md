@@ -15,7 +15,7 @@ independently rather than taken on trust.
 | Suite | Command | Result |
 |---|---|---|
 | Soroban contract (Rust) | `cd contracts/core-flow && cargo test` | **70 passed**, 2 ignored |
-| Application (TypeScript) | `npm run test:ci` | **611 passed**, 9 skipped (opt-in live) |
+| Application (TypeScript) | `npm run test:ci` | **761 passed**, 9 skipped (opt-in live) |
 | Type check | `npm run typecheck` | clean |
 | Production build | `npm run build` | succeeds |
 | Deployable WASM | `cargo build --release --target wasm32v1-none` | 42,425 bytes |
@@ -325,6 +325,59 @@ get_admin after : null
 The attacker won the race and gained nothing.
 
 ---
+
+### Bulk Pay API layer (P2 #5, in progress)
+
+See [`../BULK_PAY.md`](../BULK_PAY.md). **Database-backed validation is BLOCKED** — the
+local development database is unavailable, so migration 8 is unapplied and no query
+below has run against real PostgreSQL.
+
+| Property | Evidence |
+|---|---|
+| One Payment per CSV row, never an aggregate | `payroll/__tests__/batches.test.ts`; `payroll/__tests__/csv.test.ts` (102 tests) |
+| Exact decimals; scientific notation, excess precision and fractional hours refused | `csv.test.ts` — 74 tests incl. `0.0000001` preserved as `1n` |
+| Spreadsheet formula injection neutralized at the storage boundary | `csv.test.ts` "hostile input"; asserted on the stored `sourceReference` |
+| Unknown request fields rejected, not ignored | `batches.route.test.ts` — `{state:'PAID', role:'FINANCE'}` → 400 `UNKNOWN_FIELD` |
+| Approver role derived from membership, never the body | `batches.route.test.ts` — `{"role":"FINANCE"}` refused at the schema |
+| Separation of duties holds for roles with BOTH permissions | `batches.route.test.ts` — ADMIN approving twice records 3, then 0 |
+| Cross-tenant batch returns a byte-identical 404 to a non-existent one | `batches.route.test.ts` — responses compared with `toEqual` |
+| Idempotent creation under double-click, retry and N concurrent requests | `batches.route.test.ts` — 1 batch, 3 payments, not 9 |
+| Same key + different payload refused rather than replayed | `batches.route.test.ts` → 409 `IDEMPOTENCY_KEY_REUSED` |
+| Lost-race path relies on the unique index, not the pre-check | `batches.test.ts` — pre-check blinded so only the index can stop the write |
+| Batch creation is atomic | `batches.test.ts` — injected failure leaves no batch, payment or audit event |
+| Approval changes no state, hash, amount or recipient | `batches.route.test.ts` — before/after snapshot equality |
+| 500 leaks no model name, `prisma`, or stack frames | `batches.route.test.ts` "error sanitization" |
+
+#### Two real bugs found while building this
+
+**`approval.create` omitted `orgId`.** `Approval`'s parent relation is a composite
+foreign key on `(orgId, paymentId)`, so `orgId` is a required scalar — the generated
+`ApprovalUncheckedCreateInput` lists it without `?`. The call passed only `paymentId`,
+and would have failed against real PostgreSQL with *Argument `orgId` is missing* on the
+**dual-approval path**. It survived because `db` is typed `any` and the in-memory
+double did not enforce required columns.
+
+Fixed in `payments/actions.ts`, and the double now enforces required columns for all
+twelve tenant-scoped tables. Switching that on immediately caught a **second** instance
+in `rejectPayment`'s `approval.upsert`, which a `.create`-only static audit had missed.
+
+**`any * any` is typed `number` by TypeScript.** The draft re-validation read payments
+as `any`, so `p.hours * p.rateBaseUnits` — the exactness check itself — would have been
+evaluated as floating-point arithmetic. Caught by `tsc` only once the operands were
+given explicit `bigint` types, which is why `RevalidationPayment` is declared rather
+than inferred.
+
+#### A fake-db defect that would have weakened a test
+
+The in-memory double's `$transaction` snapshotted **every** table and restored the whole
+snapshot on failure. Under concurrency that is wrong in the worst direction: when two
+transactions interleave at an `await` and the second fails, restoring its snapshot also
+discards the **first** one's committed writes.
+
+The concurrent-idempotency test therefore saw one batch with **one** payment instead of
+one batch with **three** — a result that invites weakening the assertion. Real Postgres
+isolates transactions per connection, so the double now records a per-transaction undo
+log and replays only its own writes.
 
 ## 4. Instawards SOW deliverables
 

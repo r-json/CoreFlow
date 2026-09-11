@@ -56,6 +56,15 @@ export interface CreateDraftBatchInput {
   sourceRowCount?: number | null;
   sourceChecksum?: string | null;
   idempotencyKey?: string | null;
+  /**
+   * Hash of the semantically meaningful request, paired with `idempotencyKey`.
+   *
+   * Lets a genuine retry (same key, same payload) be told apart from a key
+   * collision (same key, different payload). Without it, a client that reused a
+   * key for a different file would be handed the FIRST batch and told it
+   * succeeded — the wrong payroll, reported as the right one.
+   */
+  idempotencyFingerprint?: string | null;
 }
 
 export interface CreatedBatch {
@@ -78,6 +87,15 @@ export type CreateDraftBatchResult =
       note?: string;
     }
   | { ok: false; status: 400 | 409; message: string; code?: string };
+
+/** Fields the replay paths need from an existing batch. */
+const REPLAY_SELECT = {
+  id: true,
+  reference: true,
+  periodStart: true,
+  periodEnd: true,
+  idempotencyFingerprint: true,
+} as const;
 
 /** Earliest start and latest end across the rows, for the batch header. */
 export function deriveBatchPeriod(rows: readonly ParsedPayrollRow[]): {
@@ -105,17 +123,31 @@ async function generateReference(db: any, orgId: string, attempt: number): Promi
   return `CF-${String(existing + 1 + attempt).padStart(5, '0')}`;
 }
 
-/** A recent batch built from byte-identical input, if there is one. */
+/**
+ * A recent batch built from byte-identical input, if there is one.
+ *
+ * `excludeId` is the batch just created. It is excluded IN THE QUERY rather than
+ * filtered out of the result: two batches created in the same millisecond order
+ * arbitrarily, so taking the newest match first and discarding it afterwards
+ * returns nothing exactly when a duplicate is most likely — a genuine
+ * double-submit seconds apart.
+ */
 export async function findDuplicateUpload(
   db: any,
   orgId: string,
   checksum: string,
-  now: Date = new Date(),
+  opts: { now?: Date; excludeId?: string } = {},
 ): Promise<{ id: string; reference: string; createdAt: Date } | null> {
   if (!checksum) return null;
+  const now = opts.now ?? new Date();
   const since = new Date(now.getTime() - DUPLICATE_UPLOAD_WINDOW_MS);
   const found = await db.payrollBatch.findFirst({
-    where: { orgId, sourceChecksum: checksum, createdAt: { gte: since } },
+    where: {
+      orgId,
+      sourceChecksum: checksum,
+      createdAt: { gte: since },
+      ...(opts.excludeId ? { id: { not: opts.excludeId } } : {}),
+    },
     orderBy: { createdAt: 'desc' },
     select: { id: true, reference: true, createdAt: true },
   });
@@ -142,6 +174,33 @@ async function describeExisting(
     unlinkedRecipients: payments.filter((p: any) => p.workerId === null).length,
   };
 }
+
+/**
+ * Is an existing batch under this key a replay of THIS request?
+ *
+ * Treated as a replay only when the fingerprints agree. A stored batch with no
+ * fingerprint (created before fingerprinting, or without a key) is accepted as a
+ * replay rather than refused: refusing would strand a client that is legitimately
+ * retrying, and the unique index has already guaranteed there is only one batch.
+ */
+function replayVerdict(
+  prior: { idempotencyFingerprint?: string | null },
+  fingerprint: string | null,
+): 'replay' | 'conflict' {
+  if (fingerprint === null) return 'replay';
+  const stored = prior.idempotencyFingerprint ?? null;
+  if (stored === null) return 'replay';
+  return stored === fingerprint ? 'replay' : 'conflict';
+}
+
+const KEY_REUSED: CreateDraftBatchResult = {
+  ok: false,
+  status: 409,
+  code: 'IDEMPOTENCY_KEY_REUSED',
+  message:
+    'This idempotency key was already used for a different payroll. Retrying a ' +
+    'request must send the same file and options; a new payroll needs a new key.',
+};
 
 /**
  * Create a DRAFT batch and one DRAFT payment per row.
@@ -174,15 +233,17 @@ export async function createDraftBatch(
   }
 
   const idempotencyKey = input.idempotencyKey?.trim() || null;
+  const fingerprint = input.idempotencyFingerprint?.trim() || null;
 
   // Fast path: this exact request already succeeded. Checked before doing any
   // work, but NOT relied upon for correctness — the unique index below is.
   if (idempotencyKey !== null) {
     const prior = await db.payrollBatch.findFirst({
       where: { orgId: ctx.orgId, idempotencyKey },
-      select: { id: true, reference: true, periodStart: true, periodEnd: true },
+      select: REPLAY_SELECT,
     });
     if (prior) {
+      if (replayVerdict(prior, fingerprint) === 'conflict') return KEY_REUSED;
       return {
         ok: true,
         created: false,
@@ -225,6 +286,7 @@ export async function createDraftBatch(
             sourceRowCount: input.sourceRowCount ?? rows.length,
             sourceChecksum: input.sourceChecksum ?? null,
             idempotencyKey,
+            idempotencyFingerprint: fingerprint,
             uploadedBy: ctx.userId,
           },
           select: { id: true },
@@ -310,9 +372,10 @@ export async function createDraftBatch(
       if (hit('idempotencyKey') && idempotencyKey !== null) {
         const prior = await db.payrollBatch.findFirst({
           where: { orgId: ctx.orgId, idempotencyKey },
-          select: { id: true, reference: true, periodStart: true, periodEnd: true },
+          select: REPLAY_SELECT,
         });
         if (prior) {
+          if (replayVerdict(prior, fingerprint) === 'conflict') return KEY_REUSED;
           return {
             ok: true,
             created: false,

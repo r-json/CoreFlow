@@ -24,8 +24,29 @@ class Table {
   constructor(
     readonly name: string,
     /** Unique constraints, each a list of column names. */
-    readonly uniques: readonly (readonly string[])[] = []
+    readonly uniques: readonly (readonly string[])[] = [],
+    /**
+     * Columns Prisma requires on create (no default, not nullable).
+     *
+     * Without this the fake accepted a row missing a required scalar and the
+     * test passed, while the same call failed against real Postgres. That is
+     * exactly how `approval.create` shipped without its `orgId` — the tenant
+     * half of a composite foreign key — and went unnoticed.
+     */
+    readonly required: readonly string[] = []
   ) {}
+
+  /** Throws a Prisma-shaped missing-argument error, as the real client does. */
+  assertRequired(row: Row): void {
+    for (const col of this.required) {
+      if (row[col] === undefined || row[col] === null) {
+        throw new Error(
+          `fake-db: ${this.name}.create is missing required argument \`${col}\`. ` +
+            `Prisma would reject this against a real database.`
+        );
+      }
+    }
+  }
 
   nextId(prefix: string): string {
     this.seq += 1;
@@ -161,22 +182,30 @@ export interface FakeDb {
 export function createFakeDb(): FakeDb {
   const tables: Record<string, Table> = {
     organization: new Table('organization', [['slug']]),
-    orgMember: new Table('orgMember', [['orgId', 'userId']]),
-    invitation: new Table('invitation', [['tokenHash'], ['orgId', 'email']]),
+    orgMember: new Table('orgMember', [['orgId', 'userId']], ['orgId', 'userId']),
+    invitation: new Table('invitation', [['tokenHash'], ['orgId', 'email']], ['orgId']),
     user: new Table('user', [['walletAddress']]),
-    worker: new Table('worker', [['orgId', 'walletAddress']]),
-    project: new Table('project', [['orgId', 'code']]),
-    escrow: new Table('escrow', [['onChainId']]),
-    payrollBatch: new Table('payrollBatch', [['orgId', 'reference'], ['orgId', 'idempotencyKey']]),
-    payment: new Table('payment', [['escrowId', 'onChainPaymentIndex']]),
-    approval: new Table('approval', [['paymentId', 'role']]),
+    worker: new Table('worker', [['orgId', 'walletAddress']], ['orgId']),
+    project: new Table('project', [['orgId', 'code']], ['orgId']),
+    escrow: new Table('escrow', [['onChainId']], ['orgId']),
+    payrollBatch: new Table(
+      'payrollBatch',
+      [['orgId', 'reference'], ['orgId', 'idempotencyKey']],
+      ['orgId', 'reference']
+    ),
+    payment: new Table('payment', [['escrowId', 'onChainPaymentIndex']], ['orgId', 'batchId']),
+    approval: new Table('approval', [['paymentId', 'role']], ['orgId', 'paymentId']),
     oracleAttestation: new Table('oracleAttestation', [
       ['escrowOnChainId', 'onChainPaymentIndex', 'nonce'],
     ]),
-    blockchainTransaction: new Table('blockchainTransaction', [['idempotencyKey'], ['hash']]),
-    auditEvent: new Table('auditEvent'),
-    reconciliationFinding: new Table('reconciliationFinding'),
-    reconciliationRun: new Table('reconciliationRun', [['correlationId']]),
+    blockchainTransaction: new Table(
+      'blockchainTransaction',
+      [['idempotencyKey'], ['hash']],
+      ['orgId']
+    ),
+    auditEvent: new Table('auditEvent', [], ['orgId']),
+    reconciliationFinding: new Table('reconciliationFinding', [], ['orgId']),
+    reconciliationRun: new Table('reconciliationRun', [['correlationId']], ['orgId']),
     chainEvent: new Table('chainEvent', [['id']]),
     indexerCursor: new Table('indexerCursor', [['contractId', 'network']]),
   };
@@ -222,6 +251,16 @@ export function createFakeDb(): FakeDb {
     },
   };
 
+  /** Order rows per a Prisma `orderBy`. Shared so findFirst and findMany agree. */
+  function sortRows(rows: Row[], orderBy: any): Row[] {
+    if (!orderBy) return rows;
+    const spec = Array.isArray(orderBy) ? orderBy[0] : orderBy;
+    const [key, dir] = Object.entries(spec)[0] as [string, string];
+    return [...rows].sort((a, b) =>
+      a[key] === b[key] ? 0 : (a[key] < b[key] ? -1 : 1) * (dir === 'desc' ? -1 : 1)
+    );
+  }
+
   function hydrate(name: string, row: Row, include?: Row): Row {
     if (!include) return { ...row };
     const out: Row = { ...row };
@@ -237,25 +276,28 @@ export function createFakeDb(): FakeDb {
         continue;
       }
       let rows = tables[def.table].rows.filter((r) => r[def.fk] === row.id);
-      if (def.orderBy) {
+
+      // A relation can be included as `true` or as a spec carrying its own
+      // orderBy / include. Honouring the spec matters: ignoring a nested include
+      // returns rows whose relations are undefined, and the code under test then
+      // silently takes its `?? []` fallback — so a test asserting on nested data
+      // would pass without ever exercising it.
+      const spec_ = spec as any;
+      const nestedOrderBy = spec_ && typeof spec_ === 'object' ? spec_.orderBy : undefined;
+      if (nestedOrderBy) {
+        rows = sortRows(rows, nestedOrderBy);
+      } else if (def.orderBy) {
         rows = [...rows].sort((a, b) =>
           a[def.orderBy!] === b[def.orderBy!] ? 0 : a[def.orderBy!] < b[def.orderBy!] ? -1 : 1
         );
       }
-      out[rel] = rows.map((r) => ({ ...r }));
+
+      const nestedInclude = spec_ && typeof spec_ === 'object' ? spec_.include : undefined;
+      out[rel] = rows.map((r) => hydrate(def.table, r, nestedInclude));
     }
     return out;
   }
 
-  /** Order rows per a Prisma `orderBy`. Shared so findFirst and findMany agree. */
-  function sortRows(rows: Row[], orderBy: any): Row[] {
-    if (!orderBy) return rows;
-    const spec = Array.isArray(orderBy) ? orderBy[0] : orderBy;
-    const [key, dir] = Object.entries(spec)[0] as [string, string];
-    return [...rows].sort((a, b) =>
-      a[key] === b[key] ? 0 : (a[key] < b[key] ? -1 : 1) * (dir === 'desc' ? -1 : 1)
-    );
-  }
 
 function model(name: string) {
     const t = tables[name];
@@ -273,8 +315,19 @@ function model(name: string) {
         const rows = sortRows(t.findMany(flattenWhere(where ?? {})), orderBy);
         return rows[0] ? hydrate(name, rows[0], include) : null;
       },
-      findMany: async ({ where, take, orderBy, include, distinct }: any = {}) => {
+      findMany: async ({ where, take, orderBy, include, distinct, cursor, skip }: any = {}) => {
         let rows = sortRows(t.findMany(flattenWhere(where ?? {})), orderBy);
+        if (cursor) {
+          const [[key, value]] = Object.entries(cursor) as [string, any][];
+          const at = rows.findIndex((r) => r[key] === value);
+          if (at < 0) {
+            const err: any = new Error(`${name}: cursor row not found`);
+            err.code = 'P2025';
+            throw err;
+          }
+          rows = rows.slice(at);
+        }
+        if (typeof skip === 'number') rows = rows.slice(skip);
         if (distinct) {
           const keys = Array.isArray(distinct) ? distinct : [distinct];
           const seen = new Set<string>();
@@ -295,6 +348,7 @@ function model(name: string) {
           id: data.id ?? t.nextId(prefixes[name] ?? name),
           ...applyNowDefaults(data),
         };
+        t.assertRequired(row);
         t.assertUnique(row);
         t.rows.push(row);
         return row;
@@ -323,6 +377,7 @@ function model(name: string) {
           return row;
         }
         const created = { id: create.id ?? t.nextId(prefixes[name] ?? name), ...create };
+        t.assertRequired(created);
         t.assertUnique(created);
         t.rows.push(created);
         return created;
@@ -343,20 +398,108 @@ function model(name: string) {
    * reproduces the property the indexer depends on: a failed event leaves NO
    * partial effect, so resuming is unambiguous.
    */
+  /**
+   * Interactive transaction with PER-TRANSACTION rollback.
+   *
+   * This used to snapshot every table and restore the whole snapshot on failure.
+   * That is wrong under concurrency, and wrong in the direction that matters: when
+   * two transactions interleave at an await point and the second fails, restoring
+   * its snapshot also discards the FIRST one's committed writes. A test for
+   * concurrent idempotent creates then saw one batch with one payment instead of
+   * one batch with three, and would have been "fixed" by weakening the assertion
+   * — hiding the fact that the fake, not the code, was at fault.
+   *
+   * Real Postgres isolates transactions per connection, so each rolls back only
+   * its own work. This records an undo entry per write and replays it in reverse.
+   */
   db.$transaction = async (fn: (tx: any) => Promise<any>) => {
-    const snapshot = Object.fromEntries(
-      Object.entries(tables).map(([k, t]) => [k, t.rows.map((r) => ({ ...r }))])
-    );
+    const undo: (() => void)[] = [];
+
+    const tx: any = {};
+    for (const name of Object.keys(tables)) {
+      const base = db[name];
+      const table = tables[name];
+      tx[name] = {
+        ...base,
+        create: async (args: any) => {
+          const row = await base.create(args);
+          undo.push(() => {
+            const i = table.rows.findIndex((r) => r.id === row.id);
+            if (i >= 0) table.rows.splice(i, 1);
+          });
+          return row;
+        },
+        upsert: async (args: any) => {
+          const before = await base.findFirst({ where: args.where });
+          const row = await base.upsert(args);
+          if (before) {
+            undo.push(() => {
+              const live = table.rows.find((r) => r.id === before.id);
+              if (live) {
+                for (const k of Object.keys(live)) delete live[k];
+                Object.assign(live, before);
+              }
+            });
+          } else {
+            undo.push(() => {
+              const i = table.rows.findIndex((r) => r.id === row.id);
+              if (i >= 0) table.rows.splice(i, 1);
+            });
+          }
+          return row;
+        },
+        update: async (args: any) => {
+          const before = await base.findFirst({ where: args.where });
+          const row = await base.update(args);
+          if (before) {
+            undo.push(() => {
+              const live = table.rows.find((r) => r.id === before.id);
+              if (live) {
+                for (const k of Object.keys(live)) delete live[k];
+                Object.assign(live, before);
+              }
+            });
+          }
+          return row;
+        },
+        updateMany: async (args: any) => {
+          const before = await base.findMany({ where: args.where });
+          const result = await base.updateMany(args);
+          undo.push(() => {
+            for (const prior of before) {
+              const live = table.rows.find((r) => r.id === prior.id);
+              if (live) {
+                for (const k of Object.keys(live)) delete live[k];
+                Object.assign(live, prior);
+              }
+            }
+          });
+          return result;
+        },
+        deleteMany: async (args: any = {}) => {
+          const before = await base.findMany({ where: args.where });
+          const result = await base.deleteMany(args);
+          undo.push(() => {
+            for (const prior of before) table.rows.push(prior);
+          });
+          return result;
+        },
+      };
+    }
+
     // The transaction client deliberately OMITS `$transaction`, exactly as
     // Prisma's interactive client does. Passing `db` itself would let nested
     // transaction code pass here and fail only against a real database — which is
     // precisely what happened before this was tightened.
-    const tx: any = { ...db };
-    delete tx.$transaction;
+    for (const k of Object.keys(db)) {
+      if (k === '$transaction' || k in tx) continue;
+      tx[k] = (db as any)[k];
+    }
+
     try {
       return await fn(tx);
     } catch (e) {
-      for (const [k, rows] of Object.entries(snapshot)) tables[k].rows = rows as Row[];
+      for (const u of undo.reverse()) u();
       throw e;
     }
   };

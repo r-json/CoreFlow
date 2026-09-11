@@ -144,6 +144,28 @@ export function requirePermission(
   };
 }
 
+/**
+ * Require ANY ONE of several permissions.
+ *
+ * Dual approval needs this: a batch approval is legitimate from a manager
+ * (`payment:approve:manager`) or from finance (`payment:approve:finance`), and
+ * gating on either one alone would reject half the people entitled to act. The
+ * caller's role still decides WHICH half they exercise — that is derived from
+ * membership in `approvePayment`, never from the request.
+ */
+export function requireAnyPermission(
+  ctx: TenantContext,
+  permissions: readonly Permission[]
+): Denial | null {
+  if (permissions.some((p) => can(ctx.role, p))) return null;
+  return {
+    ok: false,
+    status: 403,
+    message: `Your role (${ctx.role}) cannot perform this action.`,
+    code: 'PERMISSION_DENIED',
+  };
+}
+
 // ── Resource resolution ──────────────────────────────────────────────────────
 //
 // One function per resource type. Each takes the resolved TenantContext and

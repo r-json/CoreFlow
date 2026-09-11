@@ -390,7 +390,7 @@ describe('findDuplicateUpload', () => {
       sourceChecksum: checksum,
       createdAt: new Date(now.getTime() - 4 * 60 * 1000),
     });
-    const found = await findDuplicateUpload(db, ORG, checksum, now);
+    const found = await findDuplicateUpload(db, ORG, checksum, { now });
     expect(found?.reference).toBe('CF-00041');
   });
 
@@ -404,7 +404,7 @@ describe('findDuplicateUpload', () => {
       createdAt: new Date(now.getTime() - DUPLICATE_UPLOAD_WINDOW_MS - 1000),
     });
     // Re-running the same payroll next period is legitimate, not a duplicate.
-    expect(await findDuplicateUpload(db, ORG, checksum, now)).toBeNull();
+    expect(await findDuplicateUpload(db, ORG, checksum, { now })).toBeNull();
   });
 
   it('returns the most recent match when there are several', async () => {
@@ -422,7 +422,7 @@ describe('findDuplicateUpload', () => {
         createdAt: new Date(now.getTime() - minutesAgo * 60 * 1000),
       });
     }
-    const found = await findDuplicateUpload(db, ORG, checksum, now);
+    const found = await findDuplicateUpload(db, ORG, checksum, { now });
     expect(found?.reference).toBe('CF-00002');
   });
 
