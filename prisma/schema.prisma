@@ -596,6 +596,23 @@ model BlockchainTransaction {
   contractId String?
   network    String  @default("testnet")
 
+  /// The IMMUTABLE plan this transaction was prepared for.
+  ///
+  /// Captured when the intent is opened, before a wallet is shown, and never
+  /// rewritten. Confirmation compares chain evidence against THIS, not against a
+  /// freshly recomputed plan: configuration can move under a pending transaction
+  /// (a changed settlement asset, a different finance approver, an edited payment),
+  /// and a recomputed plan would quietly agree with whatever the chain happened to
+  /// contain. Money values inside are decimal STRINGS — JSON has no bigint, and a
+  /// Number here would be the rounding this codebase refuses everywhere else.
+  plan Json?
+
+  /// SHA-256 over the canonical form of `plan`.
+  ///
+  /// Lets a stored plan be proven unaltered without re-reading every field, and
+  /// makes any tampering with the JSON detectable rather than merely unlikely.
+  planDigest String?
+
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   submittedAt DateTime?

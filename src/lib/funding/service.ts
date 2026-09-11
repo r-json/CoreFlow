@@ -24,9 +24,10 @@
  * exact total reached the contract's own address in that transaction.
  */
 
+import { createHash } from 'node:crypto';
 import { PaymentState, TxKind, TxStatus, OrgRole, MembershipStatus } from '@prisma/client';
 import { ApiError } from '@/lib/api/errors';
-import { formatAmountWithSeparators, sumAmounts } from '@/lib/money';
+import { formatAmountWithSeparators } from '@/lib/money';
 import { recordAuditEvent } from '@/lib/payments/service';
 import { settlementAsset, type SettlementAsset } from '@/lib/payroll/assets';
 import { getOraclePublicKeyHex } from '@/lib/oracle';
@@ -87,6 +88,134 @@ export interface FundingPlan {
   financeApprover: string;
   oraclePublicKey: string;
   schedule: FundingScheduleRow[];
+}
+
+/** JSON-safe form of a plan, money as decimal strings. */
+export interface StoredFundingPlan {
+  batchId: string;
+  reference: string;
+  orgId: string;
+  projectId: string | null;
+  contractId: string;
+  custodyDestination: string;
+  network: string;
+  manager: string;
+  financeApprover: string;
+  oraclePublicKey: string;
+  assetCode: string;
+  assetContractId: string;
+  assetDecimals: number;
+  totalBaseUnits: string;
+  paymentCount: number;
+  createdAt: string;
+  rows: {
+    paymentId: string;
+    worker: string;
+    token: string;
+    amountBaseUnits: string;
+    rateBaseUnits: string;
+    startDate: number;
+    endDate: number;
+  }[];
+}
+
+export function serializePlan(
+  plan: FundingPlan,
+  meta: { orgId: string; projectId: string | null; createdAt: Date },
+): StoredFundingPlan {
+  return {
+    batchId: plan.batch.id,
+    reference: plan.batch.reference,
+    orgId: meta.orgId,
+    projectId: meta.projectId,
+    contractId: plan.contractId,
+    custodyDestination: plan.custodyDestination,
+    network: plan.network.id,
+    manager: plan.manager,
+    financeApprover: plan.financeApprover,
+    oraclePublicKey: plan.oraclePublicKey,
+    assetCode: plan.asset.code,
+    assetContractId: plan.asset.contractId,
+    assetDecimals: plan.asset.decimals,
+    totalBaseUnits: plan.totalBaseUnits,
+    paymentCount: plan.batch.paymentCount,
+    createdAt: meta.createdAt.toISOString(),
+    rows: plan.schedule.map((r) => ({
+      paymentId: r.paymentId,
+      worker: r.worker,
+      token: r.token,
+      // Strings: JSON has no bigint, and a Number would be the rounding this
+      // codebase refuses everywhere else.
+      amountBaseUnits: r.amountBaseUnits.toString(),
+      rateBaseUnits: r.rateBaseUnits.toString(),
+      startDate: r.startDate,
+      endDate: r.endDate,
+    })),
+  };
+}
+
+/**
+ * SHA-256 over a canonical rendering of the plan.
+ *
+ * Keys are emitted in a fixed order so the digest depends on the plan's CONTENT
+ * rather than on how a JSON serializer happened to order it.
+ */
+export function planDigest(plan: StoredFundingPlan): string {
+  const canonical = JSON.stringify([
+    plan.batchId,
+    plan.orgId,
+    plan.projectId,
+    plan.contractId,
+    plan.custodyDestination,
+    plan.network,
+    plan.manager,
+    plan.financeApprover,
+    plan.oraclePublicKey,
+    plan.assetCode,
+    plan.assetContractId,
+    plan.assetDecimals,
+    plan.totalBaseUnits,
+    plan.paymentCount,
+    plan.rows.map((r) => [
+      r.paymentId,
+      r.worker,
+      r.token,
+      r.amountBaseUnits,
+      r.rateBaseUnits,
+      r.startDate,
+      r.endDate,
+    ]),
+  ]);
+  return createHash('sha256').update(canonical, 'utf8').digest('hex');
+}
+
+/**
+ * Read back a stored plan, refusing a tampered one.
+ *
+ * A plan whose digest does not match its content cannot be used to decide whether
+ * chain evidence is acceptable — it is no longer evidence of what was intended.
+ */
+export function readStoredPlan(record: {
+  plan: unknown;
+  planDigest: string | null;
+}): StoredFundingPlan {
+  if (!record.plan || typeof record.plan !== 'object') {
+    throw new ApiError(
+      409,
+      'STATE_CONFLICT',
+      'This funding attempt has no stored plan, so there is nothing to verify against.',
+    );
+  }
+  const plan = record.plan as StoredFundingPlan;
+  if (!record.planDigest || planDigest(plan) !== record.planDigest) {
+    throw new ApiError(
+      409,
+      'STATE_CONFLICT',
+      'The stored funding plan does not match its digest and cannot be trusted. ' +
+        'Funding will not be confirmed against an altered plan.',
+    );
+  }
+  return plan;
 }
 
 export interface FundingAttemptView {
@@ -174,6 +303,15 @@ export async function selectFinanceApprover(
     );
 
   return candidates[0]?.user.walletAddress ?? null;
+}
+
+/** The batch's project, recorded on the plan so the intent names its full scope. */
+async function projectIdForBatch(db: any, orgId: string, batchId: string): Promise<string | null> {
+  const row = await db.payrollBatch.findFirst({
+    where: { orgId, id: batchId },
+    select: { projectId: true },
+  });
+  return row?.projectId ?? null;
 }
 
 /** The most recent funding attempt for a batch. */
@@ -405,6 +543,14 @@ export async function openFundingIntent(
   const nextAttempt = (state.attempt?.attempt ?? 0) + 1;
   const key = fundingIdempotencyKey(batch.id, nextAttempt);
 
+  const projectId = await projectIdForBatch(db, ctx.orgId, batch.id);
+  const stored = serializePlan(state.plan, {
+    orgId: ctx.orgId,
+    projectId,
+    createdAt: new Date(),
+  });
+  const digest = planDigest(stored);
+
   try {
     const created = await db.$transaction(async (tx: any) => {
       const record = await tx.blockchainTransaction.create({
@@ -417,6 +563,9 @@ export async function openFundingIntent(
           attempt: nextAttempt,
           contractId: state.plan!.contractId,
           network: state.plan!.network.id,
+          // Frozen here, before any wallet is shown, and never rewritten.
+          plan: stored as unknown as object,
+          planDigest: digest,
         },
       });
 
@@ -449,6 +598,7 @@ export async function openFundingIntent(
           network: state.plan!.network.id,
           manager: state.plan!.manager,
           financeApprover: state.plan!.financeApprover,
+          planDigest: digest,
         },
       });
 
@@ -473,12 +623,15 @@ export async function openFundingIntent(
 export async function recordFundingSubmitted(
   db: any,
   ctx: TenantContext,
-  input: { attemptId: string; transactionHash: string },
+  input: { attemptId: string; transactionHash: string; batchId: string },
 ): Promise<FundingAttemptView> {
   const updated = await db.blockchainTransaction.updateMany({
     where: {
       id: input.attemptId,
       orgId: ctx.orgId,
+      // Scoped to the batch in the URL: an attempt belonging to another batch is
+      // not reachable by naming its id here.
+      batchId: input.batchId,
       status: { in: [TxStatus.AWAITING_SIGNATURE, TxStatus.PREPARING, TxStatus.SIMULATING] },
     },
     data: {
@@ -489,7 +642,7 @@ export async function recordFundingSubmitted(
   });
 
   const record = await db.blockchainTransaction.findFirst({
-    where: { id: input.attemptId, orgId: ctx.orgId },
+    where: { id: input.attemptId, orgId: ctx.orgId, batchId: input.batchId },
   });
   if (!record) throw new ApiError(404, 'NOT_FOUND', 'Funding attempt not found.');
 
@@ -517,10 +670,15 @@ export async function recordFundingSubmitted(
 export async function failFundingIntent(
   db: any,
   ctx: TenantContext,
-  input: { attemptId: string; reason: string; userRejected?: boolean },
+  input: { attemptId: string; reason: string; userRejected?: boolean; batchId: string },
 ): Promise<FundingAttemptView> {
   const record = await db.blockchainTransaction.findFirst({
-    where: { id: input.attemptId, orgId: ctx.orgId, kind: TxKind.INITIALIZE_ESCROW },
+    where: {
+      id: input.attemptId,
+      orgId: ctx.orgId,
+      batchId: input.batchId,
+      kind: TxKind.INITIALIZE_ESCROW,
+    },
   });
   if (!record) throw new ApiError(404, 'NOT_FOUND', 'Funding attempt not found.');
 
@@ -611,10 +769,15 @@ export async function confirmFunding(
   db: any,
   ctx: TenantContext,
   verifier: ChainVerifier,
-  input: { attemptId: string; onChainEscrowId: number },
+  input: { attemptId: string; onChainEscrowId: number; batchId: string },
 ): Promise<FundingConfirmation> {
   const record = await db.blockchainTransaction.findFirst({
-    where: { id: input.attemptId, orgId: ctx.orgId, kind: TxKind.INITIALIZE_ESCROW },
+    where: {
+      id: input.attemptId,
+      orgId: ctx.orgId,
+      batchId: input.batchId,
+      kind: TxKind.INITIALIZE_ESCROW,
+    },
   });
   if (!record) throw new ApiError(404, 'NOT_FOUND', 'Funding attempt not found.');
   if (!record.hash) {
@@ -653,7 +816,15 @@ export async function confirmFunding(
     return { outcome: 'FAILED', attempt: after, reason: 'The transaction failed on-chain. No funds moved.' };
   }
 
-  // ── 2. Does the escrow match what we planned? ──
+  // ── 2. Does the escrow match what we PLANNED — not what we would plan now? ──
+  //
+  // The comparison is against the stored plan. Configuration can move under a
+  // pending transaction: the settlement asset could be switched, a different
+  // finance approver could become the first candidate, a payment could be edited.
+  // A recomputed plan would quietly agree with whatever the chain contained, which
+  // is precisely the agreement that must not be manufactured.
+  const plan = readStoredPlan(record);
+
   const onChain = await verifier.readEscrow(input.onChainEscrowId);
   if (!onChain.ok) {
     return {
@@ -663,42 +834,85 @@ export async function confirmFunding(
     };
   }
 
+  const expectedTotal = BigInt(plan.totalBaseUnits);
+  const differences: string[] = [];
+  const facts = onChain.value;
+
+  // The environment the transaction was prepared for.
+  if (record.network !== plan.network) {
+    differences.push(`the attempt records network ${record.network}, the plan says ${plan.network}`);
+  }
+  if (record.contractId && record.contractId !== plan.contractId) {
+    differences.push(
+      `the attempt records contract ${record.contractId}, the plan says ${plan.contractId}`,
+    );
+  }
+
+  if (facts.cancelled) differences.push('the on-chain escrow is cancelled');
+  if (facts.manager !== plan.manager) {
+    differences.push(`the escrow manager is ${facts.manager}, the plan says ${plan.manager}`);
+  }
+  if (facts.financeApprover !== plan.financeApprover) {
+    differences.push(
+      `the escrow finance approver is ${facts.financeApprover}, the plan says ` +
+        `${plan.financeApprover}`,
+    );
+  }
+  if (facts.manager === facts.financeApprover) {
+    differences.push('the escrow has the same address as manager and finance approver');
+  }
+
+  if (facts.payments.length !== plan.rows.length) {
+    differences.push(
+      `the escrow holds ${facts.payments.length} payments, the plan has ${plan.rows.length}`,
+    );
+  } else {
+    for (const [i, expected] of plan.rows.entries()) {
+      const actual = facts.payments[i];
+      if (actual.worker !== expected.worker) {
+        differences.push(`payment ${i} pays ${actual.worker}, the plan says ${expected.worker}`);
+      }
+      if (actual.amountBaseUnits !== BigInt(expected.amountBaseUnits)) {
+        differences.push(
+          `payment ${i} is for ${actual.amountBaseUnits} base units, the plan says ` +
+            `${expected.amountBaseUnits}`,
+        );
+      }
+      if (actual.token !== expected.token) {
+        differences.push(`payment ${i} uses asset ${actual.token}, the plan says ${expected.token}`);
+      }
+    }
+  }
+
+  // Has the payment set itself been altered since the plan was frozen? The chain
+  // may agree with the plan while the database no longer does, and adopting the
+  // escrow would then attach it to payments nobody authorised.
   const payments: FundingPayment[] = await db.payment.findMany({
     where: { orgId: ctx.orgId, batchId: record.batchId },
     orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
     select: PAYMENT_SELECT,
   });
-  const asset = settlementAsset();
-  const expectedTotal = sumAmounts(payments.map((p) => p.amountBaseUnits));
-
-  const differences: string[] = [];
-  const facts = onChain.value;
-
-  if (facts.cancelled) differences.push('the on-chain escrow is cancelled');
-  if (facts.manager !== ctx.walletAddress) {
-    differences.push(
-      `the escrow manager is ${facts.manager}, not the wallet that funded it`,
-    );
-  }
-  if (facts.payments.length !== payments.length) {
-    differences.push(
-      `the escrow holds ${facts.payments.length} payments, this batch has ${payments.length}`,
-    );
-  } else {
-    for (const [i, expected] of payments.entries()) {
-      const actual = facts.payments[i];
-      if (actual.worker !== expected.recipientAddress) {
-        differences.push(`payment ${i} pays ${actual.worker}, expected ${expected.recipientAddress}`);
-      }
-      if (actual.amountBaseUnits !== expected.amountBaseUnits) {
-        differences.push(
-          `payment ${i} is for ${actual.amountBaseUnits} base units, expected ${expected.amountBaseUnits}`,
-        );
-      }
-      if (asset.contractId && actual.token !== asset.contractId) {
-        differences.push(`payment ${i} uses asset ${actual.token}, expected ${asset.contractId}`);
-      }
+  const byId = new Map(payments.map((p) => [p.id, p]));
+  for (const row of plan.rows) {
+    const current = byId.get(row.paymentId);
+    if (!current) {
+      differences.push(`payment ${row.paymentId} named in the plan no longer exists`);
+      continue;
     }
+    if (
+      current.recipientAddress !== row.worker ||
+      current.amountBaseUnits !== BigInt(row.amountBaseUnits) ||
+      current.rateBaseUnits !== BigInt(row.rateBaseUnits)
+    ) {
+      differences.push(
+        `payment ${row.paymentId} has been altered since the plan was prepared`,
+      );
+    }
+  }
+  if (payments.length !== plan.rows.length) {
+    differences.push(
+      `this batch now has ${payments.length} payments, the plan was prepared for ${plan.rows.length}`,
+    );
   }
 
   if (differences.length > 0) {
@@ -716,15 +930,36 @@ export async function confirmFunding(
       actor: { kind: 'reconciler', system: 'funding-verifier' },
       batchId: record.batchId,
       txHash: record.hash,
-      metadata: { onChainEscrowId: input.onChainEscrowId, differences },
+      metadata: {
+        onChainEscrowId: input.onChainEscrowId,
+        differences,
+        planDigest: record.planDigest,
+      },
+    });
+    // Evidence is preserved as a finding, not only as a log line: a mismatch means
+    // somebody funded an escrow this batch did not describe.
+    await db.reconciliationFinding.create({
+      data: {
+        orgId: ctx.orgId,
+        kind: 'UNKNOWN_ON_CHAIN_OBJECT',
+        severity: 'CRITICAL',
+        detail:
+          `Funding transaction ${record.hash} produced escrow ${input.onChainEscrowId}, ` +
+          `which does not match the plan prepared for batch ${plan.reference}. ` +
+          'The escrow was NOT adopted. ' +
+          differences.join('; '),
+        dbState: `plan:${record.planDigest}`,
+        chainState: `escrow:${input.onChainEscrowId}`,
+        metadata: { differences, txHash: record.hash } as any,
+      },
     });
     return { outcome: 'MISMATCH', attempt: viewAttempt(record), differences };
   }
 
   // ── 3. Did custody actually move, in THIS transaction? ──
-  const custody = STELLAR_CONFIG.requireContractId();
-  if (asset.contractId) {
-    const transfers = await verifier.readTransfers(asset.contractId, {});
+  const custody = plan.custodyDestination;
+  {
+    const transfers = await verifier.readTransfers(plan.assetContractId, {});
     if (!transfers.ok) {
       return {
         outcome: 'UNVERIFIABLE',
@@ -738,7 +973,10 @@ export async function confirmFunding(
       (t) =>
         t.txHash === record.hash &&
         t.to === custody &&
-        t.from === ctx.walletAddress &&
+        // The PLAN's manager, not the caller: verification must not depend on who
+        // happens to be asking. A different administrator recovering an uncertain
+        // transaction must reach the same verdict.
+        t.from === plan.manager &&
         t.amountBaseUnits === expectedTotal,
     );
     if (!funding) {
@@ -746,7 +984,7 @@ export async function confirmFunding(
         outcome: 'UNVERIFIABLE',
         attempt: viewAttempt(record),
         reason:
-          `No transfer of ${expectedTotal} base units from ${ctx.walletAddress} to ` +
+          `No transfer of ${expectedTotal} base units from ${plan.manager} to ` +
           `${custody} was found in transaction ${record.hash}. The escrow exists, so ` +
           'this is most likely event retention rather than a missing transfer — ' +
           'funding is left unconfirmed rather than asserted.',
@@ -771,10 +1009,11 @@ export async function confirmFunding(
           network: record.network,
           managerAddress: facts.manager,
           financeApproverAddress: facts.financeApprover,
-          oraclePublicKey: oraclePublicKeyOrNull(),
-          tokenAddress: asset.contractId,
-          assetDecimals: asset.decimals,
+          oraclePublicKey: plan.oraclePublicKey,
+          tokenAddress: plan.assetContractId,
+          assetDecimals: plan.assetDecimals,
           totalAmountBaseUnits: expectedTotal,
+          projectId: plan.projectId,
         },
         select: { id: true, onChainId: true },
       });
@@ -789,7 +1028,7 @@ export async function confirmFunding(
         data: {
           escrowId: row!.id,
           onChainPaymentIndex: i,
-          assetContractId: asset.contractId,
+          assetContractId: plan.assetContractId,
         },
       });
     }
@@ -816,8 +1055,9 @@ export async function confirmFunding(
       metadata: {
         onChainEscrowId: input.onChainEscrowId,
         totalBaseUnits: expectedTotal.toString(),
-        asset: asset.code,
-        assetContractId: asset.contractId,
+        asset: plan.assetCode,
+        assetContractId: plan.assetContractId,
+        planDigest: record.planDigest,
         custodyDestination: custody,
         paymentCount: payments.length,
         verifiedManager: facts.manager,

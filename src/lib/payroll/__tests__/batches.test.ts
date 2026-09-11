@@ -56,8 +56,11 @@ describe('deriveBatchPeriod', () => {
     expect(periodEnd?.toISOString()).toBe('2026-09-30T00:00:00.000Z');
   });
 
-  it('is null when no row states a period, rather than inventing one', () => {
-    const rows = rowsFrom(`${addr('x')},100,USDC,10,10,,,`);
+  it('is null when a row carries no period', () => {
+    // Unreachable through the parser now that period_start/period_end are required
+    // columns, but deriveBatchPeriod is also used on payments loaded from the
+    // database — including drafts created before the period became mandatory.
+    const rows = THREE_ROWS().map((r) => ({ ...r, periodStart: null, periodEnd: null }));
     expect(deriveBatchPeriod(rows)).toEqual({ periodStart: null, periodEnd: null });
   });
 });
@@ -113,7 +116,7 @@ describe('createDraftBatch', () => {
   });
 
   it('stores a neutralized reference, so a formula cannot reach a spreadsheet', async () => {
-    const rows = rowsFrom(`${addr('inj')},100,USDC,10,10,,,"=SUM(A1:A9)"`);
+    const rows = rowsFrom(`${addr('inj')},100,USDC,10,10,2026-09-01,2026-09-15,"=SUM(A1:A9)"`);
     await createDraftBatch(db, ctxFor(), { rows, asset: ASSET });
     expect(db.__tables.payment.rows[0].sourceReference).toBe("'=SUM(A1:A9)");
   });

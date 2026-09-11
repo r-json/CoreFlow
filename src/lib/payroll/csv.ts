@@ -26,8 +26,29 @@ export const MAX_CSV_BYTES = 1_000_000; // 1 MB
 export const MAX_ROWS = 100;
 export const MAX_FIELD_LENGTH = 256;
 
-export const REQUIRED_COLUMNS = ['recipient', 'amount', 'asset', 'hours', 'rate'] as const;
-export const OPTIONAL_COLUMNS = ['period_start', 'period_end', 'reference'] as const;
+/**
+ * Columns every payroll file must carry.
+ *
+ * `period_start` and `period_end` are REQUIRED, not optional. The pay period is a
+ * signed field of the CFWP-v2 oracle attestation and the contract refuses an escrow
+ * whose `end_date <= start_date`, so a row without a period can be drafted but can
+ * never be funded. CoreFlow will not supply one — defaulting to today, last month,
+ * or the upload date would mean attesting to a pay period nobody stated.
+ *
+ * This moved here from the funding check deliberately: discovering it at the wallet
+ * prompt, after a payroll has been prepared and approved, is far worse than being
+ * told at row 8.
+ */
+export const REQUIRED_COLUMNS = [
+  'recipient',
+  'amount',
+  'asset',
+  'hours',
+  'rate',
+  'period_start',
+  'period_end',
+] as const;
+export const OPTIONAL_COLUMNS = ['reference'] as const;
 
 const STELLAR_ADDRESS = /^G[A-Z2-7]{55}$/;
 
@@ -55,6 +76,7 @@ export type CsvIssueCode =
   | 'MIXED_ASSETS'
   | 'DUPLICATE_RECIPIENT'
   | 'INVALID_PERIOD'
+  | 'PERIOD_REQUIRED'
   | 'NO_ROWS';
 
 export interface CsvIssue {
@@ -277,7 +299,18 @@ function parseDateField(
   issues: CsvIssue[],
 ): Date | null {
   const value = raw.trim();
-  if (value.length === 0) return null;
+  if (value.length === 0) {
+    issues.push({
+      line,
+      column,
+      code: 'PERIOD_REQUIRED',
+      message:
+        `${column} is required. CoreFlow records a pay period because the period is ` +
+        'part of what the oracle attests to, and the contract refuses an escrow ' +
+        'without one. It cannot be assumed on your behalf.',
+    });
+    return null;
+  }
   // ISO only. Locale forms like 03/04/2026 are genuinely ambiguous between March
   // and April, and guessing which pay period was meant is not acceptable.
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
@@ -565,7 +598,10 @@ export function parsePayrollCsv(text: string, opts: ParseOptions = {}): CsvParse
     // --- Period ---
     const periodStart = parseDateField(cell('period_start'), line, 'period_start', issues);
     const periodEnd = parseDateField(cell('period_end'), line, 'period_end', issues);
-    if (periodStart && periodEnd && periodEnd.getTime() <= periodStart.getTime()) {
+    if (periodStart === null || periodEnd === null) {
+      // parseDateField has already explained which one and why.
+      fail();
+    } else if (periodEnd.getTime() <= periodStart.getTime()) {
       issues.push({
         line,
         code: 'INVALID_PERIOD',
