@@ -28,19 +28,13 @@ CREATE TYPE "ReconcileOutcome" AS ENUM ('AGREED', 'CHAIN_AHEAD', 'DATABASE_AHEAD
 CREATE TYPE "RunStatus" AS ENUM ('RUNNING', 'COMPLETED', 'FAILED', 'STALE');
 
 -- AlterEnum
--- This migration adds more than one value to an enum.
--- With PostgreSQL versions 11 and earlier, this is not possible
--- in a single migration. This can be worked around by creating
--- multiple migrations, each migration adding only one value to
--- the enum.
-
-
-ALTER TYPE "FindingKind" ADD VALUE 'ASSET_MISMATCH';
-ALTER TYPE "FindingKind" ADD VALUE 'UNKNOWN_ON_CHAIN_OBJECT';
-ALTER TYPE "FindingKind" ADD VALUE 'MISSING_PAYMENT_EVENT';
-ALTER TYPE "FindingKind" ADD VALUE 'DUPLICATE_PAYMENT_EVENT';
-ALTER TYPE "FindingKind" ADD VALUE 'CHAIN_UNREADABLE';
-ALTER TYPE "FindingKind" ADD VALUE 'OTHER';
+-- The new FindingKind values are added by the PRECEDING migration,
+-- 20260911015000_finding_kind_values, and deliberately not here.
+--
+-- PostgreSQL refuses to let a value added to an existing enum be used until the
+-- adding transaction commits (55P04), and `migrate deploy` runs each migration in
+-- one transaction. Since the statements below assign severities BY KIND, the
+-- values must already be committed by the time this migration runs.
 
 -- DropIndex
 DROP INDEX "ReconciliationFinding_orgId_resolvedAt_idx";

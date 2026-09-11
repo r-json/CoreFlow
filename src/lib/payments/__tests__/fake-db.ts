@@ -11,6 +11,33 @@
  * It is deliberately small and explicit. Anything it does not implement throws,
  * so a call site that starts depending on new behaviour fails loudly here instead
  * of passing against a silently permissive double.
+ *
+ * ── What this fake does NOT enforce ─────────────────────────────────────────
+ *
+ * Verified against real PostgreSQL by the integration suite
+ * (`*.integration.test.ts`). A passing unit test says nothing about any of these:
+ *
+ *   - COMPOSITE FOREIGN KEYS. No referential integrity is checked at all, so a
+ *     cross-tenant row that PostgreSQL rejects with P2003 is accepted here.
+ *     Unit tests therefore prove that queries are SCOPED correctly; they cannot
+ *     prove the database would refuse an unscoped write.
+ *     Covered by: constraints.integration.test.ts "B. Composite foreign keys".
+ *   - CASCADES and ON DELETE actions. Deleting a row deletes nothing else.
+ *   - COLUMN TYPES. A bigint column will happily hold a JS number here.
+ *   - OVERFLOW. int8 bounds are not enforced.
+ *   - PARTIAL INDEX PREDICATES. The `WHERE status = 'RUNNING'` run lock is
+ *     modelled as an ordinary unique constraint.
+ *   - TRANSACTION ISOLATION. Writes are immediately visible to every reader;
+ *     there is no READ COMMITTED snapshot, and no row locking.
+ *   - PLANNER BEHAVIOUR, obviously.
+ *
+ * Where it is deliberately STRICTER in form but not in substance: a create missing
+ * a required column throws a clear `fake-db: ... missing required argument` error,
+ * whereas Prisma raises `PrismaClientValidationError: Argument \`org\` is missing`
+ * — naming the RELATION, not the column. Same rejection, different words. The
+ * fake is never made stricter than PostgreSQL in what it ACCEPTS, because a test
+ * that passes here and fails in production is the failure mode this file exists
+ * to prevent.
  */
 
 interface Row {
