@@ -112,12 +112,23 @@ export function sanitizeForSpreadsheet(value: string): string {
 }
 
 /**
- * Strip control characters that would corrupt logs, terminals or CSV exports.
- * Escape sequences only — never literal control bytes in source.
+ * Control characters that have no place in payroll text: everything below 0x20
+ * except tab, newline and carriage return, plus DEL.
+ *
+ * Defined once, here, and reused by the request schemas. Two copies of a
+ * character class eventually disagree, and the one that matters is whichever is
+ * checked last.
  */
+const CONTROL_CHARS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/;
+
+/** True when a value carries a control character. */
+export function containsControlChars(value: string): boolean {
+  return CONTROL_CHARS.test(value);
+}
+
+/** Strip control characters that would corrupt logs, terminals or CSV exports. */
 function stripControlChars(value: string): string {
-  // eslint-disable-next-line no-control-regex
-  return value.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '');
+  return value.replace(new RegExp(CONTROL_CHARS.source, 'g'), '');
 }
 
 // --- Parsing ----------------------------------------------------------------

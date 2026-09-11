@@ -126,6 +126,10 @@ export async function approvePayment(ctx: ActionContext): Promise<ActionResult> 
 
   await db.approval.create({
     data: {
+      // REQUIRED. Approval's parent relation is a composite foreign key on
+      // (orgId, paymentId), so the tenant is part of the row's identity rather
+      // than something to be reached by joining through the payment.
+      orgId: membership.orgId,
       paymentId: payment.id,
       role: approvalRole,
       decision: ApprovalDecision.APPROVED,
@@ -189,6 +193,9 @@ export async function rejectPayment(ctx: ActionContext): Promise<ActionResult> {
         },
       },
       create: {
+        // REQUIRED, for the same reason as in approvePayment: the composite
+        // foreign key makes the tenant part of the row's identity.
+        orgId: membership.orgId,
         paymentId: payment.id,
         role: membership.role === OrgRole.FINANCE ? OrgRole.FINANCE : OrgRole.MANAGER,
         decision: ApprovalDecision.REJECTED,
