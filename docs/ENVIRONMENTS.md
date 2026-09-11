@@ -16,12 +16,12 @@ and Mainnet v1. Every individual value was valid; only the combination was wrong
 
 | | DEVELOPMENT | TESTNET VALIDATION | PRODUCTION |
 |---|---|---|---|
-| **Database** | Local Postgres, on the developer's machine | Dedicated hosted Postgres, disposable | Managed Postgres (`db.prisma.io`) |
+| **Database** | Private local cluster, port 5440 | Dedicated hosted Postgres, disposable | Managed Postgres (`db.prisma.io`) |
 | **Chain** | Stellar **Testnet** | Stellar **Testnet** | Stellar **Mainnet** |
 | **Contract** | v2 `CDN4FIKL…VAQRG5F4` | v2 `CDN4FIKL…VAQRG5F4` | v1 `CCTF5WBO…J2XPRFFW` |
 | **Settlement asset** | v2 testnet SAC `CBW2ZKFB…JS743Q5M` | same | v1 mainnet SAC |
 | **Funds at risk** | None | None | **Real** |
-| **Schema version** | v2 (8 migrations) | v2 (8 migrations) | **v1** — see below |
+| **Schema version** | v2 (10 migrations, applied & verified) | v2 (10 migrations) | **v1** — see below |
 | **Who may reset it** | Anyone, freely | Anyone, deliberately | Nobody, ever, from a dev workflow |
 | **Preflight verdict** | must pass | `COREFLOW_ALLOW_REMOTE_DB=1` | `COREFLOW_ALLOW_MAINNET=1` + out-of-band authorization |
 
@@ -50,110 +50,97 @@ site down.
 
 ## Setting up the development database
 
-### Current state on this machine
-
-- A local Postgres **is** running and accepting connections on
-  `/var/run/postgresql:5432`.
-- A role named `coreflow` **exists**, but its password is not recoverable — it
-  lived in the `.env.local` that the `vercel env pull` overwrote. (`psql` reports
-  `password authentication failed`, not `role does not exist`.)
-- The OS user has no Postgres role, and `postgres` peer authentication fails, so
-  the database cannot be created without an administrator.
-
-Credentials must not be guessed, and Postgres authentication must not be
-circumvented. The steps below require a Postgres superuser and are for the
-operator to run.
-
-### 1. Generate a password
-
-Generate it locally. **Do not paste it into a chat, a commit, a log or this
-file.**
+One command:
 
 ```bash
-node -e "console.log(require('crypto').randomBytes(24).toString('base64url'))"
+./scripts/dev-db.sh init
 ```
 
-### 2. Create the role and databases
+That creates a **private PostgreSQL cluster owned by your user**, in your home
+directory, on a non-default port, and writes the connection URLs into `.env`.
 
-Two databases: the development database, and a **shadow** database Prisma uses to
-verify migrations. They must be separate — Prisma **resets** the shadow database,
-so pointing it at a database that holds anything you want to keep destroys it.
+### Why a separate cluster rather than a database in the system one
+
+Creating a role in the system instance needs an existing superuser. On the machine
+this was set up on, neither `postgres` peer authentication nor the old `coreflow`
+password was available — the password was lost with the `.env.local` that a
+`vercel env pull` overwrote.
+
+`initdb` does not need root. A cluster you create is one you are legitimately the
+superuser of, so no authentication is circumvented and the system instance is left
+alone. It has a useful side effect: development cannot reach anything but its own
+data.
+
+| | |
+|---|---|
+| Data directory | `~/.local/share/coreflow/pgdata` (override with `COREFLOW_PGDATA`) |
+| Port | `5440` (override with `COREFLOW_PGPORT`) |
+| Listens on | `127.0.0.1` only |
+| Databases | `coreflow_dev`, `coreflow_shadow` |
+| Role | `coreflow`, no `CREATEDB`, no `SUPERUSER` |
+| Password | generated locally, written only to `.env`, never printed |
+
+Port 5440 rather than 5433: on this machine 5432 is the system PostgreSQL and 5433
+was held by podman's `pasta` networking.
+
+The **shadow** database is separate because Prisma **resets** it. Pointing
+`SHADOW_DATABASE_URL` at a database holding anything you want to keep destroys it —
+which is exactly how the original dev database was lost once already.
 
 ```bash
-sudo -u postgres psql
+./scripts/dev-db.sh start     # after a reboot
+./scripts/dev-db.sh stop
+./scripts/dev-db.sh status
+./scripts/dev-db.sh psql      # a shell on coreflow_dev
+./scripts/dev-db.sh destroy   # delete the cluster and all its data
 ```
 
-```sql
--- Give the existing role a known password, or create a fresh one.
--- Pick ONE of these two:
-ALTER ROLE coreflow WITH LOGIN PASSWORD 'PASTE_GENERATED_PASSWORD';
--- CREATE ROLE coreflow WITH LOGIN PASSWORD 'PASTE_GENERATED_PASSWORD';
-
--- Development and shadow databases, owned by that role.
-CREATE DATABASE coreflow_dev    OWNER coreflow;
-CREATE DATABASE coreflow_shadow OWNER coreflow;
-
--- No CREATEDB, no SUPERUSER: development needs neither.
-\q
-```
-
-Confirm it works, and that it is empty:
-
-```bash
-psql "postgresql://coreflow:PASSWORD@localhost:5432/coreflow_dev" \
-  -c "SELECT count(*) FROM information_schema.tables WHERE table_schema='public';"
-# expect 0
-```
-
-### 3. Point the environment at it
-
-In `.env.local` (git-ignored), set all four database variables to the **local**
-database. The preflight checks every one of them, because a `vercel env pull`
-writes all four and leaving one remote is enough to cause harm:
-
-```ini
-DATABASE_URL="postgresql://coreflow:PASSWORD@localhost:5432/coreflow_dev?schema=public"
-DIRECT_URL="postgresql://coreflow:PASSWORD@localhost:5432/coreflow_dev?schema=public"
-SHADOW_DATABASE_URL="postgresql://coreflow:PASSWORD@localhost:5432/coreflow_shadow?schema=public"
-```
-
-Delete the `PRISMA_DATABASE_URL`, `POSTGRES_URL` and `VERCEL_OIDC_TOKEN` lines
-from `.env.local`. They are deployment artifacts; nothing local reads them, and
-while they point at production the preflight will keep refusing.
-
-Leave the Stellar keys as they are — they already name the v2 Testnet deployment:
-
-```ini
-NEXT_PUBLIC_STELLAR_NETWORK="testnet"
-NEXT_PUBLIC_STELLAR_CONTRACT_ID="CDN4FIKLJ72WYNPBIKWYSDJWDZG22QNPLWI37VTUAE4EKKIBVAQRG5F4"
-NEXT_PUBLIC_STELLAR_TOKEN_ID="CBW2ZKFBHLHNNVCZ7JP4AXHQOOC3S6NLAMORXOAIWQNWMKUVJS743Q5M"
-```
-
-### 4. Verify, then migrate
+### Then migrate
 
 ```bash
 npm run check:env       # must print "OK: local database + Testnet v2."
-npm run db:deploy       # applies all 8 migrations from zero
+npm run db:deploy       # applies all 10 migrations from zero
 npx prisma migrate status
+npm run test:integration
 ```
 
-Then the full gate:
+---
+
+## Which file holds what
+
+This is the part that went wrong on 2026-09-11, so it is worth being exact.
+
+| File | Written by | Read by | Holds |
+|---|---|---|---|
+| `.env` | **you**, and `scripts/dev-db.sh` | Next.js **and** Prisma CLI | local development configuration, including the database URLs |
+| `.env.local` | **you** | Next.js only | personal overrides; **no database URLs** |
+| `.env.vercel` | `vercel env pull --env=production` | nothing automatically | the deployment's configuration, for reference |
+| `.env.example` | **you** | nobody | placeholders, committed |
+
+**Database configuration lives in `.env`, not `.env.local`.** This is not a
+preference: the **Prisma CLI reads only `.env`**, while Next.js reads both. Putting
+the URLs in `.env.local` makes the app work and every `prisma migrate` fail with
+*Environment variable not found: DIRECT_URL*.
+
+### After a `vercel env pull`
+
+**Never pull into `.env` or `.env.local`.** Pull into `.env.vercel`:
 
 ```bash
-npm run typecheck
-npm run test:ci
-npm run build
+vercel env pull .env.vercel --env=production
 ```
 
-### 5. After any `vercel env pull`
-
-Assume it clobbered your local configuration, because it did:
+A bare `vercel env pull` writes `.env.local` and will silently replace your local
+database URLs and network settings with the deployment's. If it has already
+happened, the production database URLs are still commented out in `.env` with a
+note; the preflight will refuse to run until they are gone or local:
 
 ```bash
 npm run check:env
 ```
 
----
+Neither `.env`, `.env.local` nor `.env.vercel` is ever committed — `.gitignore`
+denies every `.env` variant and re-admits only `.env.example`.
 
 ## Preflight reference
 

@@ -1,11 +1,14 @@
 # Bulk Pay — API Layer
 
-> **Status: API layer implemented and unit-tested. Database-backed validation BLOCKED.**
+> **Status: API layer implemented, unit-tested, and validated against real PostgreSQL.**
 >
-> Every route below compiles, is covered by unit tests against an in-memory Prisma
-> double, and is registered in the production build. **No query in this document has
-> been executed against a real PostgreSQL database.** Migration 8 is written and not
-> applied. See [Blocked](#what-is-blocked) for exactly what that leaves unverified.
+> All 10 migrations apply from zero against a local PostgreSQL 18.6 database with
+> **zero schema drift**. 71 integration tests exercise these routes and the payment
+> state machine against that database. Two real defects were found in the process —
+> see [REVIEWER_EVIDENCE](evidence/REVIEWER_EVIDENCE.md).
+>
+> **Still BLOCKED:** the live Testnet golden path (chain settlement, indexing,
+> reconciliation) and the product UI. See [Blocked](#what-is-blocked).
 
 Verified work → approved payment → programmable escrow → on-chain settlement. This
 document covers the first two links: turning a payroll file into individual,
@@ -222,33 +225,35 @@ error per upload cannot work.
 
 > These are **not** done, and no mock stands in for them.
 
-| Blocked | Prerequisite |
-|---|---|
-| Applying migration `20260911040000_payroll_batch_idempotency` | Local development database |
-| Verifying the schema matches the Prisma model | Local development database |
-| Composite foreign keys actually rejecting cross-tenant rows | Local development database |
-| The `(orgId, idempotencyKey)` unique index under real concurrency | Local development database |
-| Route integration tests against PostgreSQL | Local development database |
-| Full Bulk Pay end-to-end | Local DB + funded Testnet escrow |
-| A fresh Testnet golden-path run | Local DB + funded Testnet escrow |
-| Production `migrate diff` | Local shadow database |
+| Item | State | Prerequisite |
+|---|---|---|
+| Migrations apply from zero | ✅ **10/10, verified** | — |
+| Schema matches the Prisma model | ✅ **zero drift** | — |
+| Composite FKs reject cross-tenant rows | ✅ **verified (P2003)** | — |
+| `(orgId, idempotencyKey)` under real concurrency | ✅ **verified** | — |
+| Transactional rollback, real PostgreSQL | ✅ **verified** | — |
+| Exact bigint money through the column | ✅ **verified** | — |
+| Route integration tests | ✅ **56 passing** | — |
+| State machine against real records | ✅ **15 passing** | — |
+| Escrow funding from an approved draft | ❌ **not built** | UI + wallet signing |
+| Chain settlement, indexing, reconciliation E2E | ❌ **blocked** | a funded v2 Testnet escrow |
+| A fresh Testnet golden-path run | ❌ **blocked** | the above |
+| Production `migrate diff` | ❌ **not run** | an authorized production operation |
 
-Setup instructions: [ENVIRONMENTS.md](ENVIRONMENTS.md#setting-up-the-development-database).
+Setup: [ENVIRONMENTS.md](ENVIRONMENTS.md#setting-up-the-development-database).
 
-### What the unit tests do and do not prove
+### What each test layer proves
 
-They **do** prove: authorization decisions, tenant isolation in query construction,
-schema rejection of unknown and malformed fields, the idempotency contract including
-the lost-race path, atomic rollback, error sanitization, and exact monetary arithmetic.
+| Layer | Command | Proves |
+|---|---|---|
+| **Unit** (761) | `npm run test:ci` | authorization decisions, query scoping, schema rejection, the idempotency contract, exact arithmetic |
+| **Integration** (71) | `npm run test:integration` | what PostgreSQL itself enforces: composite FKs, unique and partial indexes, bigint columns, cascades, transaction isolation, real concurrency |
+| **Rust** (70) | `cargo test` | contract invariants, CFWP-v2 attestation, dual approval, upgrade authority |
+| **Live Testnet** (opt-in) | `COREFLOW_LIVE_TESTNET=1` | the chain actually behaves as the indexer and reconciler assume |
 
-They **do not** prove anything about PostgreSQL. The in-memory double
-([`fake-db.ts`](../src/lib/payments/__tests__/fake-db.ts)) enforces unique constraints,
-required columns and per-transaction rollback — deliberately, so these properties can
-be observed being relied upon — but it is not a database. Column types, composite
-foreign keys, partial indexes, cascade behaviour, transaction isolation and
-constraint-trigger timing are all unverified.
-
----
+The unit suite deliberately **excludes** `*.integration.test.ts`, so its total can
+never be presented as database validation. The in-memory double's limitations are
+enumerated at the top of [`fake-db.ts`](../src/lib/payments/__tests__/fake-db.ts).
 
 ## Not yet built
 

@@ -27,7 +27,11 @@
     "contract:test": "cd contracts/core-flow && cargo test",
     "predb:seed": "npm run check:env",
     "db:seed": "prisma db seed",
-    "check:env": "node scripts/check-env.mjs"
+    "check:env": "node scripts/check-env.mjs",
+    "pretest:integration": "npm run check:env",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "predb:reset": "npm run check:env",
+    "db:reset": "prisma migrate reset --force --skip-seed"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

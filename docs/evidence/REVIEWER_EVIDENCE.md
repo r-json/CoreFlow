@@ -15,7 +15,8 @@ independently rather than taken on trust.
 | Suite | Command | Result |
 |---|---|---|
 | Soroban contract (Rust) | `cd contracts/core-flow && cargo test` | **70 passed**, 2 ignored |
-| Application (TypeScript) | `npm run test:ci` | **761 passed**, 9 skipped (opt-in live) |
+| Application unit (TypeScript) | `npm run test:ci` | **761 passed**, 9 skipped (opt-in live) |
+| Application integration (real PostgreSQL) | `npm run test:integration` | **71 passed** |
 | Type check | `npm run typecheck` | clean |
 | Production build | `npm run build` | succeeds |
 | Deployable WASM | `cargo build --release --target wasm32v1-none` | 42,425 bytes |
@@ -378,6 +379,89 @@ The concurrent-idempotency test therefore saw one batch with **one** payment ins
 one batch with **three** — a result that invites weakening the assertion. Real Postgres
 isolates transactions per connection, so the double now records a per-transaction undo
 log and replays only its own writes.
+
+### Database validation gate (real PostgreSQL)
+
+`npm run test:integration` — 71 tests against PostgreSQL 18.6 on a private local
+cluster. A separate vitest config from the unit suite, so the two totals can never be
+conflated. Setup: [`../ENVIRONMENTS.md`](../ENVIRONMENTS.md#setting-up-the-development-database).
+
+| Property | Evidence |
+|---|---|
+| 10 migrations apply from zero | `prisma migrate deploy` on an empty database |
+| Schema matches the Prisma model | `prisma migrate diff --exit-code` → 0 (no drift) |
+| 14 composite tenant FKs exist | enumerated from `information_schema` |
+| Cross-tenant payment → batch rejected | `constraints.integration.test.ts` → P2003 |
+| Cross-tenant approval, project, worker, audit event rejected | 4 further P2003 tests |
+| Same wallet may be a worker in two orgs | uniqueness is per tenant, not global |
+| `(orgId, idempotencyKey)` unique; NULLs distinct | 3 tests |
+| One payment per on-chain slot | `(escrowId, onChainPaymentIndex)` → P2002 |
+| One RUNNING reconciliation run per org | partial unique index, incl. release-and-restart |
+| Money exact through the column | `250.50`, `1000`, `1n`, int8 max: client value, re-read, and `::text` from SQL all agree |
+| int8 overflow refused, not wrapped | max + 1 rejected |
+| Organization delete cascades; other tenant untouched | cascade test |
+| Rollback leaves zero partial records | real transaction, failure injected on row 3 |
+| One failing transaction cannot undo another | the defect the in-memory double had |
+| 3 concurrent identical creates → 1 batch, 3 payments | 1 response `created:true`, 2 `created:false` |
+| Same key + different payload → 409 | `IDEMPOTENCY_KEY_REUSED` |
+| 3 concurrent unkeyed creates → 3 distinct references | reference-collision retry under contention |
+| No user actor of any role can persist PAID | OWNER, ADMIN, MANAGER, FINANCE each refused |
+| PAID never moves backwards | 6 destinations × 3 actor kinds, all refused |
+| Audit trail is continuous | each row's `previousState` equals the prior row's `newState` |
+| Tenant isolation through the API | cross-tenant read/approve/re-validate → byte-identical 404 |
+
+#### Two more real defects, found only by real PostgreSQL
+
+**A migration that could never have applied.** `20260911020000_reconciliation_reliability`
+added six values to the existing `FindingKind` enum and then used them in `UPDATE`
+statements in the same file. PostgreSQL refuses that:
+
+```
+ERROR: unsafe use of new value "ASSET_MISMATCH" of enum type "FindingKind"
+HINT:  New enum values must be committed before they can be used.   (55P04)
+```
+
+`prisma migrate deploy` wraps each migration in one transaction, so add-and-use in a
+single file can never work — regardless of PostgreSQL version, and despite the
+generated comment in that file claiming it is only a PG-11-and-earlier concern. The
+earlier claim that "7 migrations apply from zero" was **wrong**: this migration had
+been applied by hand and then marked applied with `migrate resolve`, so the from-zero
+path had never actually been exercised. The ADD VALUE statements are now their own
+migration, `20260911015000_finding_kind_values`, and the full history applies from
+zero.
+
+**`onDelete: SetNull` on a composite FK whose `orgId` is NOT NULL.** Twelve relations
+declared it. SET NULL nulls **every** column of the foreign key, so deleting an
+Escrow, Project or Worker that any row referenced failed with:
+
+```
+Null constraint violation on the fields: (`orgId`)
+```
+
+Deleting an escrow was therefore impossible. `prisma validate` had been emitting a
+warning about exactly this, which had been noted as pre-existing and not
+investigated — the integration test is what forced it. Changed to `NoAction` in
+`20260911044540_composite_fk_no_action`: NO ACTION is checked at the end of the
+statement, so a cascading delete from Organization still succeeds, while a direct
+delete is refused while dependent rows exist. That refusal is the correct behaviour
+for financial data — detaching a payment from its escrow destroys the record of what
+the money was for.
+
+#### Three tests that were wrong, and were corrected rather than deleted
+
+Recorded because each looked like a product bug and was not:
+
+- A test asserted the planner would choose an index over a sequential scan on 200
+  rows. Postgres is right to prefer a seq scan at that size. Rewritten to prove a
+  usable index **exists** (`SET LOCAL enable_seqscan = off`) — which also exposed
+  that `SET LOCAL` outside a transaction is silently discarded.
+- A concurrency test raced `READY_TO_SETTLE → SUBMITTING` against
+  `READY_TO_SETTLE → PAID` and expected one winner. Both succeeded, correctly: the
+  table allows `SUBMITTING → PAID`, because a confirmation can arrive before our own
+  update lands. Re-aimed at a genuinely incompatible pair.
+- A test expected `Argument \`orgId\` is missing`. Prisma reports the missing
+  **relation**: `Argument \`org\` is missing`. Worth recording, since grepping logs
+  for the column name would never surface that failure.
 
 ## 4. Instawards SOW deliverables
 

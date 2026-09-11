@@ -192,7 +192,7 @@ model Escrow {
   /// COMPOSITE FOREIGN KEY. Referencing (orgId, id) rather than id alone makes it
   /// structurally impossible to attach this escrow to a project owned by a
   /// different organization — a plain FK only checks the row exists.
-  project   Project? @relation(fields: [orgId, projectId], references: [orgId, id], onDelete: SetNull)
+  project   Project? @relation(fields: [orgId, projectId], references: [orgId, id], onDelete: NoAction)
 
   /// The Soroban escrow id. Null only while a creation transaction is in flight.
   onChainId  Int?    @unique
@@ -238,7 +238,7 @@ model PayrollBatch {
   org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   projectId String?
   /// Composite FK — see Escrow.project.
-  project   Project? @relation(fields: [orgId, projectId], references: [orgId, id], onDelete: SetNull)
+  project   Project? @relation(fields: [orgId, projectId], references: [orgId, id], onDelete: NoAction)
 
   /// Human-facing identifier, e.g. CF-00042.
   reference String
@@ -351,7 +351,22 @@ model Payment {
   orgId String
   org   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
-  /// EVERY parent relation below is a COMPOSITE foreign key on (orgId, id).
+  /// EVERY parent relation below is a COMPOSITE foreign key on (orgId, id),
+  /// and every one uses `onDelete: NoAction` rather than `SetNull`.
+  ///
+  /// SetNull is impossible here and was a latent defect: it nulls ALL the FK's
+  /// columns, and `orgId` is NOT NULL — so deleting an Escrow that any payment
+  /// referenced failed with "Null constraint violation on the fields: (orgId)".
+  /// Found by an integration test against real PostgreSQL; `prisma validate` had
+  /// been warning about it, and the unit suite could not see it.
+  ///
+  /// NoAction rather than Restrict because NO ACTION is checked at the END of the
+  /// statement. A cascading delete from Organization removes the parent and the
+  /// child in one statement, which RESTRICT would reject depending on evaluation
+  /// order. The effect for a direct delete is the same: an Escrow, Project or
+  /// Worker still referenced by a payment cannot be removed, which is correct —
+  /// detaching a payment from its context destroys the evidence of what was paid
+  /// for, and a financial record must outlive an attempt to tidy up around it.
   ///
   /// A plain `batchId` FK only guarantees the batch exists — not that it belongs
   /// to this payment's organization. Without the composite key, a bug or a
@@ -363,13 +378,13 @@ model Payment {
   batch   PayrollBatch @relation(fields: [orgId, batchId], references: [orgId, id], onDelete: Cascade)
 
   escrowId String?
-  escrow   Escrow? @relation(fields: [orgId, escrowId], references: [orgId, id], onDelete: SetNull)
+  escrow   Escrow? @relation(fields: [orgId, escrowId], references: [orgId, id], onDelete: NoAction)
 
   projectId String?
-  project   Project? @relation(fields: [orgId, projectId], references: [orgId, id], onDelete: SetNull)
+  project   Project? @relation(fields: [orgId, projectId], references: [orgId, id], onDelete: NoAction)
 
   workerId String?
-  worker   Worker? @relation(fields: [orgId, workerId], references: [orgId, id], onDelete: SetNull)
+  worker   Worker? @relation(fields: [orgId, workerId], references: [orgId, id], onDelete: NoAction)
 
   /// The payee wallet, denormalized deliberately: it is the immutable financial
   /// identity of this payment. Re-pointing a Worker row must never silently
@@ -477,7 +492,7 @@ model OracleAttestation {
   orgId     String
   org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   paymentId String?
-  payment   Payment? @relation(fields: [orgId, paymentId], references: [orgId, id], onDelete: SetNull)
+  payment   Payment? @relation(fields: [orgId, paymentId], references: [orgId, id], onDelete: NoAction)
 
   /// Identity of the on-chain slot this attestation is bound to.
   escrowOnChainId     Int
@@ -542,9 +557,9 @@ model BlockchainTransaction {
   org   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
   paymentId String?
-  payment   Payment? @relation(fields: [orgId, paymentId], references: [orgId, id], onDelete: SetNull)
+  payment   Payment? @relation(fields: [orgId, paymentId], references: [orgId, id], onDelete: NoAction)
   escrowId  String?
-  escrow    Escrow?  @relation(fields: [orgId, escrowId], references: [orgId, id], onDelete: SetNull)
+  escrow    Escrow?  @relation(fields: [orgId, escrowId], references: [orgId, id], onDelete: NoAction)
 
   kind   TxKind
   status TxStatus @default(PREPARING)
@@ -605,11 +620,11 @@ model AuditEvent {
   actorSystem  String?
 
   paymentId String?
-  payment   Payment? @relation(fields: [orgId, paymentId], references: [orgId, id], onDelete: SetNull)
+  payment   Payment? @relation(fields: [orgId, paymentId], references: [orgId, id], onDelete: NoAction)
   batchId   String?
-  batch     PayrollBatch? @relation(fields: [orgId, batchId], references: [orgId, id], onDelete: SetNull)
+  batch     PayrollBatch? @relation(fields: [orgId, batchId], references: [orgId, id], onDelete: NoAction)
   escrowId  String?
-  escrow    Escrow?  @relation(fields: [orgId, escrowId], references: [orgId, id], onDelete: SetNull)
+  escrow    Escrow?  @relation(fields: [orgId, escrowId], references: [orgId, id], onDelete: NoAction)
 
   previousState String?
   newState      String?
@@ -778,7 +793,7 @@ model ReconciliationFinding {
   org   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
   paymentId String?
-  payment   Payment? @relation(fields: [orgId, paymentId], references: [orgId, id], onDelete: SetNull)
+  payment   Payment? @relation(fields: [orgId, paymentId], references: [orgId, id], onDelete: NoAction)
 
   /// The run that most recently observed this finding.
   runId String?
