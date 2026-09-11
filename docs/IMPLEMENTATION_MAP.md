@@ -68,7 +68,7 @@ file. Reusing it with a different payload returns 409 `IDEMPOTENCY_KEY_REUSED`.
 | **Chain** | `create_escrow` + token transfer into custody |
 | **Indexer** | `escrow/created` → `Escrow` row, `resolveEscrowTenant` |
 | **State** | `DRAFT → VALIDATING → AWAITING_ORACLE` |
-| **Status** | ❌ — **the gap between a draft and the chain** |
+| **Status** | ✅ domain + API + UI, DB-verified · ❌ live Testnet run |
 
 The disclosure must show, before the wallet opens: **network (TESTNET, plainly)** ·
 contract id · settlement asset + SAC address · exact total · recipient count ·
@@ -213,7 +213,7 @@ caller's own input.
 | Page | Stages | Needs |
 |---|---|---|
 | Bulk Pay upload | 1–3 | validate + create |
-| Batch detail: Overview / Payments / Approvals / Activity / Settlement / Audit | 3–9 | detail + approve + per-payment actions |
+| Batch detail (built) | 3–9 | header, summary, funding card, per-payment table with drill-down, approvals, activity timeline, technical details, findings |
 | Batch list | — | list |
 | Reconciliation | 9 | **route the existing panel** |
 

@@ -219,12 +219,31 @@ set of rows: it looks up `(escrowId, onChainPaymentIndex)` and finds ours. It al
 cross-checks recipient and amount, opening an `AMOUNT_MISMATCH` finding if they
 disagree.
 
+## The batch detail page
+
+`/dashboard/payroll/[id]` is the workspace: header with the mapped domain status,
+summary figures formatted server-side, the funding card (the same `FundingPanel`, so
+the three funding states and recovery behave identically wherever they appear), one
+table row per payment with a drill-down to exact base units, approvals read from
+`Approval` records — including the half that is **missing**, since "waiting for
+finance" is the fact a reviewer needs — an activity timeline from real `AuditEvent`
+rows, collapsed technical details, and any open reconciliation findings.
+
+The timeline is sparse early in a batch's life, and is left that way. Padding it with
+plausible entries nobody recorded would make the one screen whose job is to show what
+happened the least trustworthy thing in the product.
+
+On arrival, a submitted attempt with a known hash and no escrow id is recovered
+**automatically, once** — no user action, no second signature. Repeated verification
+of a genuinely pending transaction would be noise, so it is not retried on a loop and
+`Check status` stays available.
+
 ## Still blocked
 
 | | Prerequisite |
 |---|---|
-| Funding review UI + Freighter disclosure | next |
-| Batch detail page | next |
+| Funding review UI + Freighter disclosure | ✅ built |
+| Batch detail page | ✅ built |
 | Live Testnet funding run | the UI, plus a Freighter signature in a browser |
 
 Test USDC **can** be obtained through the project's existing setup: the Stellar CLI
