@@ -1,0 +1,21 @@
+# gitleaks configuration: the default rule set, plus an allowlist for values
+# that are public by construction and would otherwise trip the entropy rules.
+title = "CoreFlow gitleaks config"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Stellar contract (C...) and account (G...) strkeys are public on-chain identifiers"
+regexTarget = "secret"
+regexes = [
+  '''^[CG][A-Z2-7]{55}$''',
+]
+
+[[allowlists]]
+description = "Oracle public keys published in docs/evidence (public halves only)"
+regexTarget = "secret"
+regexes = [
+  '''^3b9d395a725ba0be4c476a0504540fb8dd70a278fac140a20e0d74cd7f41ae44$''',
+  '''^f42a48839e48d58e6628f5d096ee859e635b056be580bdcc68d620e2a2badae0$''',
+]

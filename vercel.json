@@ -2,14 +2,21 @@
   "buildCommand": "npm run vercel-build",
   "installCommand": "npm install",
   "outputDirectory": ".next",
+  "git": {
+    "deploymentEnabled": {
+      "main": false,
+      "feat/*": false,
+      "fix/*": false
+    }
+  },
   "crons": [
     {
       "path": "/api/indexer/run",
-      "schedule": "*/10 * * * *"
+      "schedule": "0 0 * * *"
     },
     {
       "path": "/api/reconciliation/run",
-      "schedule": "17 * * * *"
+      "schedule": "30 0 * * *"
     }
   ]
 }

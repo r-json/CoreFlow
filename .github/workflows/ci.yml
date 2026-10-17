@@ -35,17 +35,21 @@ jobs:
           key: cargo-${{ runner.os }}-${{ hashFiles('contracts/core-flow/Cargo.lock') }}
           restore-keys: cargo-${{ runner.os }}-
 
-      - name: Run Rust Contract Test Suite
-        working-directory: contracts/core-flow
-        run: cargo test --locked
-
       # wasm32v1-none, NOT wasm32-unknown-unknown: rustc 1.85 emits
       # reference-types into the latter and the Soroban host rejects the upload
       # with Error(WasmVm, InvalidAction). Building here keeps that regression
       # out of main rather than surfacing it at deploy time.
+      #
+      # Built BEFORE the tests: src/test.rs embeds this artifact with
+      # include_bytes! for the upgrade tests, so the test crate cannot compile
+      # until it exists.
       - name: Build Deployable WASM
         working-directory: contracts/core-flow
         run: cargo build --release --target wasm32v1-none
+
+      - name: Run Rust Contract Test Suite
+        working-directory: contracts/core-flow
+        run: cargo test --locked
 
       - name: Upload WASM Artifact
         uses: actions/upload-artifact@v4
@@ -80,8 +84,35 @@ jobs:
       - name: Run Automated Vitest Test Suite
         run: npm run test:ci
 
+      # /bulk-pay constructs the contract client at prerender and refuses to
+      # guess a contract address, so the build needs one. This is the public
+      # v2 Testnet contract id (docs/DEPLOYMENTS.md), not a secret.
       - name: Build Next.js Production App
         run: npm run build
         env:
           NEXT_PUBLIC_STELLAR_NETWORK: 'testnet'
           NEXT_PUBLIC_COMPANY_NAME: 'CoreFlow'
+          NEXT_PUBLIC_STELLAR_CONTRACT_ID: 'CDN4FIKLJ72WYNPBIKWYSDJWDZG22QNPLWI37VTUAE4EKKIBVAQRG5F4'
+
+  secret-scan:
+    name: Secret Scan (gitleaks)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # The binary is pinned and checksum-verified rather than pulled through a
+      # third-party action, so the scanner itself is a known artifact.
+      - name: Install gitleaks 8.30.1
+        run: |
+          V=8.30.1
+          curl -sSfL -o gitleaks.tar.gz "https://github.com/gitleaks/gitleaks/releases/download/v${V}/gitleaks_${V}_linux_x64.tar.gz"
+          curl -sSfL -o checksums.txt "https://github.com/gitleaks/gitleaks/releases/download/v${V}/gitleaks_${V}_checksums.txt"
+          grep "gitleaks_${V}_linux_x64.tar.gz" checksums.txt | sed "s/gitleaks_${V}_linux_x64.tar.gz/gitleaks.tar.gz/" | sha256sum -c -
+          tar -xzf gitleaks.tar.gz gitleaks
+
+      - name: Scan full git history
+        run: ./gitleaks git --config .gitleaks.toml --redact --log-opts="--all" --no-banner .

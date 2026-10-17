@@ -1,8 +1,10 @@
 name: CoreFlow Production Deployment
 
+# Manual only. This job applies migrations to the production database and
+# promotes a production deployment, so it runs when an operator chooses to,
+# never as a side effect of a merge.
 on:
-  push:
-    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   deploy:
