@@ -708,3 +708,36 @@ fn mock_issuer_matches_published_test_keys() {
         MockIssuer::from_seed(&[5u8; 32]).public_key(&env)
     );
 }
+
+// ---------- replay state across registry changes ----------
+
+/// Revoking and re-registering a key must not reset its replay state: an
+/// admin cycling a key would otherwise make every claim it ever signed valid
+/// again.
+#[test]
+fn replay_state_survives_revoke_and_reregister() {
+    let fx = Fx::new();
+    let used = fx.uid(b"claim-reuse");
+    assert_eq!(fx.submit(&fx.seq(0)), Ok(()));
+    assert_eq!(fx.submit(&used), Ok(()));
+
+    fx.client().revoke_issuer(&fx.pk());
+    fx.client().register_issuer(&fx.pk());
+
+    assert_eq!(fx.next_nonce(), 1);
+    assert_eq!(fx.submit(&fx.seq(0)), err(AttestError::NonceMismatch));
+    assert_eq!(fx.submit(&used), err(AttestError::ClaimAlreadyUsed));
+    assert_eq!(fx.submit(&fx.seq(1)), Ok(()));
+}
+
+/// With an unknown `old` and an already-registered `new`, rotate reports the
+/// missing key: that is the problem the caller has to fix first.
+#[test]
+fn rotate_reports_unknown_old_before_duplicate_new() {
+    let fx = Fx::new();
+    let unknown = MockIssuer::test(7).public_key(&fx.env);
+    assert_eq!(
+        outcome(fx.client().try_rotate_issuer(&unknown, &fx.pk())),
+        err(AttestError::IssuerNotFound)
+    );
+}
