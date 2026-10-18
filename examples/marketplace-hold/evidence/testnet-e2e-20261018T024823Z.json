@@ -1,0 +1,139 @@
+{
+  "scriptVersion": "0.1.0-alpha",
+  "runId": "20261018024823-a247",
+  "network": "testnet",
+  "networkPassphrase": "Test SDF Network ; September 2015",
+  "startedAt": "2026-10-18T02:48:23.625Z",
+  "steps": [
+    {
+      "name": "identities",
+      "at": "2026-10-18T02:48:53.229Z",
+      "admin": "GBRXQDRVG3AE56POFDVBHBOTYCQFV5FCFMU6HEZI5BJXCMNW4WFTGRL7",
+      "buyer": "GDBDE7NWHJXOYSZUGGOA7K3SS67VKZ3YK5MHJG2OQPY5GYTHBSEAMJRW",
+      "seller": "GA54W4Z6NFAVXCVZXXJEEF254PRGS2Y7IVRGZKIGNUBTEZDOP2TY2XMM",
+      "issuerPublicKeyHex": "c7d836f7e3f664a721f7d4e77b320a44834214408034a3e2b3b0cfe64df5fcd2",
+      "note": "throwaway testnet accounts; the issuer key is in-memory and not a Stellar account"
+    },
+    {
+      "name": "deploy",
+      "at": "2026-10-18T02:50:03.023Z",
+      "txHash": "dec700e5e4ca95336ba891d668b17514cf200887014f593bfc8bc6f73287360a",
+      "ledger": 5253640,
+      "contractId": "CARLTJXQAU7OWERKX6PDAW7QYOOFOQNHCN72267DND7CWLHBFBI2L6LB",
+      "wasmSha256": "42f18d38188788e5482a04a07d39416b3b98fd8d511f67eb8bfb5ab0d4791cd4",
+      "constructorArgs": {
+        "admin": "GBRXQDRVG3AE56POFDVBHBOTYCQFV5FCFMU6HEZI5BJXCMNW4WFTGRL7",
+        "issuer": "c7d836f7e3f664a721f7d4e77b320a44834214408034a3e2b3b0cfe64df5fcd2"
+      },
+      "contractExplorer": "https://stellar.expert/explorer/testnet/contract/CARLTJXQAU7OWERKX6PDAW7QYOOFOQNHCN72267DND7CWLHBFBI2L6LB",
+      "explorer": "https://stellar.expert/explorer/testnet/tx/dec700e5e4ca95336ba891d668b17514cf200887014f593bfc8bc6f73287360a"
+    },
+    {
+      "name": "balances-before",
+      "at": "2026-10-18T02:50:07.012Z",
+      "token": "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+      "balances": {
+        "buyer": "100000000000",
+        "seller": "100000000000",
+        "contract": "0"
+      }
+    },
+    {
+      "name": "open-hold",
+      "at": "2026-10-18T02:50:17.065Z",
+      "txHash": "5894e793db50d7005e6852340c8664e4d66e9d06ed064e979dd1d9dacc12e937",
+      "ledger": 5253645,
+      "holdId": 1,
+      "order": "order:20261018024823-a247",
+      "orderHex": "972d809708a223a9ada8bd9b97b4651809ffbf4cbf358b86f6effb42a6b3fcad",
+      "amount": "100000000",
+      "refundAfter": 1792295407,
+      "balances": {
+        "buyer": "99898908872",
+        "seller": "100000000000",
+        "contract": "100000000"
+      },
+      "feeCharged": "1091128",
+      "explorer": "https://stellar.expert/explorer/testnet/tx/5894e793db50d7005e6852340c8664e4d66e9d06ed064e979dd1d9dacc12e937"
+    },
+    {
+      "name": "sign-claim",
+      "at": "2026-10-18T02:50:17.141Z",
+      "claim": {
+        "issuer": "c7d836f7e3f664a721f7d4e77b320a44834214408034a3e2b3b0cfe64df5fcd2",
+        "claim_type": "461dc67f71d6957f2f6f9b872cf4c4f113f79ca3007af51f8ad7701ed22b087a",
+        "subject": "972d809708a223a9ada8bd9b97b4651809ffbf4cbf358b86f6effb42a6b3fcad",
+        "payload_hash": "3feaacf04ecaad51308a1ab58a96a5e3ac399b5806d94038380aaabd0071890e",
+        "payload_encoding": 0,
+        "replay_mode": 1,
+        "nonce": 0,
+        "claim_id": "4d359a5035de086d14ad112b3f8a35d1b1342f7b621d556dba20c6d2f02aea9b",
+        "issued_at": 1792291817,
+        "expires_at": 1792292717
+      },
+      "signatureHex": "e856dd768351c27825cea6c550e568e36d8ccc4f217318d6f459be68ae1107e22d42e50f52e4026406d2b028fec92f5aa5afc44f148f982e552a18b37fd8bd08",
+      "preimageHex": "4346434c0001cee0302d59844d32bdca915c8203dd44b33fbb7edc19051ea37abedf28ecd472ab59a2fc3455e880ecdc05c06a3357422899ef807319388188ce9994df58d672c7d836f7e3f664a721f7d4e77b320a44834214408034a3e2b3b0cfe64df5fcd2461dc67f71d6957f2f6f9b872cf4c4f113f79ca3007af51f8ad7701ed22b087a972d809708a223a9ada8bd9b97b4651809ffbf4cbf358b86f6effb42a6b3fcad3feaacf04ecaad51308a1ab58a96a5e3ac399b5806d94038380aaabd0071890e000100000000000000004d359a5035de086d14ad112b3f8a35d1b1342f7b621d556dba20c6d2f02aea9b000000006ad433e9000000006ad4376d",
+      "payloadUtf8": "{\"order\":\"order:20261018024823-a247\",\"deliveredAt\":\"2026-10-18T02:50:17.065Z\"}",
+      "offChainVerify": "passed"
+    },
+    {
+      "name": "release",
+      "at": "2026-10-18T02:50:38.807Z",
+      "txHash": "121b14f7a37359256aa47271b3b79154641277cd9c979647b4819aa3ad07ed8d",
+      "ledger": 5253647,
+      "holdId": 1,
+      "submittedBy": "GA54W4Z6NFAVXCVZXXJEEF254PRGS2Y7IVRGZKIGNUBTEZDOP2TY2XMM",
+      "balances": {
+        "buyer": "99898908872",
+        "seller": "100099857082",
+        "contract": "0"
+      },
+      "sellerGainStroops": "99857082",
+      "feeCharged": "142918",
+      "explorer": "https://stellar.expert/explorer/testnet/tx/121b14f7a37359256aa47271b3b79154641277cd9c979647b4819aa3ad07ed8d"
+    },
+    {
+      "name": "open-second-hold",
+      "at": "2026-10-18T02:50:58.023Z",
+      "txHash": "0c387b3473897c46d88b17007fab9062585539b0c0fcca91fb8750f5b66ab627",
+      "ledger": 5253652,
+      "holdId": 2,
+      "orderHex": "972d809708a223a9ada8bd9b97b4651809ffbf4cbf358b86f6effb42a6b3fcad",
+      "explorer": "https://stellar.expert/explorer/testnet/tx/0c387b3473897c46d88b17007fab9062585539b0c0fcca91fb8750f5b66ab627"
+    },
+    {
+      "name": "replay",
+      "at": "2026-10-18T02:51:01.479Z",
+      "holdId": 2,
+      "submitted": false,
+      "expected": 1106,
+      "observed": 1106,
+      "errorName": "ClaimAlreadyUsed",
+      "simulationMessage": "❌ error: transaction simulation failed: HostError: Error(Contract, #1106)",
+      "balances": {
+        "buyer": "99798575493",
+        "seller": "100099857082",
+        "contract": "100000000"
+      }
+    }
+  ],
+  "contractId": "CARLTJXQAU7OWERKX6PDAW7QYOOFOQNHCN72267DND7CWLHBFBI2L6LB",
+  "wasm": {
+    "path": "target/wasm32v1-none/release/marketplace_hold.wasm",
+    "bytes": 15940,
+    "sha256": "42f18d38188788e5482a04a07d39416b3b98fd8d511f67eb8bfb5ab0d4791cd4"
+  },
+  "token": "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+  "issuerPublicKeyHex": "c7d836f7e3f664a721f7d4e77b320a44834214408034a3e2b3b0cfe64df5fcd2",
+  "finishedAt": "2026-10-18T02:51:01.479Z",
+  "outcome": "passed",
+  "summary": {
+    "holdReleasedTx": "121b14f7a37359256aa47271b3b79154641277cd9c979647b4819aa3ad07ed8d",
+    "replayExpected": 1106,
+    "replayObserved": 1106,
+    "openHoldsLeftOpen": [
+      2
+    ],
+    "note": "Hold #2 stays open on purpose; its buyer can refund after refundAfter."
+  }
+}
