@@ -136,3 +136,22 @@ describe('verifyClaim input validation', () => {
     expectClaimError(() => verifyClaim(claim, { ...ctx, contractId: 'C' }, signature, { now }), 'InvalidInput');
   });
 });
+
+describe('verifyClaim edge cases', () => {
+  it('accepts a claim checked before its issued_at (issuer and ledger clocks differ)', () => {
+    expect(() => verifyClaim(claim, ctx, signature, { now: T0 - 1n })).not.toThrow();
+  });
+
+  it('accepts an untyped unique-id claim whose nonce is the number 0, and refuses any other nonce', () => {
+    const unique = makeClaim({ replay: { mode: 'unique-id', claimId: sha256('claim-qa-0') } });
+    const sig = signClaim(unique, ctx, secret).signature;
+    const withNumberZero = { ...unique, replay: { ...unique.replay, nonce: 0 } } as unknown as Claim;
+    expect(() => verifyClaim(withNumberZero, ctx, sig, { now })).not.toThrow();
+    const withNonce = { ...unique, replay: { ...unique.replay, nonce: 5 } } as unknown as Claim;
+    expectClaimError(() => verifyClaim(withNonce, ctx, sig, { now }), 'InvalidReplayFields');
+  });
+
+  it('reports a malformed issuer key as InvalidInput, not a raw library error', () => {
+    expectClaimError(() => verifyClaim(makeClaim({ issuer: new Uint8Array(31) }), ctx, signature, { now }), 'InvalidInput');
+  });
+});

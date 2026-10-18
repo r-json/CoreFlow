@@ -48,7 +48,8 @@ export function assertReplayFields(claim: Claim): void {
       throw new ClaimError('InvalidReplayFields', 'sequence claims must not carry a claim_id');
     }
   }
-  if (replay?.mode === 'unique-id' && replay.nonce !== undefined && replay.nonce !== 0n) {
+  // JSON and plain JavaScript callers pass 0 as a number; `0 !== 0n` is true.
+  if (replay?.mode === 'unique-id' && replay.nonce !== undefined && replay.nonce !== 0n && replay.nonce !== 0) {
     throw new ClaimError('InvalidReplayFields', 'unique-id claims must carry nonce 0');
   }
 }
