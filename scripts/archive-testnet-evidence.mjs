@@ -16,14 +16,23 @@
  * never dropped, and the script exits non-zero.
  *
  * Usage: node scripts/archive-testnet-evidence.mjs
+ *        node scripts/archive-testnet-evidence.mjs --out <dir> --from-evidence <e2e.json>...
+ *
+ * --from-evidence reads the transaction hashes from end-to-end evidence files
+ * (each step's `txHash`, labelled `<runId>:<step name>`) instead of
+ * all_50_hashes.txt.
  */
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 
 const HORIZON = 'https://horizon-testnet.stellar.org';
 const NETWORK_PASSPHRASE = 'Test SDF Network ; September 2015';
-const SOURCE = 'docs/evidence/all_50_hashes.txt';
-const OUT_DIR = 'docs/evidence/testnet-archive';
+const args = process.argv.slice(2);
+const flagIndex = args.indexOf('--from-evidence');
+const evidenceFiles = flagIndex >= 0 ? args.slice(flagIndex + 1).filter((a) => !a.startsWith('--')) : [];
+const outIndex = args.indexOf('--out');
+const SOURCE = evidenceFiles.length > 0 ? evidenceFiles.join(', ') : 'docs/evidence/all_50_hashes.txt';
+const OUT_DIR = outIndex >= 0 ? args[outIndex + 1] : 'docs/evidence/testnet-archive';
 
 async function getJson(path) {
   for (let attempt = 1; attempt <= 3; attempt++) {
@@ -48,15 +57,31 @@ async function getAllRecords(path) {
   return records;
 }
 
-const entries = readFileSync(SOURCE, 'utf8')
-  .split('\n')
-  .map((line) => line.trim())
-  .filter(Boolean)
-  .map((line) => {
-    const [hash, label] = line.split('\t');
-    if (!/^[0-9a-f]{64}$/.test(hash)) throw new Error(`malformed hash line: ${line}`);
-    return { hash, label: label ?? 'unlabelled' };
+function fromHashList(path) {
+  return readFileSync(path, 'utf8')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [hash, label] = line.split('\t');
+      if (!/^[0-9a-f]{64}$/.test(hash)) throw new Error(`malformed hash line: ${line}`);
+      return { hash, label: label ?? 'unlabelled' };
+    });
+}
+
+function fromEvidence(paths) {
+  return paths.flatMap((path) => {
+    const run = JSON.parse(readFileSync(path, 'utf8'));
+    return run.steps
+      .filter((step) => typeof step.txHash === 'string')
+      .map((step) => {
+        if (!/^[0-9a-f]{64}$/.test(step.txHash)) throw new Error(`malformed txHash in ${path}: ${step.txHash}`);
+        return { hash: step.txHash, label: `${run.runId}:${step.name}` };
+      });
   });
+}
+
+const entries = evidenceFiles.length > 0 ? fromEvidence(evidenceFiles) : fromHashList(SOURCE);
 
 mkdirSync(OUT_DIR, { recursive: true });
 const fetchedAt = new Date().toISOString();
