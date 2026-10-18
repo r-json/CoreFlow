@@ -29,8 +29,12 @@ tests assert this.
 
 ## Use in a TypeScript test suite
 
+Not on the npm registry yet. From a clone of the tagged repository:
+
 ```bash
-npm install --save-dev @coreflow/test-vectors
+cd CoreFlow/packages/test-vectors && npm ci && npm pack
+# then, in your project:
+npm install --save-dev /path/to/CoreFlow/packages/test-vectors/coreflow-test-vectors-0.1.0-alpha.tgz
 ```
 
 ```js

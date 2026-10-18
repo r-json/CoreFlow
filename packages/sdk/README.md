@@ -10,8 +10,14 @@ Wire format and error codes: [claim-format.md](../../docs/kit/claim-format.md) (
 
 ## Install
 
+The package is not on the npm registry yet. Build it from the tagged
+repository and install the tarball:
+
 ```sh
-npm install @coreflow/sdk
+git clone --branch v0.1.0-alpha https://github.com/r-json/CoreFlow.git
+cd CoreFlow/packages/sdk && npm ci && npm run build && npm pack
+# then, in your project:
+npm install /path/to/CoreFlow/packages/sdk/coreflow-sdk-0.1.0-alpha.tgz
 ```
 
 ESM only. Works in Node 20+ and in browsers (the package source uses no Node built-ins).
