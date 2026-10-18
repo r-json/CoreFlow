@@ -13,7 +13,10 @@ export default defineConfig({
     // *.integration.test.ts is excluded too: those need a real PostgreSQL database
     // and have their own config (vitest.integration.config.ts). Keeping them out
     // means the unit total can never be mistaken for database validation.
-    exclude: ['node_modules', 'e2e', '.next', 'dist', '**/*.integration.test.ts'],
+    //
+    // packages/ and examples/ are separate packages with their own dependencies
+    // and test runners; each is tested from its own directory.
+    exclude: ['node_modules', 'e2e', '.next', 'dist', '**/*.integration.test.ts', 'packages/**', 'examples/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json-summary', 'html'],
