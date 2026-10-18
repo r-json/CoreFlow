@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Keypair } from '@stellar/stellar-base';
-import { ClaimError, encodeClaim, issuerPublicKey, sha256, signClaim, verifyClaim } from '../src/index.js';
+import { ClaimError, encodeClaim, issuerPublicKey, sha256, signClaim, toHex, verifyClaim } from '../src/index.js';
 import { ctx, expectClaimError, issuer, keypair, makeClaim, secret, seed, T0 } from './fixtures.js';
 
 describe('issuerPublicKey', () => {
@@ -62,5 +62,20 @@ describe('signClaim', () => {
     expectClaimError(() => signClaim(claim, { ...ctx, contractId: 'x' }, secret), 'InvalidInput');
     expectClaimError(() => signClaim(claim, ctx, 'not a secret'), 'InvalidInput');
     expect(() => signClaim(claim, ctx, new Uint8Array(5))).toThrow(ClaimError);
+  });
+});
+
+describe('signClaim with a Keypair from another stellar-base copy', () => {
+  it('accepts a keypair-shaped object and signs identically', () => {
+    const claim = makeClaim();
+    const own = signClaim(claim, ctx, secret).signature;
+    // Simulates a Keypair created by a different installed copy of the library.
+    const foreign = { canSign: () => true, rawSecretKey: () => Buffer.from(seed), publicKey: () => keypair.publicKey() };
+    expect(toHex(signClaim(claim, ctx, foreign as never).signature)).toBe(toHex(own));
+  });
+
+  it('refuses a keypair-shaped object without a secret', () => {
+    const foreign = { canSign: () => false, rawSecretKey: () => { throw new Error('no secret'); } };
+    expectClaimError(() => signClaim(makeClaim(), ctx, foreign as never), 'InvalidInput');
   });
 });

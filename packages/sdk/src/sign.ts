@@ -23,6 +23,17 @@ function toKeypair(secret: IssuerSecret): Keypair {
     if (!secret.canSign()) throw new ClaimError('InvalidInput', 'issuerSecret: the Keypair has no secret key');
     return secret;
   }
+  // A Keypair from another copy of @stellar/stellar-base (an app usually has
+  // its own) fails `instanceof`. Accept it by shape and rebuild it locally.
+  const foreign = secret as { canSign?: unknown; rawSecretKey?: unknown } | null;
+  if (typeof foreign?.canSign === 'function' && typeof foreign.rawSecretKey === 'function') {
+    if (!(foreign.canSign as () => boolean).call(foreign)) {
+      throw new ClaimError('InvalidInput', 'issuerSecret: the Keypair has no secret key');
+    }
+    const seed = new Uint8Array((foreign.rawSecretKey as () => Uint8Array).call(foreign));
+    if (seed.length !== 32) throw new ClaimError('InvalidInput', 'issuerSecret: the Keypair seed must be 32 bytes');
+    return Keypair.fromRawEd25519Seed(seed as never);
+  }
   throw new ClaimError('InvalidInput', 'issuerSecret: expected an S... string, a 32-byte seed or a Keypair');
 }
 
