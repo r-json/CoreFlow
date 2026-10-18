@@ -36,6 +36,14 @@ const ATTEMPTS = [
     error: "Failed to parse argument 'claim': unknown variant '1792289877', expected one of bool, void, error, u32, ...",
     cause: 'u64 claim fields were passed to stellar-cli as JSON strings instead of numbers. Fixed in the script.',
   },
+  {
+    runId: '20261018021153-0171',
+    startedAt: '2026-10-18T02:11:53Z',
+    contractId: null,
+    abortedAtStep: 'b (stellar contract build), after the throwaway accounts were funded; no contract deployed',
+    error: 'Disk quota exceeded (os error 122) while compiling stellar-xdr',
+    cause: 'The verification machine ran out of temporary disk space during a run from a fresh clone; not a defect in the example. The same fresh clone passed on retry (run 20261018021549-c5e5).',
+  },
 ];
 
 const PROBE = {
@@ -56,14 +64,16 @@ for (const a of ATTEMPTS) {
   // contract creation, ...), as Horizon reports them; no guessing which is which.
   const txs = await horizon(`/accounts/${admin}/transactions?order=asc&limit=20`);
   let hold = null;
-  try {
-    hold = JSON.parse(cli(['contract', 'invoke', '--id', a.contractId, '--source', admin, '--network', 'testnet', '--send=no', '--', 'get_hold', '--hold_id', '1']));
-  } catch (e) {
-    hold = { error: String(e.stderr || e.message).split('\n').slice(-3).join(' ').trim() };
+  if (a.contractId) {
+    try {
+      hold = JSON.parse(cli(['contract', 'invoke', '--id', a.contractId, '--source', admin, '--network', 'testnet', '--send=no', '--', 'get_hold', '--hold_id', '1']));
+    } catch (e) {
+      hold = { error: String(e.stderr || e.message).split('\n').slice(-3).join(' ').trim() };
+    }
   }
   records.push({
     ...a,
-    contractLink: `${EXPLORER}/contract/${a.contractId}`,
+    contractLink: a.contractId ? `${EXPLORER}/contract/${a.contractId}` : null,
     admin,
     adminTransactions: (txs?._embedded.records ?? []).map((t) => ({
       hash: t.hash,
@@ -80,7 +90,7 @@ const probeTx = await horizon(`/transactions/${PROBE.txHash}`);
 const out = {
   description:
     'End-to-end attempts that aborted before completing, recorded next to the successful run. ' +
-    'Their original -failed.json files were deleted during the run; this record is rebuilt from ' +
+    'Their original -failed.json files were deleted during verification; this record is rebuilt from ' +
     'Testnet state and the runs’ console output.',
   generatedBy: 'examples/marketplace-hold/scripts/record-aborted-runs.mjs',
   generatedAt: new Date().toISOString(),
