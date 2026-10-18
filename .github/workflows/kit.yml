@@ -57,6 +57,43 @@ jobs:
       - name: Mutation check
         run: bash scripts/mutation-check.sh
 
+  marketplace-hold:
+    name: examples/marketplace-hold (Rust)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: examples/marketplace-hold
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: '1.97.1'
+          targets: wasm32v1-none
+          components: clippy, rustfmt
+
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            examples/marketplace-hold/contracts/marketplace-hold/target
+          key: kit-hold-${{ runner.os }}-${{ hashFiles('examples/marketplace-hold/contracts/marketplace-hold/Cargo.lock') }}
+
+      - name: Format, clippy, tests
+        working-directory: examples/marketplace-hold/contracts/marketplace-hold
+        run: |
+          cargo fmt --check
+          cargo clippy --all-targets -- -D warnings
+          cargo test
+
+      - name: Mutation check
+        run: bash scripts/mutation-check.sh
+
   sdk:
     name: '@coreflow/sdk (TypeScript)'
     runs-on: ubuntu-latest
