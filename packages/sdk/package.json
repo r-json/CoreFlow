@@ -1,0 +1,51 @@
+{
+  "name": "@coreflow/sdk",
+  "version": "0.1.0-alpha",
+  "description": "Encode, sign and verify signed claims for Soroban contracts.",
+  "type": "module",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/r-json/CoreFlow.git",
+    "directory": "packages/sdk"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "keywords": [
+    "stellar",
+    "soroban",
+    "ed25519",
+    "signed-claims",
+    "attestation"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "mutation": "node scripts/mutation-check.mjs"
+  },
+  "dependencies": {
+    "@stellar/stellar-base": "^15.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.0",
+    "typescript": "~5.6.3",
+    "vitest": "^4.1.8"
+  }
+}
