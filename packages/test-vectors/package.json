@@ -1,0 +1,37 @@
+{
+  "name": "@coreflow/test-vectors",
+  "version": "0.1.0-alpha",
+  "description": "Shared test vectors and a mock issuer for the CoreFlow signed claim format",
+  "type": "module",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/r-json/CoreFlow.git",
+    "directory": "packages/test-vectors"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "exports": {
+    ".": "./src/index.mjs",
+    "./vectors/claim-v1.json": "./vectors/claim-v1.json"
+  },
+  "files": [
+    "src",
+    "vectors",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "generate": "node scripts/generate.mjs",
+    "check": "node scripts/generate.mjs --check",
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@noble/ed25519": "^3.2.0"
+  },
+  "devDependencies": {
+    "@stellar/stellar-base": "^15.0.0"
+  }
+}
