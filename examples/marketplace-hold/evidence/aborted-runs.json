@@ -1,7 +1,7 @@
 {
-  "description": "End-to-end attempts that aborted before completing, recorded next to the successful run. Their original -failed.json files were deleted during the run; this record is rebuilt from Testnet state and the runs’ console output.",
+  "description": "End-to-end attempts that aborted before completing, recorded next to the successful run. Their original -failed.json files were deleted during verification; this record is rebuilt from Testnet state and the runs’ console output.",
   "generatedBy": "examples/marketplace-hold/scripts/record-aborted-runs.mjs",
-  "generatedAt": "2026-10-18T02:07:31.450Z",
+  "generatedAt": "2026-10-18T02:19:36.643Z",
   "network": "testnet",
   "attempts": [
     {
@@ -80,6 +80,26 @@
         "status": 0,
         "token": "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC"
       }
+    },
+    {
+      "runId": "20261018021153-0171",
+      "startedAt": "2026-10-18T02:11:53Z",
+      "contractId": null,
+      "abortedAtStep": "b (stellar contract build), after the throwaway accounts were funded; no contract deployed",
+      "error": "Disk quota exceeded (os error 122) while compiling stellar-xdr",
+      "cause": "The verification machine ran out of temporary disk space during a run from a fresh clone; not a defect in the example. The same fresh clone passed on retry (run 20261018021549-c5e5).",
+      "contractLink": null,
+      "admin": "GDCWF6EH5L7YA4PZ2WHHBFSX5OCTWXX3Y722H6FCLH3CK5M2OYDKXQA6",
+      "adminTransactions": [
+        {
+          "hash": "53cd965a24b195a269278222d1b420e3b74a90b6497e86ede665c58401b36c14",
+          "ledger": 5253186,
+          "createdAt": "2026-10-18T02:11:57Z",
+          "successful": true,
+          "link": "https://stellar.expert/explorer/testnet/tx/53cd965a24b195a269278222d1b420e3b74a90b6497e86ede665c58401b36c14"
+        }
+      ],
+      "holdOneStateNow": null
     }
   ],
   "probe": {
