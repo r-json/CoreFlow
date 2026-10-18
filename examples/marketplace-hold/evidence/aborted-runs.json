@@ -1,0 +1,92 @@
+{
+  "description": "End-to-end attempts that aborted before completing, recorded next to the successful run. Their original -failed.json files were deleted during the run; this record is rebuilt from Testnet state and the runs’ console output.",
+  "generatedBy": "examples/marketplace-hold/scripts/record-aborted-runs.mjs",
+  "generatedAt": "2026-10-18T02:07:31.450Z",
+  "network": "testnet",
+  "attempts": [
+    {
+      "runId": "20261018020012-3f0a",
+      "startedAt": "2026-10-18T02:00:12Z",
+      "contractId": "CDEFI7BA7GWL5UDQNLUAKEO5GDZJDCLJIQH2ZBOOGXFU4SM37CDGBAIW",
+      "abortedAtStep": "e (sign delivery claim)",
+      "error": "issuerSecret: expected an S... string, a 32-byte seed or a Keypair",
+      "cause": "The script passed a Keypair from a second @stellar/stellar-base copy; the SDK did not recognise it. Fixed by passing the raw seed.",
+      "contractLink": "https://stellar.expert/explorer/testnet/contract/CDEFI7BA7GWL5UDQNLUAKEO5GDZJDCLJIQH2ZBOOGXFU4SM37CDGBAIW",
+      "admin": "GBSIQZ4V7J36QTCFSOP24H74CIT4PP5YU72UBZOXA445EBWQAEWWJ4GQ",
+      "adminTransactions": [
+        {
+          "hash": "a2041f4f31b38789793697143d01fe0bcaf0ae06a69a9af541dc2378907f1b07",
+          "ledger": 5253046,
+          "createdAt": "2026-10-18T02:00:17Z",
+          "successful": true,
+          "link": "https://stellar.expert/explorer/testnet/tx/a2041f4f31b38789793697143d01fe0bcaf0ae06a69a9af541dc2378907f1b07"
+        },
+        {
+          "hash": "8a92c70c31fdc5326345c0a2fd7fad5554b1805d469620e1d7252acf26a7cf0e",
+          "ledger": 5253052,
+          "createdAt": "2026-10-18T02:00:47Z",
+          "successful": true,
+          "link": "https://stellar.expert/explorer/testnet/tx/8a92c70c31fdc5326345c0a2fd7fad5554b1805d469620e1d7252acf26a7cf0e"
+        },
+        {
+          "hash": "4aad2d8345a9ccf2c8c2d25f7fa313d9443eb442d595ac78345af115c986fefd",
+          "ledger": 5253056,
+          "createdAt": "2026-10-18T02:01:07Z",
+          "successful": true,
+          "link": "https://stellar.expert/explorer/testnet/tx/4aad2d8345a9ccf2c8c2d25f7fa313d9443eb442d595ac78345af115c986fefd"
+        }
+      ],
+      "holdOneStateNow": {
+        "amount": "100000000",
+        "buyer": "GBTBK26675ZIWXE4CZLHIOXBUZTOEBXNBBD7V5EMCF57LYHQOHVNO7ZG",
+        "order": "c777d4aa0f374233e5973654bc53bf10cd663cb17b669a7417f8ecc482ed9dd2",
+        "refund_after": 1792292484,
+        "seller": "GCEJKELQEHMHW5M3QYNQTLFRGTJKYTZAAJ3Y47EVP3KB4HGVPEVQBXWU",
+        "status": 0,
+        "token": "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC"
+      }
+    },
+    {
+      "runId": "20261018020145-5307",
+      "startedAt": "2026-10-18T02:01:45Z",
+      "contractId": "CAH3Z2UTN2ATVQ4MHSPZ7OJ7XTAZLWU5HUDF7JX2NFZ7MXNBXL6GBHKH",
+      "abortedAtStep": "f (release), at argument parsing; nothing submitted",
+      "error": "Failed to parse argument 'claim': unknown variant '1792289877', expected one of bool, void, error, u32, ...",
+      "cause": "u64 claim fields were passed to stellar-cli as JSON strings instead of numbers. Fixed in the script.",
+      "contractLink": "https://stellar.expert/explorer/testnet/contract/CAH3Z2UTN2ATVQ4MHSPZ7OJ7XTAZLWU5HUDF7JX2NFZ7MXNBXL6GBHKH",
+      "admin": "GCSLN5SU46STGH7YXV6AMCO6UXGFHIQQV57OJ6ZP3EPHLU4S65TIQUSO",
+      "adminTransactions": [
+        {
+          "hash": "3c8efc670e50ff2b31fe4ce8b2f0fa8b09c4aacb6ce2cf3eb5ece7274742c054",
+          "ledger": 5253066,
+          "createdAt": "2026-10-18T02:01:57Z",
+          "successful": true,
+          "link": "https://stellar.expert/explorer/testnet/tx/3c8efc670e50ff2b31fe4ce8b2f0fa8b09c4aacb6ce2cf3eb5ece7274742c054"
+        },
+        {
+          "hash": "1124b0d21dbc894022e9a0eaab8507526641333f5d2aedf5f35301c37ef0c495",
+          "ledger": 5253072,
+          "createdAt": "2026-10-18T02:02:27Z",
+          "successful": true,
+          "link": "https://stellar.expert/explorer/testnet/tx/1124b0d21dbc894022e9a0eaab8507526641333f5d2aedf5f35301c37ef0c495"
+        }
+      ],
+      "holdOneStateNow": {
+        "amount": "100000000",
+        "buyer": "GB6OEX26QECQ23ENKYK74622MTWEW7VDNP74BH2BM4TLY7QFAXBJ5HGE",
+        "order": "15791e9f391d71e6ce048fe368454a05b8907db78c6f489156cbc9deecbed668",
+        "refund_after": 1792292551,
+        "seller": "GDRJMBWN7NTI6AZ765P34SZSUF2GEDEHI4WLA35ZWECBXK6WBWIZWVWX",
+        "status": 0,
+        "token": "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC"
+      }
+    }
+  ],
+  "probe": {
+    "purpose": "Before the first attempt, one 1 XLM payment between two throwaway accounts to inspect how stellar-cli reports transaction hashes.",
+    "txHash": "48b92ed6186c75960be8b489702c4d83d704d95734a6ede6efbc648f4c026c2c",
+    "successful": true,
+    "ledger": 5253027,
+    "link": "https://stellar.expert/explorer/testnet/tx/48b92ed6186c75960be8b489702c4d83d704d95734a6ede6efbc648f4c026c2c"
+  }
+}
