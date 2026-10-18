@@ -94,7 +94,7 @@ with the named error at the first one that does not hold:
 1. **Issuer registered** — `issuer` is in the contract's issuer registry → `IssuerNotRegistered`.
 2. **Window** — `expires_at > issued_at` → `InvalidWindow`.
 3. **Not expired** — ledger timestamp `<= expires_at` → `ClaimExpired`.
-4. **Replay fields** — sequence mode requires `claim_id` all zero; unique-id mode requires `nonce == 0` → `InvalidReplayFields`.
+4. **Replay fields and encoding** — sequence mode requires `claim_id` all zero; unique-id mode requires `nonce == 0`; `payload_encoding` must be 0 or 1 → `InvalidReplayFields`.
 5. **Replay** — sequence: `nonce == expected` → `NonceMismatch`; unique-id: not previously used → `ClaimAlreadyUsed`.
 6. **Signature** — Ed25519 over the preimage, rebuilt by the verifier with its own `network_id` and `contract`.
 7. **Consume** — store `nonce + 1` (overflow → `NonceOverflow`) or record the `claim_id`.
@@ -119,7 +119,7 @@ contract's own codes.
 | 1101 | `IssuerNotRegistered` | The signing key is not registered on this contract; register it or sign with a registered key. |
 | 1102 | `InvalidWindow` | `expires_at` must be later than `issued_at`. |
 | 1103 | `ClaimExpired` | Ask the issuer for a fresh claim. |
-| 1104 | `InvalidReplayFields` | Sequence claims need a zero `claim_id`; unique-id claims need `nonce = 0`. |
+| 1104 | `InvalidReplayFields` | Sequence claims need a zero `claim_id`; unique-id claims need `nonce = 0`; `payload_encoding` must be 0 or 1. (Off-chain, `@coreflow/sdk` reports an out-of-range encoding as `InvalidInput`, since its typed API cannot express one.) |
 | 1105 | `NonceMismatch` | Read the expected nonce for this scope and sign with it. |
 | 1106 | `ClaimAlreadyUsed` | This claim was already accepted; it cannot be submitted twice. |
 | 1107 | `NonceOverflow` | The sequence for this scope is exhausted; use a new subject. |
