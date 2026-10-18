@@ -1,0 +1,143 @@
+name: CoreFlow Kit CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  attest:
+    name: coreflow-attest (Rust)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/attest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Pinned by packages/attest/rust-toolchain.toml. stellar-cli refuses to
+      # build contracts with rustc 1.91.0, so the kit uses a later stable.
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: '1.97.1'
+          targets: wasm32v1-none
+          components: clippy, rustfmt
+
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            packages/attest/target
+          key: kit-attest-${{ runner.os }}-${{ hashFiles('packages/attest/Cargo.lock') }}
+
+      - name: Format
+        run: cargo fmt --check
+
+      - name: Clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Tests (including shared vectors)
+        run: cargo test --all-features
+
+      # soroban-sdk 29's build script refuses wasm builds outside stellar-cli
+      # unless the build system declares spec-shaking support; a library
+      # crate only needs to prove it compiles for the target.
+      - name: Compiles for wasm32v1-none
+        run: cargo check --target wasm32v1-none --release
+        env:
+          SOROBAN_SDK_BUILD_SYSTEM_SUPPORTS_SPEC_SHAKING_V2: '1'
+
+      # Deletes each verification check in turn and requires the suite to fail.
+      - name: Mutation check
+        run: bash scripts/mutation-check.sh
+
+  marketplace-hold:
+    name: examples/marketplace-hold (Rust)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: examples/marketplace-hold
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: '1.97.1'
+          targets: wasm32v1-none
+          components: clippy, rustfmt
+
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            examples/marketplace-hold/contracts/marketplace-hold/target
+          key: kit-hold-${{ runner.os }}-${{ hashFiles('examples/marketplace-hold/contracts/marketplace-hold/Cargo.lock') }}
+
+      - name: Format, clippy, tests
+        working-directory: examples/marketplace-hold/contracts/marketplace-hold
+        run: |
+          cargo fmt --check
+          cargo clippy --all-targets -- -D warnings
+          cargo test
+
+      - name: Mutation check
+        run: bash scripts/mutation-check.sh
+
+  sdk:
+    name: '@coreflow/sdk (TypeScript)'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/sdk
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: packages/sdk/package-lock.json
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - name: Mutation check
+        run: npm run mutation
+
+  test-vectors:
+    name: '@coreflow/test-vectors'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/test-vectors
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: packages/test-vectors/package-lock.json
+
+      - run: npm ci
+      - name: Committed vectors are up to date
+        run: npm run check
+      - run: npm test

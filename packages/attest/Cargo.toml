@@ -1,0 +1,45 @@
+[package]
+name = "coreflow-attest"
+version = "0.1.0-alpha"
+edition = "2021"
+rust-version = "1.91"
+license = "Apache-2.0"
+description = "Verify issuer-signed off-chain claims inside Soroban contracts: Ed25519 claims, issuer registry, replay protection."
+repository = "https://github.com/r-json/CoreFlow"
+readme = "README.md"
+keywords = ["soroban", "stellar", "attestation", "ed25519", "claims"]
+categories = ["cryptography", "no-std"]
+
+[lib]
+crate-type = ["rlib"]
+
+[features]
+# Test helpers (`MockIssuer`, claim builders). TEST ONLY: the keys it derives
+# are public. Never enable in a contract build.
+testutils = ["soroban-sdk/testutils", "dep:ed25519-dalek", "dep:sha2"]
+
+[dependencies]
+soroban-sdk = "=29.0.1"
+ed25519-dalek = { version = "2", optional = true }
+sha2 = { version = "0.10", optional = true }
+
+[dev-dependencies]
+soroban-sdk = { version = "=29.0.1", features = ["testutils", "alloc"] }
+ed25519-dalek = "2"
+sha2 = "0.10"
+serde_json = "1"
+hex = "0.4"
+# Enables the `testutils` feature of this crate for the integration tests.
+coreflow-attest = { path = ".", features = ["testutils"] }
+
+# Host contracts need these release settings for `stellar contract build`; the
+# profile only takes effect in the final contract crate, so it is mirrored here.
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true
+overflow-checks = true
+
+# The crate is its own workspace root so it never joins a parent workspace.
+[workspace]
