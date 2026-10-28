@@ -11,15 +11,21 @@
 > **0.1.0-alpha — unaudited, Testnet only.** The API and the claim format may
 > change before 1.0. Do not use it to protect real value.
 
+**Who it is for:** Soroban developers whose contract must act on a fact that an
+off-chain service or device knows (a delivery, an inspection, a sensor reading)
+and who would otherwise write, test and maintain their own Ed25519 verification,
+replay protection and key rotation.
+
 ---
 
 ## The problem
 
-Many Soroban contracts need to act on a fact that happens off-chain: a parcel was
+Some Soroban contracts need to act on a fact that happens off-chain: a parcel was
 delivered, an inspection passed, a sensor crossed a threshold. The party that
 knows the fact is usually a backend service or a device — not a Stellar account
-that can sign transactions. So each team writes its own `ed25519_verify` code,
-and the same mistakes recur:
+that can sign transactions. Without a library, each team writes its own
+`ed25519_verify` code, and each has to avoid the same traps (all described in
+the [security model](docs/kit/security-model.md)):
 
 - **The signed bytes drift.** The TypeScript signer and the Rust contract serialize the message differently, and every signature fails — or worse, a field silently drops out of what is signed.
 - **Replays.** A claim accepted once is accepted again, on the same contract, on another deployment, or on another network.
@@ -38,8 +44,26 @@ shared test vectors, so you can stop re-deriving it.
 | [`coreflow-attest`](packages/attest) | Rust crate for your Soroban contract: `verify_claim`, the issuer registry (register, revoke, rotate) and replay protection in two modes (sequence and unique-id). soroban-sdk 29. |
 | [`@coreflow/sdk`](packages/sdk) | TypeScript, Node and browser: build the 256-byte claim, sign it on the issuer backend, pre-verify it before submitting, and turn contract error codes into readable errors. |
 | [`@coreflow/test-vectors`](packages/test-vectors) | Shared vectors (6 valid, 10 invalid) from an independent implementation, plus a mock issuer for TypeScript tests. The Rust mock issuer is `coreflow-attest`'s `testutils` feature. |
+| [`apps/workbench`](apps/workbench) | A browser tool: compose and sign claims with test keys, inspect and diff the signed bytes, verify step by step with the on-chain error codes, run the shared vectors, look up errors and re-verify the recorded Testnet claims. Runs locally, makes no network requests. |
 | [`examples/marketplace-hold`](examples/marketplace-hold) | A complete contract built with the kit: a buyer's payment is held until a signed delivery claim verifies, with an end-to-end Testnet script. |
 | [`docs/kit`](docs/kit) | [Claim format spec](docs/kit/claim-format.md) · [security model](docs/kit/security-model.md) · [key rotation runbook](docs/kit/key-rotation.md) · [when not to use this](docs/kit/when-not-to-use.md) |
+
+## Try it in the browser (no Rust, no deployment)
+
+The Workbench needs only Node.js 20+. It is newer than the `v0.1.0-alpha` tag,
+so run it from a clone of the repository rather than the tag:
+
+```bash
+git clone https://github.com/r-json/CoreFlow.git
+cd CoreFlow/apps/workbench
+npm run setup   # builds packages/sdk, then installs the Workbench
+npm run dev     # open http://localhost:5173
+```
+
+Then follow the five-minute tour on its first page: sign a delivery claim with
+a throwaway key, watch it fail with `ClaimExpired` (1103) when you move the
+clock, flip one byte and see the diff point at the field, and re-verify a claim
+from a recorded Testnet run. Details: [apps/workbench](apps/workbench).
 
 ## Quickstart
 
@@ -175,8 +199,21 @@ one contract, so the relayer — or anyone — can submit it without being trust
 - **Binding.** Every claim is bound to the network passphrase and the verifying contract's address; a claim signed for Testnet, or for another contract, fails.
 - **Expiry.** `expires_at` is inside the signed bytes and checked against the ledger timestamp.
 - **Key rotation.** Issuer keys live in an on-chain registry with `register`, `revoke` and atomic `rotate`. See the [rotation runbook](docs/kit/key-rotation.md).
-- **Tests that fail when a check is deleted.** CI runs a mutation check on every package: each check is removed in turn and the suite must fail. `coreflow-attest`: 16/16 mutants killed; `@coreflow/sdk`: 7/7; `marketplace-hold`: 12/12.
+- **Tests that fail when a check is deleted.** CI runs a mutation check on every package: each check is removed in turn and the suite must fail. `coreflow-attest`: 16/16 mutants killed; `@coreflow/sdk`: 8/8; `marketplace-hold`: 12/12.
 - **Audit status: not audited.** 0.1.0-alpha has had no external security audit. Use it on Testnet only and do not use it to protect real value. Details: [security model](docs/kit/security-model.md).
+
+## CoreFlow Kit and the CoreFlow payroll app
+
+This repository started as **CoreFlow**, a payroll and B2B escrow application
+(the Next.js app in `src/`, the `contracts/core-flow` Soroban contract and the
+docs under `docs/` outside `docs/kit`). Building it meant solving signed
+off-chain attestations on Soroban, and **CoreFlow Kit** is that work turned into
+a reusable, independently tested toolkit with its own claim format.
+
+The kit does not depend on the payroll app, and the payroll app does not use the
+kit: its contract has its own claim layout and targets soroban-sdk 20.5.0. The
+payroll app stays here as a reference application. [docs/README.md](docs/README.md)
+separates the two sets of documents.
 
 ## Roadmap
 
@@ -190,6 +227,11 @@ one contract, so the relayer — or anyone — can submit it without being trust
 - Security model, key rotation runbook, "when not to use" guide
 - CI with mutation checks and a gitleaks secret scan
 
+**Since 0.1.0-alpha (not yet tagged)**
+
+- `apps/workbench`: the browser tool described above, with unit, page and end-to-end browser tests in CI
+- `@coreflow/sdk`: `claimToJSON` / `claimFromJSON`, `decodePreimage`, `comparePreimages`, `verifyPreimage`, `identifyNetwork`, issuer strkey helpers
+
 **Planned**
 
 - Publish to npm and crates.io
@@ -200,7 +242,12 @@ one contract, so the relayer — or anyone — can submit it without being trust
 - Helpers for XDR-encoded payloads
 - A registry timelock option and pruning of expired unique-id markers
 - A Scaffold Stellar template
+- A Workbench mode that reads a deployed Testnet contract (issuer registry, next nonce) and simulates a submission through a public RPC, without sending anything
 - An external security audit, before any 1.0 or Mainnet guidance
+
+The proposed next increment, v0.2.0-alpha, is described in
+[docs/kit/roadmap.md](docs/kit/roadmap.md). What exists today, and how to
+check it, is in [docs/kit/evidence.md](docs/kit/evidence.md).
 
 ## Contributing
 
@@ -210,6 +257,7 @@ Issues and pull requests are welcome. Before opening a PR:
 (cd packages/attest && cargo fmt --check && cargo clippy --all-targets --all-features -- -D warnings && cargo test --all-features && bash scripts/mutation-check.sh)
 (cd packages/sdk && npm ci && npm run typecheck && npm test && npm run mutation)
 (cd packages/test-vectors && npm ci && npm run check && npm test)
+(cd apps/workbench && npm run setup && npm run typecheck && npm run format:check && npm test && npm run build && npm run e2e)
 ```
 
 A change to the claim format needs a spec update in `docs/kit/claim-format.md`,

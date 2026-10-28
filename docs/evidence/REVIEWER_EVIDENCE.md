@@ -1,5 +1,9 @@
 # CoreFlow — Reviewer Evidence
 
+> **Scope:** this document describes the CoreFlow payroll app (the reference
+> application in `src/` and `contracts/core-flow`), not CoreFlow Kit. For the kit,
+> start at the [root README](../../README.md) and [docs/README.md](../README.md).
+
 Everything below is reproducible from this repository. Where a claim is about
 on-chain state, the verification command is given so it can be checked
 independently rather than taken on trust.
