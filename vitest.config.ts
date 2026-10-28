@@ -14,9 +14,18 @@ export default defineConfig({
     // and have their own config (vitest.integration.config.ts). Keeping them out
     // means the unit total can never be mistaken for database validation.
     //
-    // packages/ and examples/ are separate packages with their own dependencies
-    // and test runners; each is tested from its own directory.
-    exclude: ['node_modules', 'e2e', '.next', 'dist', '**/*.integration.test.ts', 'packages/**', 'examples/**'],
+    // packages/, examples/ and apps/ are separate packages with their own
+    // dependencies and test runners; each is tested from its own directory.
+    exclude: [
+      'node_modules',
+      'e2e',
+      '.next',
+      'dist',
+      '**/*.integration.test.ts',
+      'packages/**',
+      'examples/**',
+      'apps/**',
+    ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json-summary', 'html'],

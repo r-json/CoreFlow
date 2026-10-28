@@ -1,5 +1,9 @@
 # Building a Multi-Signature Payroll Escrow on Stellar Soroban
 
+> **Scope:** this document describes the CoreFlow payroll app (the reference
+> application in `src/` and `contracts/core-flow`), not CoreFlow Kit. For the kit,
+> start at the [root README](../README.md) and [docs/README.md](README.md).
+
 > **A step-by-step tutorial for building trustless, dual-approval payment contracts on Stellar**
 >
 > **Author:** CoreFlow Team  

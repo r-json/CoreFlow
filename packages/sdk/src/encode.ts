@@ -9,8 +9,11 @@ export const PREIMAGE_LENGTH = 256;
 const MAGIC = [0x43, 0x46, 0x43, 0x4c]; // "CFCL"
 const WIRE_VERSION = 1;
 
-/** Validate the shape of a claim and return its wire values. Throws `InvalidInput`. */
-function validate(claim: Claim): { encoding: number; mode: number; nonce: bigint; claimId: Uint8Array } {
+/**
+ * @internal Validate the shape of a claim and return its wire values. Throws `InvalidInput`.
+ * The inactive replay field is returned as zero.
+ */
+export function claimWireValues(claim: Claim): { encoding: number; mode: number; nonce: bigint; claimId: Uint8Array } {
   if (typeof claim !== 'object' || claim === null) throw new ClaimError('InvalidInput', 'claim: expected an object');
   assertBytes(claim.issuer, 32, 'claim.issuer');
   assertBytes(claim.claimType, 32, 'claim.claimType');
@@ -67,7 +70,7 @@ export function assertReplayFields(claim: Claim): void {
  * @throws {ClaimError} `InvalidInput` for a wrong byte length, an out-of-range u64 or a bad strkey.
  */
 export function encodeClaim(claim: Claim, ctx: ClaimContext): Uint8Array {
-  const { encoding, mode, nonce, claimId } = validate(claim);
+  const { encoding, mode, nonce, claimId } = claimWireValues(claim);
   if (typeof ctx !== 'object' || ctx === null) throw new ClaimError('InvalidInput', 'ctx: expected an object');
   // Both digests validate their input and throw InvalidInput.
   const network = networkId(ctx.networkPassphrase);

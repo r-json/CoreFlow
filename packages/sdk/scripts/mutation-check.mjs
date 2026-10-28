@@ -12,7 +12,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const REQUIRED = ['window', 'expiry', 'replay-fields', 'signature', 'network-binding', 'contract-binding', 'issuer-match'];
+const REQUIRED = ['window', 'expiry', 'replay-fields', 'signature', 'network-binding', 'contract-binding', 'issuer-match', 'preimage-signature'];
 const pkgRoot = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const vectorsDir = resolve(pkgRoot, '..', 'test-vectors', 'vectors');
 const srcDir = join(pkgRoot, 'src');

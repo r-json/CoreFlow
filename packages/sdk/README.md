@@ -101,6 +101,40 @@ if (err) {
 
 It returns `undefined` for any other number.
 
+## Pass a claim around as JSON
+
+`claimToJSON` and `claimFromJSON` use the field names of the on-chain `Claim`
+struct, so the same object travels from the issuer to a relayer, into a log, or
+into `stellar contract invoke`. u64 values are decimal strings; `claimFromJSON`
+also accepts safe-integer numbers and rejects unknown keys.
+
+```ts
+import { claimFromJSON, claimToJSON } from '@coreflow/sdk';
+
+const json = JSON.stringify(claimToJSON(claim)); // send to the relayer
+const received = claimFromJSON(json); // back to a typed Claim
+```
+
+## Debug the signed bytes
+
+When a signature verifies in one language but not the other, compare the bytes
+each side signed:
+
+```ts
+import { comparePreimages, decodePreimage, fromHex, identifyNetwork, verifyPreimage } from '@coreflow/sdk';
+
+const fromSigner = fromHex(signerPreimageHex);
+const fromContract = fromHex(contractTestPreimageHex);
+
+comparePreimages(fromSigner, fromContract).map((d) => d.name); // e.g. ['contract']
+identifyNetwork(decodePreimage(fromContract).networkId)?.name; // 'testnet'
+verifyPreimage(fromSigner, signature); // throws InvalidSignature unless these bytes were signed
+```
+
+`verifyPreimage` only checks that the signature belongs to these exact bytes
+and the issuer inside them. It does not check the network, contract, window,
+expiry or replay fields; `verifyClaim` does.
+
 ## API
 
 | Export | Purpose |
@@ -110,8 +144,14 @@ It returns `undefined` for any other number.
 | `verifyClaim(claim, ctx, signature, opts?)` | Throws `ClaimError` on failure. |
 | `ClaimError`, `fromContractErrorCode(code)` | Typed errors with a `code` and a `nextStep`. |
 | `sha256`, `claimType`, `networkId`, `contractDigest` | Digests used in the preimage. |
+| `claimToJSON(claim)`, `claimFromJSON(json)` | Portable JSON with the on-chain field names. |
+| `decodePreimage(bytes)`, `PREIMAGE_LAYOUT` | Read a preimage back into its fields; the byte layout table. |
+| `comparePreimages(a, b)` | The fields that differ between two preimages. |
+| `verifyPreimage(bytes, signature)` | Is this the embedded issuer's signature over exactly these bytes? |
+| `identifyNetwork(networkId)`, `KNOWN_NETWORKS` | Name the public network a `network_id` belongs to. |
+| `issuerFromStrkey(G...)`, `issuerToStrkey(bytes)` | Convert an issuer key to and from its `G...` form. |
 | `issuerPublicKey`, `randomClaimId`, `toHex`, `fromHex` | Helpers. |
-| `Claim`, `ClaimContext`, `ClaimErrorCode`, `IssuerSecret` | Types. |
+| `Claim`, `ClaimContext`, `ClaimJSON`, `DecodedPreimage`, `ClaimErrorCode`, `IssuerSecret` | Types. |
 
 Malformed arguments (wrong byte length, integers outside the u64 range, invalid strkeys) throw `ClaimError('InvalidInput')`.
 

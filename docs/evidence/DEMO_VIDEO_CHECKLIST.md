@@ -1,5 +1,9 @@
 # Demo Video Checklist — 3-5 min, unlisted
 
+> **Scope:** this document describes the CoreFlow payroll app (the reference
+> application in `src/` and `contracts/core-flow`), not CoreFlow Kit. For the kit,
+> start at the [root README](../../README.md) and [docs/README.md](../README.md).
+
 Record 1920x1080. Zoom terminal to ~16pt. Timestamp each section in the description.
 
 ## 0:00-0:20 — Setup shot
@@ -62,7 +66,7 @@ Record 1920x1080. Zoom terminal to ~16pt. Timestamp each section in the descript
 
 ## Do not claim on camera
 - [ ] Do **not** say "deployed to Mainnet" — this sprint is Testnet-only per SOW §4
-- [ ] Do **not** call the 20 Mainnet users new adoption; they predate this sprint
+- [ ] Do **not** present any earlier "user activity" records as adoption; they could not be verified and have been removed
 - [ ] Do **not** imply Clockify/Jira integration exists
 - [ ] Use the test USDC issuer's real name — it is **not** Circle USDC
 

@@ -2,9 +2,10 @@ name: CoreFlow Kit CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, 'kit/**' ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   attest:
@@ -141,3 +142,38 @@ jobs:
       - name: Committed vectors are up to date
         run: npm run check
       - run: npm test
+
+  workbench:
+    name: 'apps/workbench (browser tool)'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/workbench
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: |
+            packages/sdk/package-lock.json
+            apps/workbench/package-lock.json
+
+      # Builds packages/sdk (the Workbench uses it from this repository), then installs.
+      - run: npm run setup
+      - run: npm run typecheck
+      - run: npm run format:check
+      - run: npm test
+      - run: npm run build
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: End-to-end (desktop and mobile)
+        run: npm run e2e
+        env:
+          PW_CHANNEL: chromium
