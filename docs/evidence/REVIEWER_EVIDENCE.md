@@ -517,7 +517,7 @@ The contract refusing an unregistered oracle is the security control working. A
 manager cannot install their own oracle, which is the defect this phase's
 attestation registry was built to close — and it held against a real transaction.
 
-## 4. Instawards SOW deliverables
+## 4. Delivered scope
 
 | # | Deliverable | Implementation | Test | Live evidence |
 |---|---|---|---|---|

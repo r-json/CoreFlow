@@ -7,7 +7,7 @@
 Record 1920x1080. Zoom terminal to ~16pt. Timestamp each section in the description.
 
 ## 0:00-0:20 — Setup shot
-- [ ] Repo + branch `instawards/pay-batch-sac` on screen
+- [ ] Repo and the merged feature branch on screen
 - [ ] `cargo test` → **40 passed, 0 failed**
 - [ ] `npx vitest run` → **79 passed**
 - [ ] State: contract live on Testnet, ID visible
@@ -65,7 +65,7 @@ Record 1920x1080. Zoom terminal to ~16pt. Timestamp each section in the descript
 - [ ] Restate: no single party can move funds; payouts gated on oracle proof
 
 ## Do not claim on camera
-- [ ] Do **not** say "deployed to Mainnet" — this sprint is Testnet-only per SOW §4
+- [ ] Do **not** say "deployed to Mainnet" — v2 is Testnet-only (see `docs/DEPLOYMENTS.md`)
 - [ ] Do **not** present any earlier "user activity" records as adoption; they could not be verified and have been removed
 - [ ] Do **not** imply Clockify/Jira integration exists
 - [ ] Use the test USDC issuer's real name — it is **not** Circle USDC

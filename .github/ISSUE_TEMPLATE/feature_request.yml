@@ -1,0 +1,51 @@
+name: Feature request
+description: Suggest a change or an addition to CoreFlow Kit.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check the [roadmap](https://github.com/r-json/CoreFlow/blob/main/docs/kit/roadmap.md) and [when not to use the kit](https://github.com/r-json/CoreFlow/blob/main/docs/kit/when-not-to-use.md) first; your idea may already be planned, or `require_auth` may fit better.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - coreflow-attest (Rust crate)
+        - "@coreflow/sdk (TypeScript)"
+        - "@coreflow/test-vectors"
+        - Workbench (apps/workbench)
+        - Examples
+        - Documentation
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What are you trying to do, and what gets in the way today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: What you would like the kit to do. Code sketches welcome.
+    validations:
+      required: true
+  - type: dropdown
+    id: claim-format
+    attributes:
+      label: Does it change the signed claim format?
+      description: Format changes need a spec update, new vectors and passing tests in both languages.
+      options:
+        - "No"
+        - "Yes"
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered

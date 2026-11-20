@@ -1,0 +1,61 @@
+name: Bug report
+description: Something in CoreFlow Kit does not work as documented.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem. **Security vulnerabilities do not belong here:** report them privately from the repository's Security tab, as described in [SECURITY.md](https://github.com/r-json/CoreFlow/blob/main/SECURITY.md).
+        Use test keys only. Never paste a secret key or a production issuer key.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - coreflow-attest (Rust crate)
+        - "@coreflow/sdk (TypeScript)"
+        - "@coreflow/test-vectors"
+        - Workbench (apps/workbench)
+        - examples/marketplace-hold
+        - Documentation
+        - CoreFlow payroll reference app
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      placeholder: v0.1.0-alpha, or a commit hash
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How to reproduce
+      description: Commands, a failing test, or the claim JSON and signature (from the Workbench or the SDK). Test keys only.
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Error output
+      description: The contract error code (1101–1109), stack trace or test output.
+      render: text
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      value: |
+        OS:
+        Node.js:
+        rustc:
+        soroban-sdk:
+        stellar-cli:
+        Network (local, Testnet):
