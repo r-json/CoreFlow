@@ -1,7 +1,7 @@
 # CoreFlow — Engineering Baseline Audit
 
 **Date:** 2026-09-10
-**Branch audited:** `instawards/pay-batch-sac` @ `301145a`
+**Commit audited:** `301145a`
 **Method:** direct source inspection + executed test suites + deployed env inspection.
 Documentation claims were *not* taken as evidence.
 
