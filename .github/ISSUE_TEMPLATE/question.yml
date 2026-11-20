@@ -1,0 +1,29 @@
+name: Question
+description: Ask how to use CoreFlow Kit.
+labels: [question]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The [documentation index](https://github.com/r-json/CoreFlow/blob/main/docs/README.md) covers the claim format, the security model, key rotation and the Workbench.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - coreflow-attest (Rust crate)
+        - "@coreflow/sdk (TypeScript)"
+        - "@coreflow/test-vectors"
+        - Workbench (apps/workbench)
+        - Examples
+        - Documentation
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: What are you trying to do, and what have you tried? Test keys only.
+    validations:
+      required: true

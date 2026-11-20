@@ -8,6 +8,8 @@
 [![Network: Stellar Testnet](https://img.shields.io/badge/network-Stellar%20Testnet-7B2FBE)](examples/marketplace-hold)
 [![Status: alpha, unaudited](https://img.shields.io/badge/status-alpha%20%C2%B7%20unaudited-orange)](docs/kit/security-model.md#audit-status)
 
+**[Quickstart](#quickstart) · [Workbench](apps/workbench) · [Claim format](docs/kit/claim-format.md) · [Security model](docs/kit/security-model.md) · [Evidence](docs/kit/evidence.md) · [Roadmap](docs/kit/roadmap.md) · [Contributing](CONTRIBUTING.md)**
+
 > **0.1.0-alpha — unaudited, Testnet only.** The API and the claim format may
 > change before 1.0. Do not use it to protect real value.
 
@@ -64,6 +66,8 @@ Then follow the five-minute tour on its first page: sign a delivery claim with
 a throwaway key, watch it fail with `ClaimExpired` (1103) when you move the
 clock, flip one byte and see the diff point at the field, and re-verify a claim
 from a recorded Testnet run. Details: [apps/workbench](apps/workbench).
+
+![The Workbench's Verify page: each check in the contract's order, with the two checks only the contract can make marked "Contract only"](docs/assets/workbench-verify.png)
 
 ## Quickstart
 
@@ -251,7 +255,9 @@ check it, is in [docs/kit/evidence.md](docs/kit/evidence.md).
 
 ## Contributing
 
-Issues and pull requests are welcome. Before opening a PR:
+Issues and pull requests are welcome. [CONTRIBUTING.md](CONTRIBUTING.md) covers
+setup, the checks CI runs and how to change the claim format, and everyone
+follows the [code of conduct](CODE_OF_CONDUCT.md). Before opening a PR:
 
 ```bash
 (cd packages/attest && cargo fmt --check && cargo clippy --all-targets --all-features -- -D warnings && cargo test --all-features && bash scripts/mutation-check.sh)

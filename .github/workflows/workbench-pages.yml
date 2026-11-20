@@ -1,0 +1,76 @@
+name: Workbench on GitHub Pages
+
+# Publishes apps/workbench as a static site. It deploys only when GitHub Pages
+# is enabled for this repository with "GitHub Actions" as the source
+# (Settings > Pages). Until then the deploy is skipped, not failed.
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'apps/workbench/**'
+      - 'packages/sdk/**'
+      - '.github/workflows/workbench-pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: workbench-pages
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Is GitHub Pages enabled?
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.pages.outputs.enabled }}
+    steps:
+      - id: pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh api "repos/${{ github.repository }}/pages" --jq .build_type 2>/dev/null | grep -qx workflow; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::GitHub Pages is not enabled with GitHub Actions as the source; skipping the Workbench deploy."
+          fi
+
+  build:
+    name: Build the Workbench
+    needs: check
+    if: needs.check.outputs.enabled == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/workbench
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: |
+            packages/sdk/package-lock.json
+            apps/workbench/package-lock.json
+      # Builds packages/sdk (the Workbench uses it from this repository), then installs.
+      - run: npm run setup
+      - run: npm test
+      - run: npm run build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/workbench/dist
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
