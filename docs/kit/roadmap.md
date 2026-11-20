@@ -1,52 +1,67 @@
-# CoreFlow Kit v0.2.0-alpha: proposed plan
+# CoreFlow Kit v0.2.0-alpha: plan
 
 **Status: proposed, not started.**
 
-**Outcome:** a Stellar developer can install CoreFlow Kit from public
-registries, go from an empty folder to a claim verified by their own Testnet
-contract, and debug that contract in the browser Workbench.
+**Outcome:** a Stellar developer installs CoreFlow Kit from npm and crates.io,
+generates a tested claim-gated Soroban contract with one command, and inspects
+a deployed contract's issuer registry, replay state and storage TTL from the
+terminal before paying a fee.
 
 Today the kit works on Testnet, but using it means cloning this repository and
-building tarballs. This increment closes that gap. It stays Testnet-only, and
-the kit stays labelled unaudited.
+building tarballs. This increment closes that gap. It adds no claim-format
+features, stays Testnet-only, and the kit stays labelled unaudited.
 
 ## Deliverables
 
-| # | Deliverable | Why it matters |
+| # | Deliverable | What ships |
 |---|---|---|
-| D1 | `@coreflow/sdk`, `@coreflow/test-vectors` and `coreflow-attest` published from CI, with npm provenance | Install with `npm install` and `cargo add` instead of cloning |
-| D2 | `@coreflow/cli`: `create` scaffolds a claim-gated Soroban contract with tests, a mutation check, an issuer script and a Testnet script; plus `sign`, `verify`, `inspect`, `diff`, `explain` and `doctor` | From nothing to a working, tested project in one command |
-| D3 | Workbench Testnet mode: read a deployed contract's issuer registry and next nonce, and simulate a submission. Read-only; never signs or submits. | Shows the two checks only a contract can make: issuer registered and claim unused |
-| D4 | Getting-started guide, CLI reference, Workbench guide and troubleshooting, with every command run in CI | A developer outside the project can finish without help |
-| D5 | Usability sessions with developers, and fixes for what blocks them | Tests the workflow with people who did not build it |
-| D6 | `v0.2.0-alpha` release, a Testnet evidence file from a scaffolded project, a short demo | One place to check every result |
-| D7 | `examples/work-payout`: a Testnet example contract that pays a contributor through a Stellar Asset Contract token when a signed work-approval claim verifies | Shows the kit gating a token transfer, with a reproducible script. An example, not a payment product. |
-| D8 | Property-based tests of claim encoding and decoding, in Rust and TypeScript | Explores invariants and malformed input far beyond the 16 fixed vectors |
-| D9 | Issuer-service template: a minimal Node service that signs claims with a key it loads from the environment or a file, with a key-rotation walkthrough | Shows the off-chain half: the service signs; only the contract verifies and acts |
-| D10 | Guides for D7–D9 | An independent developer can reproduce each workflow |
+| D1 | Registry release pipeline and property-based encoding tests | A tag-triggered `release.yml` that publishes `@coreflow/sdk`, `@coreflow/test-vectors` and `@coreflow/cli` to npm through trusted publishing (GitHub OIDC, provenance generated automatically) and `coreflow-attest` to crates.io through `rust-lang/crates-io-auth-action`. A clean-install matrix (Node.js 22 and 24, Linux and macOS) installs the published packages into an empty project and runs the 16 shared vectors in both languages. Property-based suites (`proptest` and `fast-check`) generate at least 10,000 claims per language on every CI run, check the 256-byte layout, field offsets and malformed-input rejection, and require byte equality between Rust and TypeScript on a shared seeded corpus. A seeded encoder fault must make the suite fail. |
+| D2 | `@coreflow/cli` core | `sign` (issuer key from an environment variable or a file, never from arguments), `verify` (every off-chain check in the contract's order, error codes 1101–1109, non-zero exit on failure), `inspect`, `diff`, `explain` and `doctor` (Node.js, the Rust toolchain pinned in `rust-toolchain.toml`, `wasm32v1-none`, stellar-cli 30.0+). Every command has `--json` output and golden-file tests against the Workbench on all 16 vectors. |
+| D3 | `coreflow create` scaffold | Generates a Cargo workspace and a TypeScript package with a claim-gated contract: `__constructor(admin)`, admin-gated `add_issuer`, `remove_issuer` and `rotate_issuer`, and `act(claim, signature)`, which checks `claim_type` and `subject` before `verify_claim`. Supports `--replay sequence` and `--replay unique-id`. Ships exact-auth and negative tests, a mutation check, TypeScript bindings generated with `npx @stellar/stellar-sdk generate`, an issuer script, a Testnet script and a SEP-55 (Draft) release workflow that builds and attests the WASM. |
+| D4 | Stellar RPC inspection, Testnet evidence and release | `@coreflow/sdk/rpc` (`readIssuerStatus`, `readNextNonce`, `isClaimUsed`, `simulateAct`) and the `coreflow state` and `coreflow simulate` commands. `state` builds the kit's ledger keys and reads each entry's value, durability and `liveUntilLedgerSeq` with `getLedgerEntries`. `simulate` dry-runs `act` with `simulateTransaction` and reports success, a CoreFlow error, a host trap, or archived state, either restored automatically by the invocation (Protocol 23 and later) or flagged by a `restorePreamble`. Read-only; Mainnet is refused. Then two Testnet runs from a scaffolded project, guides whose commands run in CI, and the `v0.2.0-alpha` release. |
 
 ## Milestones and acceptance checks
 
 | Milestone | Accepted when |
 |---|---|
-| M1: Published packages and encoding properties | `npm view` finds `@coreflow/sdk@0.2.0-alpha` and `@coreflow/test-vectors@0.2.0-alpha` with provenance; `cargo search coreflow-attest` lists 0.2.0-alpha; a CI job installs all three into an empty project and passes the 16 shared vectors. A CI job runs at least 10,000 generated claims per language and checks round trips, the fixed 256-byte length, field offsets, byte-for-byte agreement between Rust and TypeScript, and rejection of malformed input; a seeded encoding fault makes it fail. |
-| M2: CLI, scaffold and payout contract | In CI, `npx @coreflow/cli create demo`, then `cargo test` and `npm test` inside `demo`, passes; the scaffold's mutation check kills every mutant; `coreflow verify` and `coreflow explain` match the Workbench on all 16 vectors; `coreflow doctor` reports installed against pinned toolchain versions. The `work-payout` contract's tests, using a Stellar Asset Contract test token and exact auth mocks, pass in CI, and its mutation check kills every mutant. |
-| M3: Workbench Testnet mode and payout run | For a given contract ID, the Workbench shows the issuer status, next nonce and simulated verdict; CI tests use recorded RPC responses; one live run is recorded by a script; Mainnet is refused; offline, the page says so and the local tools keep working. A scripted Testnet run of `work-payout` writes an evidence file covering deploy, funding, payout and a refused replay (error 1106), and the Workbench re-verifies that claim offline. |
-| M4: Issuer service, docs, validation, release | `coreflow create demo --issuer` adds the issuer-service template; its tests pass in CI, including one where claims it signs verify in the scaffold contract; it never holds a funded account or submits transactions. The guides (getting started, CLI, Workbench, troubleshooting, payout example, property tests, issuer service) exist and their commands run in CI. An anonymous validation report lists each session, its time to a first verified claim and every problem found; every blocking problem is closed by a merged fix. `v0.2.0-alpha` is tagged with a scaffold Testnet evidence file and a demo. |
+| M1: Release pipeline and CLI core (weeks 1–2) | The pipeline is proven by publishing 0.1.1 of `@coreflow/sdk`, `@coreflow/test-vectors` and `coreflow-attest` from the v0.1 code: `npm audit signatures` passes for both npm packages, `cargo search coreflow-attest` lists 0.1.1, and the four clean-install jobs pass all 16 vectors. Golden-file tests show `verify`, `inspect` and `explain` output identical to the Workbench on all 16 vectors. |
+| M2: Project scaffold (weeks 2–3) | In CI, the CLI tarball runs `create demo`, then `cargo test`, `npm test` and `stellar contract build` pass for both `--replay sequence` and `--replay unique-id`. Negative tests cover non-admin add, remove and rotate, and the scaffold's mutation check kills every mutant. |
+| M3: RPC inspection and property tests (week 3) | At least 12 recorded-RPC fixture cases pass, including an archived entry restored automatically and a `restorePreamble` case, plus a Mainnet-refusal test. The property suites run at least 10,000 generated claims per language with cross-language byte equality, and the seeded encoder fault makes them fail. |
+| M4: Testnet evidence, guides and release (week 4) | Two scaffold Testnet runs, one from a fresh clone, each with an evidence file covering deployment, issuer registration, an accepted claim, a simulated replay refused with error 1106, `coreflow state` output with TTL, and a SHA-256 manifest of the Horizon responses. `gh attestation verify` passes for the deployed WASM, the docs job is green, and the `v0.2.0-alpha` tag publishes all four packages with release notes, the evidence page in [`docs/evidence/`](../evidence/) and a short terminal walkthrough. |
 
-## Usability sessions
+## Design notes
 
-Each participant gets one task: from an empty folder to a claim verified by
-their own Testnet contract, using only the published guide. For each session,
-the report records whether the task was completed, the time it took, where the
-participant got stuck and what they said. Participants stay anonymous unless
-they opt in. The report states the actual number of sessions and their results.
+- **TTL.** Issuer and replay entries are persistent. Every write extends an
+  entry's TTL when fewer than a configurable threshold of ledgers remain, up to
+  the network maximum. Claim expiry always comes from the signed `expires_at`,
+  never from a TTL.
+- **Archival.** An archived persistent entry is never read as absent, so
+  archival affects liveness, not replay safety. Since Protocol 23, simulation
+  normally lists archived entries for automatic restore; `coreflow simulate`
+  reports them before anything is submitted.
+- **Keys and networks.** Testnet runs use throwaway keys generated per run. The
+  RPC commands never sign or submit, and the Testnet script refuses the Mainnet
+  passphrase.
+- **Provenance.** Packages are published only from CI with short-lived OIDC
+  credentials, and the scaffold's release workflow attests the WASM it builds so
+  a deployed contract can be traced to its commit.
 
 ## Out of scope
 
-Mainnet deployment or Mainnet guidance; production payment functionality; a
-security audit; threshold (k-of-n) claims; XDR payload helpers; a Scaffold
-Stellar template; any work on the CoreFlow payroll app; hosting or other
-infrastructure.
+Mainnet deployment or Mainnet guidance; a security audit; claim-format changes,
+including threshold (k-of-n) claims and XDR payload helpers; any work on the
+CoreFlow payroll app.
+
+## After v0.2.0-alpha
+
+- A Workbench Testnet mode on top of the new RPC module: read a deployed
+  contract's issuer registry and next nonce, and simulate a submission in the
+  browser. Read-only.
+- `examples/work-payout`: a Testnet example that pays through a Stellar Asset
+  Contract token when a signed work-approval claim verifies.
+- An issuer-service template: a minimal Node service that signs claims with a
+  key loaded from the environment or a file, with a key-rotation walkthrough.
+- Usability sessions with developers who did not build the kit, and fixes for
+  what blocks them.
 
 What exists today and how to check it: [evidence.md](evidence.md).
