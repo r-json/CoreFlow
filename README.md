@@ -7,8 +7,9 @@
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 [![Network: Stellar Testnet](https://img.shields.io/badge/network-Stellar%20Testnet-7B2FBE)](examples/marketplace-hold)
 [![Status: alpha, unaudited](https://img.shields.io/badge/status-alpha%20%C2%B7%20unaudited-orange)](docs/kit/security-model.md#audit-status)
+[![Stellar Monthly Builder Program: winner](https://img.shields.io/badge/Stellar%20Monthly%20Builder%20Program-winner-FDDA24)](#track-record)
 
-**[Quickstart](#quickstart) · [Workbench](apps/workbench) · [Claim format](docs/kit/claim-format.md) · [Security model](docs/kit/security-model.md) · [Evidence](docs/kit/evidence.md) · [Roadmap](docs/kit/roadmap.md) · [Contributing](CONTRIBUTING.md)**
+**[Quickstart](#quickstart) · [Workbench](apps/workbench) · [Claim format](docs/kit/claim-format.md) · [Security model](docs/kit/security-model.md) · [Evidence](docs/kit/evidence.md) · [Track record](#track-record) · [Roadmap](docs/kit/roadmap.md) · [Contributing](CONTRIBUTING.md)**
 
 > **0.1.0-alpha — unaudited, Testnet only.** The API and the claim format may
 > change before 1.0. Do not use it to protect real value.
@@ -17,6 +18,21 @@
 off-chain service or device knows (a delivery, an inspection, a sensor reading)
 and who would otherwise write, test and maintain their own Ed25519 verification,
 replay protection and key rotation.
+
+## Track record
+
+CoreFlow is built by [Arjay Rosel](https://github.com/r-json), a computer
+science student at the Polytechnic University of the Philippines and a member
+of the Stellar Philippines Ambassador Chapter. Every item below links to
+something you can check.
+
+| Milestone | Proof |
+|---|---|
+| **Stellar Monthly Builder Program winner**, for the CoreFlow payroll and escrow app | The app, its contract and its evidence are in this repository ([developer guide](docs/DEVELOPER_GUIDE.md)) |
+| CoreFlow v1 escrow contract deployed on **Stellar Mainnet** | [`CCTF5WBO…RFFW`](https://stellar.expert/explorer/public/contract/CCTF5WBOQR7JP2KPLQT372X7JCGCINHDFRSAPF4YTYRKZXZ3J2XPRFFW) · historical; the hardened v2 runs on Testnet ([deployments](docs/DEPLOYMENTS.md)) |
+| CoreFlow v2 hardened on Testnet (9 Sep 2026): domain-separated oracle proofs, dual approval by distinct signers, multi-asset settlement. Replay and double settlement refused on-chain. | [Golden-path run](docs/evidence/REVIEWER_EVIDENCE.md#3-live-golden-path-validation) · 873 unit, 71 integration and 70 contract tests |
+| **CoreFlow Kit v0.1.0-alpha** released (18 Oct 2026): verifier crate, TypeScript SDK and shared vectors. Every check is covered by a mutation test (36 of 36 mutants killed). | [Tag](https://github.com/r-json/CoreFlow/tree/v0.1.0-alpha) · [Testnet run](examples/marketplace-hold/evidence/testnet-e2e-20261018T020314Z.json) |
+| CoreFlow Kit Workbench: compose, verify, inspect and diff claims in the browser, with nothing sent to a server | [apps/workbench](apps/workbench) · 52 unit and page tests, 11 browser tests |
 
 ---
 
@@ -236,11 +252,16 @@ separates the two sets of documents.
 - `apps/workbench`: the browser tool described above, with unit, page and end-to-end browser tests in CI
 - `@coreflow/sdk`: `claimToJSON` / `claimFromJSON`, `decodePreimage`, `comparePreimages`, `verifyPreimage`, `identifyNetwork`, issuer strkey helpers
 
-**Planned**
+**Next: v0.2.0-alpha** ([plan](docs/kit/roadmap.md))
 
-- Publish to npm and crates.io
+- Publish to npm and crates.io from CI with trusted publishing and provenance, plus property-based encoding tests (10,000+ generated claims per language per run)
+- `@coreflow/cli`: `sign`, `verify`, `inspect`, `diff`, `explain` and `doctor`, each with `--json`
+- `coreflow create`: scaffold a claim-gated contract with exact-auth tests, a mutation check and a SEP-55 attested release workflow
+- `coreflow state` and `coreflow simulate`: read a deployed contract's issuer registry, replay state and TTL through Stellar RPC, read-only
+
+**Later**
+
 - SDK helpers to deploy, fund and release (today the example script uses stellar-cli)
-- CLI: `npx create-coreflow-app` and a `coreflow` command to scaffold a project, deploy to Testnet, run a local mock issuer and sign test claims
 - A distinct-signer, multi-approval escrow module
 - Threshold claims (k of n issuers)
 - Helpers for XDR-encoded payloads
@@ -249,9 +270,8 @@ separates the two sets of documents.
 - A Workbench mode that reads a deployed Testnet contract (issuer registry, next nonce) and simulates a submission through a public RPC, without sending anything
 - An external security audit, before any 1.0 or Mainnet guidance
 
-The proposed next increment, v0.2.0-alpha, is described in
-[docs/kit/roadmap.md](docs/kit/roadmap.md). What exists today, and how to
-check it, is in [docs/kit/evidence.md](docs/kit/evidence.md).
+What exists today, and how to check it, is in
+[docs/kit/evidence.md](docs/kit/evidence.md).
 
 ## Contributing
 
