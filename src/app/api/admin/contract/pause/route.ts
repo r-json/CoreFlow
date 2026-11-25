@@ -12,7 +12,11 @@ const pauseSchema = z.object({
 // In-memory contract pause status state fallback (backed by AuditLog)
 let isContractPausedInMemory = false;
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // The middleware already requires a session here; checking again in the
+  // handler keeps the route safe if the middleware matcher ever changes.
+  const user = await getUserFromRequest(request);
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   return NextResponse.json({ paused: isContractPausedInMemory });
 }
 

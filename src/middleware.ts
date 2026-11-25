@@ -1,7 +1,7 @@
 /**
  * Next.js Edge Middleware for CoreFlow.
  *
- * Protects all /api/escrows/* and /api/hours routes by checking for
+ * Protects all session-authenticated API routes by checking for
  * an authenticated session cookie.
  *
  * Public routes (no auth required):
@@ -18,6 +18,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 
+// Keep in step with src/lib/auth/api-access.ts; the tests compare the two.
 const PROTECTED_API_PREFIXES = [
   '/api/escrows',
   '/api/hours',
@@ -25,6 +26,9 @@ const PROTECTED_API_PREFIXES = [
   '/api/oracle/attest',
   // Issues Ed25519 attestations that unlock on-chain settlement — never public.
   '/api/submit-batch',
+  '/api/organizations',
+  '/api/payments',
+  '/api/payroll',
 ];
 
 /**
@@ -93,5 +97,8 @@ export const config = {
     '/api/admin/:path*',
     '/api/oracle/attest',
     '/api/submit-batch',
+    '/api/organizations/:path*',
+    '/api/payments/:path*',
+    '/api/payroll/:path*',
   ],
 };

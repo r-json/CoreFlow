@@ -77,27 +77,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: owned.message }, { status: owned.status });
     }
 
-    // Idempotency: never sign the same (escrow, payment, nonce) twice.
-    const existing = await prisma.oracleAttestation.findUnique({
-      where: {
-        escrowOnChainId_onChainPaymentIndex_nonce: {
-          escrowOnChainId: onChainId,
-          onChainPaymentIndex: paymentId,
-          nonce: BigInt(nonce),
-        },
-      },
-    });
-    if (existing) {
-      return NextResponse.json(
-        { signature: existing.signature, pubkey, nonce, reused: true },
-        { status: 200 }
-      );
-    }
-
-    // Schema v2 binds the attestation to the payee, asset, amount, period,
-    // contract and network. Those come from the on-chain payment row, never
-    // from the request, so a caller cannot steer a signature onto a payment
-    // the oracle was not asked about.
+    // Checked before the idempotent re-issue below, so a stored signature is
+    // only ever returned to the escrow's on-chain manager.
+    // Schema v2 also binds the attestation to the payee, asset, amount, period,
+    // contract and network read from the on-chain payment row, never from the
+    // request, so a caller cannot steer a signature onto a payment the oracle
+    // was not asked about.
     let escrow: Awaited<ReturnType<CoreFlowClient['getEscrow']>>;
     try {
       escrow = await new CoreFlowClient().getEscrow(onChainId);
@@ -112,6 +97,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Only the escrow manager can request attestations for this escrow.' },
         { status: 403 }
+      );
+    }
+
+    // Idempotency: never sign the same (escrow, payment, nonce) twice.
+    const existing = await prisma.oracleAttestation.findUnique({
+      where: {
+        escrowOnChainId_onChainPaymentIndex_nonce: {
+          escrowOnChainId: onChainId,
+          onChainPaymentIndex: paymentId,
+          nonce: BigInt(nonce),
+        },
+      },
+    });
+    if (existing) {
+      return NextResponse.json(
+        { signature: existing.signature, pubkey, nonce, reused: true },
+        { status: 200 }
       );
     }
 
