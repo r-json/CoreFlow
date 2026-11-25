@@ -2,7 +2,8 @@ name: Workbench on GitHub Pages
 
 # Publishes apps/workbench as a static site. It deploys only when GitHub Pages
 # is enabled for this repository with "GitHub Actions" as the source
-# (Settings > Pages). Until then the deploy is skipped, not failed.
+# (Settings > Pages). Until then the run fails at the check job with a warning,
+# so a deploy that did not happen is visible instead of a green, skipped run.
 on:
   push:
     branches: [ main ]
@@ -36,7 +37,10 @@ jobs:
             echo "enabled=true" >> "$GITHUB_OUTPUT"
           else
             echo "enabled=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::GitHub Pages is not enabled with GitHub Actions as the source; skipping the Workbench deploy."
+            msg="GitHub Pages is not enabled with GitHub Actions as the source (Settings > Pages), so the Workbench was not deployed."
+            echo "::warning::$msg"
+            echo ":warning: $msg" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
           fi
 
   build:
