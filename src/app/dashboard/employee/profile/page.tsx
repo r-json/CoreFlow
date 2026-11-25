@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { accountUrl } from '@/lib/explorer';
 import { useAuth } from '@/hooks/useAuth';
 import { useDashboard } from '@/hooks/useDashboard';
 import {
@@ -135,7 +136,7 @@ export default function EmployeeProfilePage() {
                   isCopied={copiedField === 'wallet'}
                   explorerLink={
                     auth.walletAddress
-                      ? `https://stellar.expert/explorer/public/account/${auth.walletAddress}`
+                      ? accountUrl(auth.walletAddress)
                       : undefined
                   }
                 />

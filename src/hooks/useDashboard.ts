@@ -3,6 +3,7 @@ import { EscrowData } from '@/components/EscrowCard';
 import { Transaction } from '@/components/TransactionFeed';
 import { CoreFlowClient } from '@/lib/contracts';
 import { STELLAR_CONFIG } from '@/lib/config';
+import { SAC_DECIMALS, formatAmountWithSeparators } from '@/lib/money';
 
 interface UseDashboardProps {
   isAuthenticated: boolean;
@@ -182,16 +183,13 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
     const errorMsg = err instanceof Error ? err.message : 'Blockchain transaction failed';
     console.error(`[Reconciliation] Blockchain transaction failed for Escrow #${escrowId}:`, err);
 
-    // Rollback DB status to ensure DB stays synchronized with chain
-    try {
-      await fetch(`/api/escrows/${escrowId}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: originalStatus }),
-      });
-    } catch (e) {
-      console.error('Rollback sync failed:', e);
-    }
+    // No DB rollback write.
+    //
+    // There is nothing to roll back: the client never advanced the stored state in
+    // the first place. And "the submission threw" does not establish what the chain
+    // did — an RPC timeout can accompany a transaction that landed. Reverting the
+    // record here could mark a settled payment as unsettled, which is a false
+    // statement about money. Reconciliation resolves it against chain state.
 
     // Report error for audit
     try {
@@ -229,15 +227,14 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
           return;
         }
 
-        try {
-          await fetch(`/api/escrows/${escrowId}/status`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ managerApproved: true, status: 'pending_finance' }),
-          });
-        } catch (e) {
-          console.error('Off-chain sync failed:', e);
-        }
+        // No off-chain status write here, deliberately.
+        //
+        // The transaction above was submitted; whether the CHAIN accepted it is a
+        // separate question, answered by the indexer observing the contract's event
+        // log. Writing the expected status from the client would assert an outcome
+        // nobody has confirmed — the precise failure mode the payment state machine
+        // exists to prevent. The dashboard refreshes below and advances when the
+        // indexer catches up.
 
         setTransactions((prev) => [
           {
@@ -298,15 +295,14 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
           return;
         }
 
-        try {
-          await fetch(`/api/escrows/${escrowId}/status`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ financeApproved: true, status: 'ready' }),
-          });
-        } catch (e) {
-          console.error('Off-chain sync failed:', e);
-        }
+        // No off-chain status write here, deliberately.
+        //
+        // The transaction above was submitted; whether the CHAIN accepted it is a
+        // separate question, answered by the indexer observing the contract's event
+        // log. Writing the expected status from the client would assert an outcome
+        // nobody has confirmed — the precise failure mode the payment state machine
+        // exists to prevent. The dashboard refreshes below and advances when the
+        // indexer catches up.
 
         setTransactions((prev) => [
           {
@@ -369,15 +365,14 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
           return;
         }
 
-        try {
-          await fetch(`/api/escrows/${escrowId}/status`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: 'paid' }),
-          });
-        } catch (e) {
-          console.error('Off-chain sync failed:', e);
-        }
+        // No off-chain status write here, deliberately.
+        //
+        // The transaction above was submitted; whether the CHAIN accepted it is a
+        // separate question, answered by the indexer observing the contract's event
+        // log. Writing the expected status from the client would assert an outcome
+        // nobody has confirmed — the precise failure mode the payment state machine
+        // exists to prevent. The dashboard refreshes below and advances when the
+        // indexer catches up.
 
         setTransactions((prev) => [
           {
@@ -441,15 +436,14 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
           return;
         }
 
-        try {
-          await fetch(`/api/escrows/${escrowId}/status`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: 'cancelled' }),
-          });
-        } catch (e) {
-          console.error('Off-chain sync failed:', e);
-        }
+        // No off-chain status write here, deliberately.
+        //
+        // The transaction above was submitted; whether the CHAIN accepted it is a
+        // separate question, answered by the indexer observing the contract's event
+        // log. Writing the expected status from the client would assert an outcome
+        // nobody has confirmed — the precise failure mode the payment state machine
+        // exists to prevent. The dashboard refreshes below and advances when the
+        // indexer catches up.
 
         setTransactions((prev) => [
           {
@@ -526,7 +520,19 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
     }
   };
 
-  const handleCreateEscrow = async (workerPubKey: string, amountCents: number, rateCents: number) => {
+  /**
+   * Create and fund an escrow on-chain.
+   *
+   * Amounts arrive as base units (bigint) from the modal, NOT as
+   * dollars-times-100. Passing "cents" here used to under-fund every escrow by
+   * 100,000x, because Stellar assets carry seven decimals — see lib/money.
+   */
+  const handleCreateEscrow = async (
+    workerPubKey: string,
+    financeApprover: string,
+    amountUnits: bigint,
+    rateUnits: bigint
+  ) => {
     if (!isConnected) {
       setError('Please connect Freighter wallet first');
       return;
@@ -546,6 +552,22 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
             `Unsupported address type: "${workerPubKey}". In live on-chain mode, the worker address must be a valid 56-character Stellar public key (starting with 'G') or Contract ID (starting with 'C').`
           );
         }
+        if (!/^[GC][A-Z2-7]{55}$/.test(financeApprover)) {
+          throw new Error(
+            `Finance approver "${financeApprover}" is not a valid Stellar address.`
+          );
+        }
+        // Separation of duties is the product's core claim, and the contract
+        // enforces it with SignersNotDistinct (#15). The dashboard previously
+        // passed the connected wallet as BOTH manager and finance approver, so
+        // this call trapped on every attempt and the dual-approval flow had no
+        // working path at all.
+        if (financeApprover === walletAddress) {
+          throw new Error(
+            'The finance approver must be a different wallet from the manager. ' +
+              'CoreFlow requires two distinct signers before funds can move.'
+          );
+        }
 
         const tokenAddress = STELLAR_CONFIG.token.id;
         if (!tokenAddress) {
@@ -560,10 +582,10 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
             // Per-payee asset. This single-escrow path uses the configured
             // default SAC; the Bulk Pay CSV flow sets it per row.
             token: tokenAddress,
-            amount: BigInt(amountCents),
+            amount: amountUnits,
             start_date: Math.floor(Date.now() / 1000),
             end_date: Math.floor(Date.now() / 1000) + 86400 * 7,
-            rate_per_hour: BigInt(rateCents),
+            rate_per_hour: rateUnits,
           }
         ];
 
@@ -572,7 +594,12 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
           throw new Error('Oracle is not configured; cannot create a verifiable escrow.');
         }
         const { pubkey: oraclePubkey } = await pubkeyRes.json();
-        const txResult = await client.submitInitializeEscrow(walletAddress, walletAddress, oraclePubkey, payload);
+        const txResult = await client.submitInitializeEscrow(
+          walletAddress,
+          financeApprover,
+          oraclePubkey,
+          payload
+        );
         
         try {
           await fetch('/api/escrows', {
@@ -581,8 +608,12 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
             body: JSON.stringify({
               onChainId: txResult.returnValue || 0,
               workerPubKey,
-              amountCents,
-              rateCents,
+              // Base units as a string: JSON has no bigint, and the value can
+              // exceed Number.MAX_SAFE_INTEGER for large batches.
+              amountBaseUnits: amountUnits.toString(),
+              rateBaseUnits: rateUnits.toString(),
+              assetDecimals: SAC_DECIMALS,
+              financeApprover,
               tokenAddress,
             }),
           });
@@ -609,7 +640,7 @@ export function useDashboard({ isAuthenticated, walletAddress }: UseDashboardPro
         const newEsc: EscrowData = {
           id: newId,
           worker: workerPubKey.length >= 10 ? workerPubKey.slice(0, 6) + '...' + workerPubKey.slice(-4) : workerPubKey,
-          amount: (amountCents / 100).toLocaleString(),
+          amount: formatAmountWithSeparators(amountUnits, SAC_DECIMALS),
           currency: 'USDC',
           hoursLogged: '0',
           status: 'pending_hours',

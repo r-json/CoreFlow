@@ -1,0 +1,30 @@
+[package]
+name = "marketplace-hold"
+version = "0.1.0-alpha"
+edition = "2021"
+rust-version = "1.91"
+license = "Apache-2.0"
+description = "Example Soroban contract: a payment hold released by an issuer-signed delivery claim, built on coreflow-attest."
+repository = "https://github.com/r-json/CoreFlow"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+soroban-sdk = "=29.0.1"
+coreflow-attest = { path = "../../../../packages/attest" }
+
+[dev-dependencies]
+soroban-sdk = { version = "=29.0.1", features = ["testutils"] }
+coreflow-attest = { path = "../../../../packages/attest", features = ["testutils"] }
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true
+overflow-checks = true
+
+# The crate is its own workspace root so it never joins a parent workspace.
+[workspace]

@@ -1,5 +1,9 @@
 # CoreFlow Developer Guide
 
+> **Scope:** this document describes the CoreFlow payroll app (the reference
+> application in `src/` and `contracts/core-flow`), not CoreFlow Kit. For the kit,
+> start at the [root README](../README.md) and [docs/README.md](README.md).
+
 Trustless multi-signature payroll escrow on Stellar Soroban.
 
 ## Prerequisites

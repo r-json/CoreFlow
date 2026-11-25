@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { contractUrl } from '@/lib/explorer';
 import { useAuth } from '@/hooks/useAuth';
 import { STELLAR_CONFIG } from '@/lib/config';
 import {
@@ -98,7 +99,7 @@ export default function AdminSettingsPage() {
               isCopied={copiedField === 'contractId'}
               explorerLink={
                 contractId !== 'Not configured'
-                  ? `https://stellar.expert/explorer/public/contract/${contractId}`
+                  ? contractUrl(contractId)
                   : undefined
               }
             />

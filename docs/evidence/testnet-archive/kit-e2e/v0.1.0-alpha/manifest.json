@@ -1,0 +1,61 @@
+{
+  "description": "Raw Horizon responses for the CoreFlow Testnet transactions listed in examples/marketplace-hold/evidence/testnet-e2e-20261018T024823Z.json, captured before a Testnet reset removes them.",
+  "generatedBy": "scripts/archive-testnet-evidence.mjs",
+  "fetchedAt": "2026-10-18T04:03:06.758Z",
+  "horizon": "https://horizon-testnet.stellar.org",
+  "networkPassphrase": "Test SDF Network ; September 2015",
+  "source": "examples/marketplace-hold/evidence/testnet-e2e-20261018T024823Z.json",
+  "count": 4,
+  "transactions": [
+    {
+      "hash": "dec700e5e4ca95336ba891d668b17514cf200887014f593bfc8bc6f73287360a",
+      "label": "20261018024823-a247:deploy",
+      "status": "archived",
+      "successful": true,
+      "ledger": 5253640,
+      "createdAt": "2026-10-18T02:49:47Z",
+      "sourceAccount": "GBRXQDRVG3AE56POFDVBHBOTYCQFV5FCFMU6HEZI5BJXCMNW4WFTGRL7",
+      "operationCount": 1,
+      "file": "20261018024823-a247-deploy__dec700e5e4ca95336ba891d668b17514cf200887014f593bfc8bc6f73287360a.json",
+      "sha256": "5a81bbe7d9ed1a7787c7eb88e4b9009a3a8025e63c2037933dd4a8208f58990e"
+    },
+    {
+      "hash": "5894e793db50d7005e6852340c8664e4d66e9d06ed064e979dd1d9dacc12e937",
+      "label": "20261018024823-a247:open-hold",
+      "status": "archived",
+      "successful": true,
+      "ledger": 5253645,
+      "createdAt": "2026-10-18T02:50:12Z",
+      "sourceAccount": "GDBDE7NWHJXOYSZUGGOA7K3SS67VKZ3YK5MHJG2OQPY5GYTHBSEAMJRW",
+      "operationCount": 1,
+      "file": "20261018024823-a247-open-hold__5894e793db50d7005e6852340c8664e4d66e9d06ed064e979dd1d9dacc12e937.json",
+      "sha256": "ee38b8772d9d4f203079830fa92d061b2f343c201c7731680f688a0cd99cc99f"
+    },
+    {
+      "hash": "121b14f7a37359256aa47271b3b79154641277cd9c979647b4819aa3ad07ed8d",
+      "label": "20261018024823-a247:release",
+      "status": "archived",
+      "successful": true,
+      "ledger": 5253647,
+      "createdAt": "2026-10-18T02:50:22Z",
+      "sourceAccount": "GA54W4Z6NFAVXCVZXXJEEF254PRGS2Y7IVRGZKIGNUBTEZDOP2TY2XMM",
+      "operationCount": 1,
+      "file": "20261018024823-a247-release__121b14f7a37359256aa47271b3b79154641277cd9c979647b4819aa3ad07ed8d.json",
+      "sha256": "3bf66e6b6de32def0eb87c40bf3a321edb2f9817abec22592d1f2c90ad304880"
+    },
+    {
+      "hash": "0c387b3473897c46d88b17007fab9062585539b0c0fcca91fb8750f5b66ab627",
+      "label": "20261018024823-a247:open-second-hold",
+      "status": "archived",
+      "successful": true,
+      "ledger": 5253652,
+      "createdAt": "2026-10-18T02:50:47Z",
+      "sourceAccount": "GDBDE7NWHJXOYSZUGGOA7K3SS67VKZ3YK5MHJG2OQPY5GYTHBSEAMJRW",
+      "operationCount": 1,
+      "file": "20261018024823-a247-open-second-hold__0c387b3473897c46d88b17007fab9062585539b0c0fcca91fb8750f5b66ab627.json",
+      "sha256": "1de4de751ee4e2f7f75f4d551141e3158b9390877893916bc957cedd7d3e6b3c"
+    }
+  ],
+  "archived": 4,
+  "missing": 0
+}

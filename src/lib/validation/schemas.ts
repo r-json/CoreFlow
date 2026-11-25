@@ -19,11 +19,26 @@ export const verifySchema = z.object({
   signature: z.string().min(1, 'signature is required'),
 });
 
+/**
+ * Base-unit amounts arrive as decimal STRINGS, not numbers.
+ *
+ * JSON has no bigint, and a large payroll batch in 7-decimal base units
+ * exceeds Number.MAX_SAFE_INTEGER (2^53-1) at roughly 900 million units of the
+ * asset — where a JSON number would start silently rounding. A string parsed
+ * with BigInt is exact at any size.
+ */
+export const baseUnitString = z
+  .string()
+  .regex(/^\d+$/, 'must be a whole number of base units, as a string')
+  .refine((v) => BigInt(v) > 0n, 'must be greater than zero');
+
 export const createEscrowSchema = z.object({
   onChainId: z.number().int().positive().nullish(),
   workerPubKey: z.string().min(1),
-  amountCents: z.number().int().positive(),
-  rateCents: z.number().int().positive(),
+  financeApprover: stellarAddress.nullish(),
+  amountBaseUnits: baseUnitString,
+  rateBaseUnits: baseUnitString,
+  assetDecimals: z.number().int().min(0).max(18).default(7),
   tokenAddress: z.string().min(1).nullish(),
 });
 

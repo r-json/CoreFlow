@@ -1,7 +1,7 @@
 import { RefreshCw, LogOut, LogIn, ShieldCheck, Crown, Users, Mail, ScrollText } from 'lucide-react';
 import type { UserRole } from '@/hooks/useAuth';
-import { STELLAR_CONFIG } from '@/lib/config';
 import Link from 'next/link';
+import { NetworkBadge } from '@/components/NetworkBadge';
 
 interface DashboardHeaderProps {
   isContractConfigured: boolean;
@@ -44,7 +44,6 @@ export function DashboardHeader({
   onSignOut,
 }: DashboardHeaderProps) {
   const companyName = process.env.NEXT_PUBLIC_COMPANY_NAME || 'CoreFlow';
-  const networkName = (STELLAR_CONFIG.contract.network || 'public').toUpperCase();
 
   const truncatedAddress = walletAddress
     ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
@@ -56,6 +55,7 @@ export function DashboardHeader({
     <header className="sticky top-0 z-40 border-b border-violet-500/10 bg-slate-950/85 backdrop-blur-xl shadow-md shadow-black/10">
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
+          {/* Which chain these numbers refer to is never implicit. */}
           <div className="relative w-9 h-9 flex items-center justify-center">
             <div className="absolute inset-0 bg-violet-600/20 blur-md rounded-full animate-pulse-glow" />
             <svg
@@ -99,10 +99,10 @@ export function DashboardHeader({
               <span className="text-[9px] bg-violet-500/10 border border-violet-500/20 text-violet-400 font-bold px-1.5 py-0.5 rounded uppercase tracking-wide">
                 Soroban Escrow
               </span>
-              {/* Network Indicator */}
-              <span className="text-[9px] bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono font-bold px-1.5 py-0.5 rounded">
-                Network: {networkName}
-              </span>
+              {/* Network indicator. Previously rendered emerald regardless of
+                  network, so Mainnet and Testnet were visually identical and an
+                  unconfigured contract showed as healthy. */}
+              <NetworkBadge />
             </h1>
             <p className="text-[10px] text-slate-400">On-Chain Accounts Payable &amp; Remittance</p>
           </div>

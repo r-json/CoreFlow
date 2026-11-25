@@ -1,5 +1,9 @@
 # CoreFlow — Security Review Report
 
+> **Note:** an internal review of the CoreFlow payroll app written by its own
+> developers. It is not an independent security audit, and it does not cover
+> CoreFlow Kit, which has not been audited.
+
 > **Version:** 1.0  
 > **Date:** August 2026  
 > **Scope:** Smart contract (`contracts/core-flow/src/lib.rs`), backend API (`src/app/api/`), middleware, auth, oracle, and indexer subsystems  

@@ -196,6 +196,9 @@ export default function AdminEscrowsPage() {
         onClose={() => actions.setShowCreateModal(false)}
         onSubmit={actions.handleCreateEscrow}
         isMockMode={isMockMode}
+        // Lets the modal refuse a finance approver equal to the manager before
+        // the transaction is built, rather than after the contract traps.
+        managerAddress={auth.walletAddress}
       />
       <SubmitHoursModal
         isOpen={showHoursModal}

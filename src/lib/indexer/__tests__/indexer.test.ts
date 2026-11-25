@@ -1,133 +1,101 @@
 // @vitest-environment node
-import { describe, it, expect, vi } from 'vitest';
-import { parseCoreFlowEvent } from '../events';
-import { processBatch, type RawIndexedEvent, type IndexerDeps } from '../index';
+/**
+ * Event decoding tests.
+ *
+ * The projection itself is covered in projection.test.ts; this file pins the
+ * boundary where raw contract events become typed domain events. A decoding
+ * mistake here is invisible downstream — a dropped field becomes a zero, and a
+ * zero amount projects as a real payment of nothing.
+ */
+import { describe, it, expect } from 'vitest';
+import { parseCoreFlowEvent, paymentIndexOf } from '../events';
+
+const WORKER = 'G' + 'W'.repeat(55);
+const TOKEN = 'C' + 'T'.repeat(55);
+const MANAGER = 'G' + 'M'.repeat(55);
 
 describe('parseCoreFlowEvent', () => {
-  it('maps each contract topic pair to a domain event', () => {
-    expect(parseCoreFlowEvent('escrow', 'created', [5n, 'GM', 13000n])).toEqual({
-      kind: 'created',
-      escrowId: 5,
-    });
-    expect(parseCoreFlowEvent('hours', 'submit', [5n, 0n, 40n])).toEqual({
-      kind: 'hours',
-      escrowId: 5,
-      paymentId: 0,
-      hours: 40,
-    });
-    expect(parseCoreFlowEvent('approve', 'manager', 5n)).toEqual({
-      kind: 'manager_approved',
-      escrowId: 5,
-    });
-    expect(parseCoreFlowEvent('approve', 'finance', 5n)).toEqual({
-      kind: 'finance_approved',
-      escrowId: 5,
-    });
-    expect(parseCoreFlowEvent('payment', 'final', [5n, 13000n, 1n])).toEqual({
-      kind: 'finalized',
-      escrowId: 5,
-    });
-    expect(parseCoreFlowEvent('escrow', 'cancel', 5n)).toEqual({
-      kind: 'cancelled',
-      escrowId: 5,
+  it('decodes escrow creation', () => {
+    expect(parseCoreFlowEvent('escrow', 'created', [7, MANAGER, 28_600_000_000n])).toEqual({
+      kind: 'created', escrowId: 7, manager: MANAGER, totalAmount: 28_600_000_000n,
     });
   });
 
-  it('returns null for unrelated events', () => {
-    expect(parseCoreFlowEvent('transfer', 'token', [1n])).toBeNull();
-  });
-});
-
-/** Minimal in-memory Prisma double for the indexer. */
-function makeDb() {
-  const escrows = new Map<number, Record<string, unknown>>();
-  const chainEvents = new Map<string, unknown>();
-  let cursor: { lastLedger: number } | null = null;
-
-  return {
-    escrow: {
-      upsert: vi.fn(async ({ where, create, update }: any) => {
-        const ex = escrows.get(where.onChainId);
-        if (ex) Object.assign(ex, update);
-        else escrows.set(where.onChainId, { ...create });
-      }),
-      updateMany: vi.fn(async ({ where, data }: any) => {
-        const ex = escrows.get(where.onChainId);
-        if (ex) Object.assign(ex, data);
-        return { count: ex ? 1 : 0 };
-      }),
-    },
-    chainEvent: {
-      findUnique: vi.fn(async ({ where }: any) => chainEvents.get(where.id) ?? null),
-      create: vi.fn(async ({ data }: any) => {
-        chainEvents.set(data.id, data);
-      }),
-    },
-    indexerCursor: {
-      upsert: vi.fn(async ({ update }: any) => {
-        cursor = { lastLedger: update.lastLedger };
-      }),
-    },
-    _state: { escrows, chainEvents, getCursor: () => cursor },
-  };
-}
-
-const fullLifecycle: RawIndexedEvent[] = [
-  { id: 'e1', ledger: 10, topic0: 'escrow', topic1: 'created', value: [1n, 'GM', 13000n] },
-  { id: 'e2', ledger: 11, topic0: 'hours', topic1: 'submit', value: [1n, 0n, 40n] },
-  { id: 'e3', ledger: 12, topic0: 'approve', topic1: 'manager', value: 1n },
-  { id: 'e4', ledger: 13, topic0: 'approve', topic1: 'finance', value: 1n },
-  { id: 'e5', ledger: 14, topic0: 'payment', topic1: 'final', value: [1n, 13000n, 1n] },
-];
-
-function deps(db: ReturnType<typeof makeDb>): IndexerDeps {
-  return {
-    db,
-    fetchEscrowDetail: vi.fn(async () => ({
-      worker: 'GWORKER',
-      amountCents: 13000,
-      rateCents: 250,
-      tokenAddress: 'CTOKEN',
-    })),
-  };
-}
-
-describe('processBatch', () => {
-  it('projects a full lifecycle to the correct final state', async () => {
-    const db = makeDb();
-    const result = await processBatch(fullLifecycle, deps(db));
-
-    expect(result.processed).toBe(5);
-    expect(result.skipped).toBe(0);
-    expect(result.lastLedger).toBe(14);
-
-    const escrow = db._state.escrows.get(1)!;
-    expect(escrow.status).toBe('paid');
-    expect(escrow.managerApproved).toBe(true);
-    expect(escrow.financeApproved).toBe(true);
-    expect(escrow.workerPubKey).toBe('GWORKER');
-    expect(db._state.getCursor()).toEqual({ lastLedger: 14 });
+  it('decodes a per-payment add with its full financial identity', () => {
+    expect(
+      parseCoreFlowEvent('payment', 'add', [
+        7, 2, WORKER, TOKEN, 9_000_000_000n, 200_000_000n, 1000n, 2000n,
+      ])
+    ).toEqual({
+      kind: 'payment_added', escrowId: 7, paymentIndex: 2,
+      worker: WORKER, token: TOKEN,
+      amountBaseUnits: 9_000_000_000n, rateBaseUnits: 200_000_000n,
+      periodStart: 1000n, periodEnd: 2000n,
+    });
   });
 
-  it('is idempotent — reprocessing the same batch is a no-op', async () => {
-    const db = makeDb();
-    await processBatch(fullLifecycle, deps(db));
-    const escrowAfterFirst = { ...db._state.escrows.get(1) };
-
-    const second = await processBatch(fullLifecycle, deps(db));
-    expect(second.processed).toBe(0);
-    expect(second.skipped).toBe(5);
-    expect(db._state.escrows.get(1)).toEqual(escrowAfterFirst);
+  it('decodes a per-payment settlement', () => {
+    expect(
+      parseCoreFlowEvent('payment', 'paid', [7, 1, WORKER, TOKEN, 9_600_000_000n, 32n])
+    ).toEqual({
+      kind: 'payment_paid', escrowId: 7, paymentIndex: 1,
+      worker: WORKER, token: TOKEN, amountBaseUnits: 9_600_000_000n, hours: 32n,
+    });
   });
 
-  it('skips unrecognized events without recording them', async () => {
-    const db = makeDb();
-    const result = await processBatch(
-      [{ id: 'x1', ledger: 9, topic0: 'transfer', topic1: 'token', value: [1n] }],
-      deps(db)
-    );
-    expect(result.processed).toBe(0);
-    expect(result.skipped).toBe(1);
-    expect(db._state.chainEvents.size).toBe(0);
+  it('decodes hours, approvals, cancellation, rotation and the aggregate finalize', () => {
+    expect(parseCoreFlowEvent('hours', 'submit', [7, 0, 40n])).toEqual({
+      kind: 'hours', escrowId: 7, paymentIndex: 0, hours: 40n,
+    });
+    expect(parseCoreFlowEvent('approve', 'manager', 7)).toEqual({
+      kind: 'manager_approved', escrowId: 7,
+    });
+    expect(parseCoreFlowEvent('approve', 'finance', 7)).toEqual({
+      kind: 'finance_approved', escrowId: 7,
+    });
+    expect(parseCoreFlowEvent('payment', 'cancel', [7, 2])).toEqual({
+      kind: 'payment_cancelled', escrowId: 7, paymentIndex: 2,
+    });
+    expect(parseCoreFlowEvent('escrow', 'cancel', 7)).toEqual({
+      kind: 'cancelled', escrowId: 7,
+    });
+    expect(parseCoreFlowEvent('oracle', 'rotate', [7, 3])).toEqual({
+      kind: 'oracle_rotated', escrowId: 7, rotations: 3,
+    });
+    expect(parseCoreFlowEvent('payment', 'final', [7, 28_600_000_000n, 3])).toEqual({
+      kind: 'finalized', escrowId: 7, totalAmount: 28_600_000_000n, count: 3,
+    });
+  });
+
+  it('returns null for unrelated events rather than throwing', () => {
+    // A future contract version emitting something new must not halt ingestion.
+    expect(parseCoreFlowEvent('something', 'else', [1])).toBeNull();
+    expect(parseCoreFlowEvent('escrow', 'unknown', 1)).toBeNull();
+  });
+
+  it('keeps money as bigint, never Number', () => {
+    // Above 2^53-1 a Number cast silently rounds, which for a ledger means a
+    // wrong amount recorded as fact.
+    const huge = 9_007_199_254_740_993n; // 2^53 + 1
+    const ev = parseCoreFlowEvent('payment', 'paid', [1, 0, WORKER, TOKEN, huge, 1n]);
+    expect(ev).toMatchObject({ amountBaseUnits: huge });
+    expect(typeof (ev as any).amountBaseUnits).toBe('bigint');
+  });
+
+  it('accepts an amount delivered as a decimal string', () => {
+    // scValToNative yields bigint, but a replayed stored payload is JSON strings.
+    const ev = parseCoreFlowEvent('payment', 'paid', [1, 0, WORKER, TOKEN, '10000000000', '40']);
+    expect(ev).toMatchObject({ amountBaseUnits: 10_000_000_000n, hours: 40n });
+  });
+
+  it('identifies which events refer to a payment slot', () => {
+    const add = parseCoreFlowEvent('payment', 'add', [7, 2, WORKER, TOKEN, 1n, 1n, 0n, 1n])!;
+    const approval = parseCoreFlowEvent('approve', 'manager', 7)!;
+    expect(paymentIndexOf(add)).toBe(2);
+    expect(paymentIndexOf(approval)).toBeNull();
+  });
+
+  it('treats a scalar value as a one-element tuple', () => {
+    expect(parseCoreFlowEvent('escrow', 'cancel', 9)).toEqual({ kind: 'cancelled', escrowId: 9 });
   });
 });

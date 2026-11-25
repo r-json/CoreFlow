@@ -1,5 +1,9 @@
 # CoreFlow — Project Instructions
 
+> **Scope:** this document describes the CoreFlow payroll app (the reference
+> application in `src/` and `contracts/core-flow`), not CoreFlow Kit. For the kit,
+> start at the [root README](../README.md) and [docs/README.md](../docs/README.md).
+
 > **On-Chain Accounts Payable for Remote Teams**
 > Soroban Smart Contract + Next.js 14 Dashboard · Stellar Philippines Bootcamp 2026
 

@@ -1,5 +1,9 @@
 # Testnet Validation — Deliverables 1 & 2
 
+> **Scope:** this document describes the CoreFlow payroll app (the reference
+> application in `src/` and `contracts/core-flow`), not CoreFlow Kit. For the kit,
+> start at the [root README](../../README.md) and [docs/README.md](../README.md).
+
 Network: **Stellar Testnet**  ·  Contract: `CA47SB2NBTTVFPBDHPQHDAO4MGJNPCJFXKMNJ6XGFCVWXX5WEG7T4UW5`
 
 ## Deployed artifacts

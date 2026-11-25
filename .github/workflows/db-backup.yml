@@ -8,6 +8,9 @@ on:
 jobs:
   backup:
     name: Daily PostgreSQL Disaster Recovery Backup
+    # Opt-in: runs once the repository variable ENABLE_DB_BACKUP is "true" and
+    # the backup secrets are configured. Without them every run fails.
+    if: ${{ vars.ENABLE_DB_BACKUP == 'true' }}
     runs-on: ubuntu-latest
 
     steps:

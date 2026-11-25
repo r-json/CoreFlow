@@ -16,7 +16,8 @@ import path from 'node:path';
 import { NextRequest } from 'next/server';
 import { API_ACCESS, type Access } from '@/lib/auth/api-access';
 
-const ADMIN = { userId: 'u-admin', walletAddress: 'GADMIN', role: 'ADMIN' };
+const ORG_ID = 'sample';
+const ADMIN = { userId: 'u-admin', walletAddress: 'GADMINAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', role: 'ADMIN' };
 const WORKER = 'GWORKERAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
 const MANAGER = 'GMANAGERAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
 const OTHER = 'GOTHERAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
@@ -27,12 +28,96 @@ vi.mock('@/lib/auth', async (orig) => {
   return { ...actual, getUserFromRequest: vi.fn() };
 });
 
-// Every Prisma call resolves to an empty result, so handlers run past their
-// authorization checks without a database.
+vi.mock('@/lib/config', async (orig) => {
+  const actual = await orig<typeof import('@/lib/config')>();
+  return {
+    ...actual,
+    STELLAR_CONFIG: {
+      ...actual.STELLAR_CONFIG,
+      contract: {
+        ...actual.STELLAR_CONFIG.contract,
+        id: 'CCQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2DINBUGQ2CNSG',
+      },
+      getNetworkPassphrase: () => 'Test SDF Network ; September 2015',
+    },
+  };
+});
+
+// Configurable tenant/resource state so handlers can be exercised with either
+// an unprivileged org role (WORKER -> 403) or a privileged org role (OWNER).
+const dbState = vi.hoisted(() => ({
+  orgRole: 'OWNER' as string | null,
+  walletAddress: 'GMANAGERAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+  existingAttestation: null as { signature: string } | null,
+  paymentState: 'AWAITING_MANAGER',
+}));
+
 vi.mock('@/lib/db/prisma', () => {
-  const op = (name: string) =>
-    vi.fn(async () => (name === 'findMany' ? [] : name === 'count' ? 0 : name.startsWith('find') ? null : {}));
-  const model = () => new Proxy({}, { get: (_t, name: string) => op(name) });
+  const op = (modelName: string, name: string) =>
+    vi.fn(async () => {
+      if (modelName === 'orgMember') {
+        if (name === 'findMany') {
+          return dbState.orgRole ? [{ orgId: 'sample', role: dbState.orgRole, status: 'ACTIVE' }] : [];
+        }
+        if (name === 'findUnique') {
+          return dbState.orgRole
+            ? {
+                id: 'mem-self',
+                orgId: 'sample',
+                userId: 'u-caller',
+                role: dbState.orgRole,
+                status: 'ACTIVE',
+                org: { id: 'sample', name: 'Sample Org', slug: 'sample-org' },
+                user: { walletAddress: dbState.walletAddress },
+              }
+            : null;
+        }
+        if (name === 'findFirst') {
+          return {
+            id: 'sample',
+            orgId: 'sample',
+            userId: 'u-target-other',
+            role: 'VIEWER',
+            status: 'ACTIVE',
+          };
+        }
+      }
+      if (modelName === 'escrow' && name === 'findFirst') {
+        return { id: 'esc-1', orgId: 'sample', onChainId: 1 };
+      }
+      if (modelName === 'oracleAttestation' && name === 'findUnique') {
+        return dbState.existingAttestation;
+      }
+      if (modelName === 'payment' && (name === 'findFirst' || name === 'findUnique')) {
+        return {
+          id: 'sample',
+          orgId: 'sample',
+          batchId: 'batch-1',
+          recipientAddress: 'GWORKERAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+          amountBaseUnits: 10000n,
+          rateBaseUnits: 250n,
+          hours: 40n,
+          assetCode: 'USDC',
+          assetContractId: 'CTOKEN',
+          assetDecimals: 7,
+          state: dbState.paymentState,
+          approvals: [],
+          attestations: [],
+          transactions: [],
+          auditEvents: [],
+          findings: [],
+          createdAt: new Date('2026-01-01T00:00:00Z'),
+        };
+      }
+      if (name === 'findMany') return [];
+      if (name === 'count') return 0;
+      if (name.startsWith('find')) return null;
+      return {};
+    });
+
+  const model = (modelName: string) =>
+    new Proxy({}, { get: (_t, name: string) => op(modelName, name) });
+
   const prisma: any = new Proxy(
     {},
     {
@@ -40,7 +125,7 @@ vi.mock('@/lib/db/prisma', () => {
         if (name === '$transaction')
           return vi.fn(async (arg: any) => (Array.isArray(arg) ? Promise.all(arg) : arg(prisma)));
         if (name.startsWith('$')) return vi.fn(async () => []);
-        return model();
+        return model(name);
       },
     }
   );
@@ -61,6 +146,8 @@ vi.mock('@/lib/oracle', () => ({
   getOraclePublicKeyHex: () => 'ab'.repeat(32),
 }));
 
+vi.mock('@/lib/audit', () => ({ audit: vi.fn() }));
+
 import { getUserFromRequest } from '@/lib/auth';
 const mockUser = getUserFromRequest as unknown as ReturnType<typeof vi.fn>;
 
@@ -72,15 +159,29 @@ function request(route: string, method: string, body?: unknown) {
   const url = `http://localhost${route.replace(/\[[^\]]+\]/g, 'sample')}`;
   return new NextRequest(url, {
     method,
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'x-organization-id': ORG_ID,
+      'idempotency-key': 'idem-sample',
+    },
     body: method === 'GET' || method === 'DELETE' ? undefined : JSON.stringify(body ?? {}),
   });
 }
 
 async function call(route: string, method: string, body?: unknown) {
+  if (route === '/api/payments/[id]/submit') dbState.paymentState = 'READY_TO_SETTLE';
+  else if (route === '/api/payments/[id]/retry') dbState.paymentState = 'SUBMISSION_FAILED';
+  else if (route === '/api/payments/[id]/cancel') dbState.paymentState = 'DRAFT';
+  else dbState.paymentState = 'AWAITING_MANAGER';
   const mod = await load(route);
   return (mod[method] as Function)(request(route, method, body), {
-    params: { id: 'sample', token: 'sample' },
+    params: {
+      id: ORG_ID,
+      token: 'sample',
+      findingId: 'sample',
+      invitationId: 'sample',
+      memberId: 'sample',
+    },
   }) as Promise<Response>;
 }
 
@@ -88,7 +189,17 @@ const ESCROW = {
   manager: MANAGER,
   finance_approver: OTHER,
   oracle_pubkey: 'ab'.repeat(32),
-  payments: [{ id: 0, worker: WORKER }],
+  payments: [
+    {
+      id: 0,
+      worker: WORKER,
+      token: 'CCZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLFMVSWKZLEB3K',
+      amount: 2000n,
+      rate_per_hour: 250n,
+      start_date: 1000,
+      end_date: 2000,
+    },
+  ],
   manager_approved: false,
   finance_approved: false,
   cancelled: false,
@@ -98,17 +209,23 @@ const ATTEST_BODY = { onChainId: 1, paymentId: 0, hoursLogged: 8, nonce: 0 };
 const BATCH_BODY = { escrow_id: 1, payees: [{ address: WORKER, amount: 10, token: 'CTOKEN' }] };
 
 /** A caller with the least privilege the access level allows. */
-const allowedCaller: Record<Access, object | null> = {
+const allowedCaller: Record<Access, { user: object; orgRole: string } | null> = {
   public: null,
-  session: employee(OTHER),
-  admin: ADMIN,
-  'escrow-worker': employee(WORKER),
-  'escrow-manager': employee(MANAGER),
+  session: { user: employee(OTHER), orgRole: 'WORKER' },
+  admin: { user: ADMIN, orgRole: 'OWNER' },
+  tenant: { user: employee(MANAGER), orgRole: 'OWNER' },
+  'escrow-manager': { user: employee(MANAGER), orgRole: 'MANAGER' },
   'bootstrap-secret': null,
   'cron-secret': null,
 };
-const bodyFor = (route: string) =>
-  route === '/api/oracle/attest' ? ATTEST_BODY : route === '/api/submit-batch' ? BATCH_BODY : {};
+
+const bodyFor = (route: string) => {
+  if (route === '/api/oracle/attest') return ATTEST_BODY;
+  if (route === '/api/submit-batch') return BATCH_BODY;
+  if (route === '/api/organizations/[id]/members/[memberId]') return { role: 'VIEWER' };
+  if (route === '/api/payments/[id]/reject') return { reason: 'test rejection reason' };
+  return {};
+};
 
 const cases = Object.entries(API_ACCESS).flatMap(([route, policy]) =>
   Object.entries(policy.methods).map(([method, access]) => ({ route, method, access: access as Access }))
@@ -117,6 +234,9 @@ const sessionCases = cases.filter((c) => allowedCaller[c.access] !== null);
 
 beforeEach(() => {
   vi.clearAllMocks();
+  dbState.orgRole = 'OWNER';
+  dbState.walletAddress = MANAGER;
+  dbState.existingAttestation = null;
   getEscrow.mockResolvedValue(ESCROW);
   getNonce.mockResolvedValue(0);
 });
@@ -128,15 +248,20 @@ describe('protected handlers', () => {
   });
 
   it.each(sessionCases.filter((c) => c.access !== 'session'))(
-    '$method $route: 403 for an EMPLOYEE with no claim to it',
+    '$method $route: 403 for an unprivileged caller',
     async ({ route, method }) => {
+      dbState.orgRole = 'WORKER'; // holds no org permissions
+      dbState.walletAddress = OTHER;
       mockUser.mockResolvedValue(employee(OTHER));
       expect((await call(route, method, bodyFor(route))).status).toBe(403);
     }
   );
 
   it.each(sessionCases)('$method $route: allowed for $access', async ({ route, method, access }) => {
-    mockUser.mockResolvedValue(allowedCaller[access]);
+    const allowed = allowedCaller[access]!;
+    dbState.orgRole = allowed.orgRole;
+    dbState.walletAddress = (allowed.user as { walletAddress: string }).walletAddress;
+    mockUser.mockResolvedValue(allowed.user);
     const res = await call(route, method, bodyFor(route));
     expect([401, 403]).not.toContain(res.status);
   });
@@ -154,17 +279,19 @@ describe('protected handlers', () => {
 
 describe('POST /api/submit-batch', () => {
   it('signs for the escrow manager', async () => {
+    dbState.orgRole = 'MANAGER';
     mockUser.mockResolvedValue(employee(MANAGER));
     const res = await call('/api/submit-batch', 'POST', BATCH_BODY);
     expect(res.status).toBe(200);
     expect((await res.json()).signatures).toHaveLength(1);
   });
 
-  it('signs for an ADMIN without reading the escrow', async () => {
+  it('signs nothing for a platform ADMIN who is not the escrow manager', async () => {
+    dbState.orgRole = 'ADMIN';
+    dbState.walletAddress = ADMIN.walletAddress;
     mockUser.mockResolvedValue(ADMIN);
-    const res = await call('/api/submit-batch', 'POST', BATCH_BODY);
-    expect(res.status).toBe(200);
-    expect(getEscrow).not.toHaveBeenCalled();
+    expect((await call('/api/submit-batch', 'POST', BATCH_BODY)).status).toBe(403);
+    expect(signHoursProof).not.toHaveBeenCalled();
   });
 
   it('signs nothing without a session', async () => {
@@ -174,12 +301,15 @@ describe('POST /api/submit-batch', () => {
   });
 
   it('signs nothing for a signed-in wallet that is not the manager', async () => {
+    dbState.orgRole = 'MANAGER';
+    dbState.walletAddress = WORKER;
     mockUser.mockResolvedValue(employee(WORKER));
     expect((await call('/api/submit-batch', 'POST', BATCH_BODY)).status).toBe(403);
     expect(signHoursProof).not.toHaveBeenCalled();
   });
 
   it('signs nothing when the escrow cannot be read', async () => {
+    dbState.orgRole = 'MANAGER';
     mockUser.mockResolvedValue(employee(MANAGER));
     getEscrow.mockRejectedValue(new Error('rpc down'));
     expect((await call('/api/submit-batch', 'POST', BATCH_BODY)).status).toBe(502);
@@ -188,33 +318,43 @@ describe('POST /api/submit-batch', () => {
 });
 
 describe('POST /api/oracle/attest', () => {
-  it("signs for the payment's worker", async () => {
-    mockUser.mockResolvedValue(employee(WORKER));
+  it('signs for the escrow manager', async () => {
+    dbState.orgRole = 'MANAGER';
+    mockUser.mockResolvedValue(employee(MANAGER));
     const res = await call('/api/oracle/attest', 'POST', ATTEST_BODY);
     expect(res.status).toBe(201);
     expect((await res.json()).signature).toBe('signature-hex');
   });
 
-  it('signs for an ADMIN', async () => {
+  it('signs nothing for a platform ADMIN who is not the escrow manager', async () => {
+    dbState.orgRole = 'ADMIN';
+    dbState.walletAddress = ADMIN.walletAddress;
     mockUser.mockResolvedValue(ADMIN);
-    expect((await call('/api/oracle/attest', 'POST', ATTEST_BODY)).status).toBe(201);
-  });
-
-  it('signs nothing for a signed-in wallet that is not the worker', async () => {
-    mockUser.mockResolvedValue(employee(OTHER));
     expect((await call('/api/oracle/attest', 'POST', ATTEST_BODY)).status).toBe(403);
     expect(signHoursProof).not.toHaveBeenCalled();
   });
 
-  it('signs nothing for a payment that does not exist', async () => {
-    mockUser.mockResolvedValue(employee(WORKER));
-    const res = await call('/api/oracle/attest', 'POST', { ...ATTEST_BODY, paymentId: 5 });
+  it('does not return a cached signature to a caller who is not the escrow manager', async () => {
+    dbState.orgRole = 'MANAGER';
+    dbState.walletAddress = OTHER;
+    dbState.existingAttestation = { signature: 'cached-sig' };
+    mockUser.mockResolvedValue(employee(OTHER));
+    const res = await call('/api/oracle/attest', 'POST', ATTEST_BODY);
     expect(res.status).toBe(403);
     expect(signHoursProof).not.toHaveBeenCalled();
   });
 
+  it('signs nothing for a payment that does not exist', async () => {
+    dbState.orgRole = 'MANAGER';
+    mockUser.mockResolvedValue(employee(MANAGER));
+    const res = await call('/api/oracle/attest', 'POST', { ...ATTEST_BODY, paymentId: 5 });
+    expect(res.status).toBe(400);
+    expect(signHoursProof).not.toHaveBeenCalled();
+  });
+
   it('signs nothing when the escrow cannot be read', async () => {
-    mockUser.mockResolvedValue(employee(WORKER));
+    dbState.orgRole = 'MANAGER';
+    mockUser.mockResolvedValue(employee(MANAGER));
     getEscrow.mockRejectedValue(new Error('rpc down'));
     expect((await call('/api/oracle/attest', 'POST', ATTEST_BODY)).status).toBe(502);
     expect(signHoursProof).not.toHaveBeenCalled();

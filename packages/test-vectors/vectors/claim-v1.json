@@ -1,0 +1,455 @@
+{
+  "version": 1,
+  "description": "Test vectors for the CoreFlow signed claim format, wire version 1 (docs/kit/claim-format.md). TEST ONLY: issuer seeds are SHA-256(\"coreflow-test-issuer-<n>\") and are public.",
+  "generator": "packages/test-vectors/scripts/generate.mjs",
+  "issuers": [
+    {
+      "name": "test-issuer-0",
+      "seed_rule": "SHA-256(\"coreflow-test-issuer-0\")",
+      "seed_hex": "b9b263e9ab59ae8abcd2071844418bb904b7f23456142393ce0d6793b9cb801b",
+      "public_key_hex": "b35fe662038bcced74729876b2bf3cd3875594e93626e7890b2bc70821eef120"
+    },
+    {
+      "name": "test-issuer-1",
+      "seed_rule": "SHA-256(\"coreflow-test-issuer-1\")",
+      "seed_hex": "6d9b2ea3834f1e5d9931019afdc9282897620a3264659533850539adbacc80ab",
+      "public_key_hex": "c1b57789af50fc5471fcab4277b9617fa03cca9ba8e4085dd1488f4be582775c"
+    }
+  ],
+  "valid": [
+    {
+      "name": "sequence-first",
+      "description": "Sequence mode, first claim in the scope (nonce 0), raw payload.",
+      "context": {
+        "network_passphrase": "Test SDF Network ; September 2015",
+        "network_id_hex": "cee0302d59844d32bdca915c8203dd44b33fbb7edc19051ea37abedf28ecd472",
+        "contract_id": "CBWDWZ64DEYTQ4GUFIJAX73W4YSXWYC776N6N3L7M3OMHZNALI2A4I25",
+        "contract_digest_hex": "8942a92d87fed72917e382d023f50e155473a669bb0fbed2a6a29444a0b69672"
+      },
+      "claim": {
+        "issuer_hex": "b35fe662038bcced74729876b2bf3cd3875594e93626e7890b2bc70821eef120",
+        "claim_type_hex": "461dc67f71d6957f2f6f9b872cf4c4f113f79ca3007af51f8ad7701ed22b087a",
+        "claim_type_string": "marketplace.delivery.v1",
+        "subject_hex": "da68380de022bac727782efee3c495d4ae08ba3233b4976543cb5247b100424a",
+        "payload_hex": "64656c697665726564",
+        "payload_hash_hex": "373e0712c83cffe15ff427b60e788b549f82496fe5fd5391f7921832b04c6b20",
+        "payload_encoding": 0,
+        "replay_mode": 0,
+        "nonce": "0",
+        "claim_id_hex": "0000000000000000000000000000000000000000000000000000000000000000",
+        "issued_at": "1790000000",
+        "expires_at": "1790003600"
+      },
+      "now": "1790000060",
+      "preimage_hex": "4346434c0001cee0302d59844d32bdca915c8203dd44b33fbb7edc19051ea37abedf28ecd4728942a92d87fed72917e382d023f50e155473a669bb0fbed2a6a29444a0b69672b35fe662038bcced74729876b2bf3cd3875594e93626e7890b2bc70821eef120461dc67f71d6957f2f6f9b872cf4c4f113f79ca3007af51f8ad7701ed22b087ada68380de022bac727782efee3c495d4ae08ba3233b4976543cb5247b100424a373e0712c83cffe15ff427b60e788b549f82496fe5fd5391f7921832b04c6b20000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006ab13b80000000006ab14990",
+      "signature_hex": "ee298f7b2ac0e9db4d844f0462948368f9b8553185980ec5587a4ae00cc77bfab7bbbb9ee9e622d17b6c36aa2eccc792c28d6c84dd42b5fb341171c3d4fe590b"
+    },
+    {
+      "name": "sequence-next",
+      "description": "Sequence mode, nonce 1.",
+      "context": {
+        "network_passphrase": "Test SDF Network ; September 2015",
+        "network_id_hex": "cee0302d59844d32bdca915c8203dd44b33fbb7edc19051ea37abedf28ecd472",
+        "contract_id": "CBWDWZ64DEYTQ4GUFIJAX73W4YSXWYC776N6N3L7M3OMHZNALI2A4I25",
+        "contract_digest_hex": "8942a92d87fed72917e382d023f50e155473a669bb0fbed2a6a29444a0b69672"
+      },
+      "claim": {
+        "issuer_hex": "b35fe662038bcced74729876b2bf3cd3875594e93626e7890b2bc70821eef120",
+        "claim_type_hex": "461dc67f71d6957f2f6f9b872cf4c4f113f79ca3007af51f8ad7701ed22b087a",
+        "claim_type_string": "marketplace.delivery.v1",
+        "subject_hex": "da68380de022bac727782efee3c495d4ae08ba3233b4976543cb5247b100424a",
+        "payload_hex": "64656c697665726564",
+        "payload_hash_hex": "373e0712c83cffe15ff427b60e788b549f82496fe5fd5391f7921832b04c6b20",
+        "payload_encoding": 0,
+        "replay_mode": 0,
+        "nonce": "1",
+        "claim_id_hex": "0000000000000000000000000000000000000000000000000000000000000000",
+        "issued_at": "1790000000",
+        "expires_at": "1790003600"
+      },
+      "now": "1790000060",
+      "preimage_hex": "4346434c0001cee0302d59844d32bdca915c8203dd44b33fbb7edc19051ea37abedf28ecd4728942a92d87fed72917e382d023f50e155473a669bb0fbed2a6a29444a0b69672b35fe662038bcced74729876b2bf3cd3875594e93626e7890b2bc70821eef120461dc67f71d6957f2f6f9b872cf4c4f113f79ca3007af51f8ad7701ed22b087ada68380de022bac727782efee3c495d4ae08ba3233b4976543cb5247b100424a373e0712c83cffe15ff427b60e788b549f82496fe5fd5391f7921832b04c6b20000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000006ab13b80000000006ab14990",
+      "signature_hex": "4c4788fa37ed78f335bfea576faac8f6b4f129a2ddff6d9966bac17dde64632ebef240f77cf31515404ae4916333d45e6fd4c862200c00699cc41c59819ffe0c"
+    },
+    {
+      "name": "unique-id",
+      "description": "Unique-id mode with a content-derived claim id; nonce is 0.",
+      "context": {
+        "network_passphrase": "Test SDF Network ; September 2015",
+        "network_id_hex": "cee0302d59844d32bdca915c8203dd44b33fbb7edc19051ea37abedf28ecd472",
+        "contract_id": "CBWDWZ64DEYTQ4GUFIJAX73W4YSXWYC776N6N3L7M3OMHZNALI2A4I25",
+        "contract_digest_hex": "8942a92d87fed72917e382d023f50e155473a669bb0fbed2a6a29444a0b69672"
+      },
+      "claim": {
+        "issuer_hex": "b35fe662038bcced74729876b2bf3cd3875594e93626e7890b2bc70821eef120",
+        "claim_type_hex": "461dc67f71d6957f2f6f9b872cf4c4f113f79ca3007af51f8ad7701ed22b087a",
+        "claim_type_string": "marketplace.delivery.v1",
+        "subject_hex": "da68380de022bac727782efee3c495d4ae08ba3233b4976543cb5247b100424a",
+        "payload_hex": "64656c697665726564",
+        "payload_hash_hex": "373e0712c83cffe15ff427b60e788b549f82496fe5fd5391f7921832b04c6b20",
+        "payload_encoding": 0,
+        "replay_mode": 1,
+        "nonce": "0",
+        "claim_id_hex": "3a9cca63531df92dbe9bea1d34211f9798de8f858811ee8c3e42c4d118963632",
+        "issued_at": "1790000000",
+        "expires_at": "1790003600"
+      },
+      "now": "1790000060",
+      "preimage_hex": "4346434c0001cee0302d59844d32bdca915c8203dd44b33fbb7edc19051ea37abedf28ecd4728942a92d87fed72917e382d023f50e155473a669bb0fbed2a6a29444a0b69672b35fe662038bcced74729876b2bf3cd3875594e93626e7890b2bc70821eef120461dc67f71d6957f2f6f9b872cf4c4f113f79ca3007af51f8ad7701ed22b087ada68380de022bac727782efee3c495d4ae08ba3233b4976543cb5247b100424a373e0712c83cffe15ff427b60e788b549f82496fe5fd5391f7921832b04c6b20000100000000000000003a9cca63531df92dbe9bea1d34211f9798de8f858811ee8c3e42c4d118963632000000006ab13b80000000006ab14990",
+      "signature_hex": "3eec78042de5d311ee85363edb39b3610bff9af932775d1ba3aaf6fc7a342a9f9c9610e917cd452bf5c1f24cd5d90f5aa07f9105138505bc3918b63049be0904"
+    },
+    {
+      "name": "xdr-payload",
+      "description": "Payload encoding 1 (XDR ScVal), hash of the XDR bytes.",
+      "context": {
+        "network_passphrase": "Test SDF Network ; September 2015",
+        "network_id_hex": "cee0302d59844d32bdca915c8203dd44b33fbb7edc19051ea37abedf28ecd472",
+        "contract_id": "CBWDWZ64DEYTQ4GUFIJAX73W4YSXWYC776N6N3L7M3OMHZNALI2A4I25",
+        "contract_digest_hex": "8942a92d87fed72917e382d023f50e155473a669bb0fbed2a6a29444a0b69672"
+      },
+      "claim": {
+        "issuer_hex": "b35fe662038bcced74729876b2bf3cd3875594e93626e7890b2bc70821eef120",
+        "claim_type_hex": "3818dadffa8e5e059553682b826333b8de4a057dfc3f723d223d2a0c7f3547d7",
+        "claim_type_string": "sensor.reading.v1",
+        "subject_hex": "39f406a65b7ca2bd3160d608aa5f39ffd6299c0f3582cf7bac5d9aabb2302fcd",
+        "payload_hex": "00000005000000000000002a",
+        "payload_hash_hex": "4015bc627523e9b2ece0b4d39873c7b3018a7a46e0c96e4c3fe6dd1e62605725",
+        "payload_encoding": 1,
+        "replay_mode": 0,
+        "nonce": "0",
+        "claim_id_hex": "0000000000000000000000000000000000000000000000000000000000000000",
+        "issued_at": "1790000000",
+        "expires_at": "1790003600"
+      },
+      "now": "1790000060",
+      "preimage_hex": "4346434c0001cee0302d59844d32bdca915c8203dd44b33fbb7edc19051ea37abedf28ecd4728942a92d87fed72917e382d023f50e155473a669bb0fbed2a6a29444a0b69672b35fe662038bcced74729876b2bf3cd3875594e93626e7890b2bc70821eef1203818dadffa8e5e059553682b826333b8de4a057dfc3f723d223d2a0c7f3547d739f406a65b7ca2bd3160d608aa5f39ffd6299c0f3582cf7bac5d9aabb2302fcd4015bc627523e9b2ece0b4d39873c7b3018a7a46e0c96e4c3fe6dd1e62605725010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006ab13b80000000006ab14990",
+      "signature_hex": "37255f082a967678612bbd7342cc34072be01056d4969df11f59ac3dde0c2786ff3454c55d3d592a837e1688a2b1e9b867070ce2e6e7058177be72f4048fff0c"
+    },
+    {
+      "name": "u64-extremes",
+      "description": "Largest nonce and widest window: nonce 2^64-1, issued_at 0, expires_at 2^64-1.",
+      "context": {
+        "network_passphrase": "Test SDF Network ; September 2015",
+        "network_id_hex": "cee0302d59844d32bdca915c8203dd44b33fbb7edc19051ea37abedf28ecd472",
+        "contract_id": "CBWDWZ64DEYTQ4GUFIJAX73W4YSXWYC776N6N3L7M3OMHZNALI2A4I25",
+        "contract_digest_hex": "8942a92d87fed72917e382d023f50e155473a669bb0fbed2a6a29444a0b69672"
+      },
+      "claim": {
+        "issuer_hex": "b35fe662038bcced74729876b2bf3cd3875594e93626e7890b2bc70821eef120",
+        "claim_type_hex": "461dc67f71d6957f2f6f9b872cf4c4f113f79ca3007af51f8ad7701ed22b087a",
+        "claim_type_string": "marketplace.delivery.v1",
+        "subject_hex": "da68380de022bac727782efee3c495d4ae08ba3233b4976543cb5247b100424a",
+        "payload_hex": "64656c697665726564",
+        "payload_hash_hex": "373e0712c83cffe15ff427b60e788b549f82496fe5fd5391f7921832b04c6b20",
+        "payload_encoding": 0,
+        "replay_mode": 0,
+        "nonce": "18446744073709551615",
+        "claim_id_hex": "0000000000000000000000000000000000000000000000000000000000000000",
+        "issued_at": "0",
+        "expires_at": "18446744073709551615"
+      },
+      "now": "1",
+      "preimage_hex": "4346434c0001cee0302d59844d32bdca915c8203dd44b33fbb7edc19051ea37abedf28ecd4728942a92d87fed72917e382d023f50e155473a669bb0fbed2a6a29444a0b69672b35fe662038bcced74729876b2bf3cd3875594e93626e7890b2bc70821eef120461dc67f71d6957f2f6f9b872cf4c4f113f79ca3007af51f8ad7701ed22b087ada68380de022bac727782efee3c495d4ae08ba3233b4976543cb5247b100424a373e0712c83cffe15ff427b60e788b549f82496fe5fd5391f7921832b04c6b200000ffffffffffffffff00000000000000000000000000000000000000000000000000000000000000000000000000000000ffffffffffffffff",
+      "signature_hex": "0a6805fa0822f0894ede8c328ed81cc2c6e71b9736a7396c295015c8574cdd0b3c4e6b559f64e46afddd004150eefe776558b17a82099951d8d6f95f3fe9250e"
+    },
+    {
+      "name": "mainnet-second-issuer",
+      "description": "Mainnet passphrase, second contract, second issuer.",
+      "context": {
+        "network_passphrase": "Public Global Stellar Network ; September 2015",
+        "network_id_hex": "7ac33997544e3175d266bd022439b22cdb16508c01163f26e5cb2a3e1045a979",
+        "contract_id": "CBA7D5OGSJGEYXP6PPDJJEGIJ2YCIF52XBLZ63K6FQLYMJG4TD7TX5BZ",
+        "contract_digest_hex": "253b0edfebadba9bd8e04b8ef82e2271841882087a78092e0e7c0c99067814d4"
+      },
+      "claim": {
+        "issuer_hex": "c1b57789af50fc5471fcab4277b9617fa03cca9ba8e4085dd1488f4be582775c",
+        "claim_type_hex": "461dc67f71d6957f2f6f9b872cf4c4f113f79ca3007af51f8ad7701ed22b087a",
+        "claim_type_string": "marketplace.delivery.v1",
+        "subject_hex": "15e03a86f3d71c032fd597dfc3e881a56a01850467348d58f15af98c5715ea6c",
+        "payload_hex": "64656c697665726564",
+        "payload_hash_hex": "373e0712c83cffe15ff427b60e788b549f82496fe5fd5391f7921832b04c6b20",
+        "payload_encoding": 0,
+        "replay_mode": 0,
+        "nonce": "0",
+        "claim_id_hex": "0000000000000000000000000000000000000000000000000000000000000000",
+        "issued_at": "1790000000",
+        "expires_at": "1790003600"
+      },
+      "now": "1790000060",
+      "preimage_hex": "4346434c00017ac33997544e3175d266bd022439b22cdb16508c01163f26e5cb2a3e1045a979253b0edfebadba9bd8e04b8ef82e2271841882087a78092e0e7c0c99067814d4c1b57789af50fc5471fcab4277b9617fa03cca9ba8e4085dd1488f4be582775c461dc67f71d6957f2f6f9b872cf4c4f113f79ca3007af51f8ad7701ed22b087a15e03a86f3d71c032fd597dfc3e881a56a01850467348d58f15af98c5715ea6c373e0712c83cffe15ff427b60e788b549f82496fe5fd5391f7921832b04c6b20000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006ab13b80000000006ab14990",
+      "signature_hex": "f8e86cecd521158cfaec353494caaf771c66a3e1a566269d5dcc17747eb6fd70a3e7315ff1531cce748a10e9ec0c4a7be009d84d448160f02f78c3c78864860f"
+    }
+  ],
+  "invalid": [
+    {
+      "name": "expired",
+      "reason": "Ledger time is one second past expires_at.",
+      "expected_error": "ClaimExpired",
+      "context": {
+        "network_passphrase": "Test SDF Network ; September 2015",
+        "network_id_hex": "cee0302d59844d32bdca915c8203dd44b33fbb7edc19051ea37abedf28ecd472",
+        "contract_id": "CBWDWZ64DEYTQ4GUFIJAX73W4YSXWYC776N6N3L7M3OMHZNALI2A4I25",
+        "contract_digest_hex": "8942a92d87fed72917e382d023f50e155473a669bb0fbed2a6a29444a0b69672"
+      },
+      "claim": {
+        "issuer_hex": "b35fe662038bcced74729876b2bf3cd3875594e93626e7890b2bc70821eef120",
+        "claim_type_hex": "461dc67f71d6957f2f6f9b872cf4c4f113f79ca3007af51f8ad7701ed22b087a",
+        "claim_type_string": "marketplace.delivery.v1",
+        "subject_hex": "da68380de022bac727782efee3c495d4ae08ba3233b4976543cb5247b100424a",
+        "payload_hex": "64656c697665726564",
+        "payload_hash_hex": "373e0712c83cffe15ff427b60e788b549f82496fe5fd5391f7921832b04c6b20",
+        "payload_encoding": 0,
+        "replay_mode": 0,
+        "nonce": "0",
+        "claim_id_hex": "0000000000000000000000000000000000000000000000000000000000000000",
+        "issued_at": "1790000000",
+        "expires_at": "1790003600"
+      },
+      "now": "1790003601",
+      "signature_hex": "ee298f7b2ac0e9db4d844f0462948368f9b8553185980ec5587a4ae00cc77bfab7bbbb9ee9e622d17b6c36aa2eccc792c28d6c84dd42b5fb341171c3d4fe590b"
+    },
+    {
+      "name": "empty-window",
+      "reason": "expires_at equals issued_at.",
+      "expected_error": "InvalidWindow",
+      "context": {
+        "network_passphrase": "Test SDF Network ; September 2015",
+        "network_id_hex": "cee0302d59844d32bdca915c8203dd44b33fbb7edc19051ea37abedf28ecd472",
+        "contract_id": "CBWDWZ64DEYTQ4GUFIJAX73W4YSXWYC776N6N3L7M3OMHZNALI2A4I25",
+        "contract_digest_hex": "8942a92d87fed72917e382d023f50e155473a669bb0fbed2a6a29444a0b69672"
+      },
+      "claim": {
+        "issuer_hex": "b35fe662038bcced74729876b2bf3cd3875594e93626e7890b2bc70821eef120",
+        "claim_type_hex": "461dc67f71d6957f2f6f9b872cf4c4f113f79ca3007af51f8ad7701ed22b087a",
+        "claim_type_string": "marketplace.delivery.v1",
+        "subject_hex": "da68380de022bac727782efee3c495d4ae08ba3233b4976543cb5247b100424a",
+        "payload_hex": "64656c697665726564",
+        "payload_hash_hex": "373e0712c83cffe15ff427b60e788b549f82496fe5fd5391f7921832b04c6b20",
+        "payload_encoding": 0,
+        "replay_mode": 0,
+        "nonce": "0",
+        "claim_id_hex": "0000000000000000000000000000000000000000000000000000000000000000",
+        "issued_at": "1790000000",
+        "expires_at": "1790000000"
+      },
+      "now": "1790000000",
+      "signature_hex": "db41d9fca284a53c531752e635070cc7da815c4641174014d3a9422e0ef31fbe855120b5d38b04185e8022897b93bcf901ea6f73453206ba213ba70c47f97501"
+    },
+    {
+      "name": "sequence-with-claim-id",
+      "reason": "Sequence mode must carry an all-zero claim_id.",
+      "expected_error": "InvalidReplayFields",
+      "context": {
+        "network_passphrase": "Test SDF Network ; September 2015",
+        "network_id_hex": "cee0302d59844d32bdca915c8203dd44b33fbb7edc19051ea37abedf28ecd472",
+        "contract_id": "CBWDWZ64DEYTQ4GUFIJAX73W4YSXWYC776N6N3L7M3OMHZNALI2A4I25",
+        "contract_digest_hex": "8942a92d87fed72917e382d023f50e155473a669bb0fbed2a6a29444a0b69672"
+      },
+      "claim": {
+        "issuer_hex": "b35fe662038bcced74729876b2bf3cd3875594e93626e7890b2bc70821eef120",
+        "claim_type_hex": "461dc67f71d6957f2f6f9b872cf4c4f113f79ca3007af51f8ad7701ed22b087a",
+        "claim_type_string": "marketplace.delivery.v1",
+        "subject_hex": "da68380de022bac727782efee3c495d4ae08ba3233b4976543cb5247b100424a",
+        "payload_hex": "64656c697665726564",
+        "payload_hash_hex": "373e0712c83cffe15ff427b60e788b549f82496fe5fd5391f7921832b04c6b20",
+        "payload_encoding": 0,
+        "replay_mode": 0,
+        "nonce": "0",
+        "claim_id_hex": "3a9cca63531df92dbe9bea1d34211f9798de8f858811ee8c3e42c4d118963632",
+        "issued_at": "1790000000",
+        "expires_at": "1790003600"
+      },
+      "now": "1790000060",
+      "signature_hex": "ecde87e571e5a8a50013c640a147a0825c389ecc36b01b9ae313d4e97b447bb8db8506b2d41c9af7cafde86fce04cd6da71e2c30781966cb6694c485e54ecc0b"
+    },
+    {
+      "name": "unique-id-with-nonce",
+      "reason": "Unique-id mode must carry nonce 0.",
+      "expected_error": "InvalidReplayFields",
+      "context": {
+        "network_passphrase": "Test SDF Network ; September 2015",
+        "network_id_hex": "cee0302d59844d32bdca915c8203dd44b33fbb7edc19051ea37abedf28ecd472",
+        "contract_id": "CBWDWZ64DEYTQ4GUFIJAX73W4YSXWYC776N6N3L7M3OMHZNALI2A4I25",
+        "contract_digest_hex": "8942a92d87fed72917e382d023f50e155473a669bb0fbed2a6a29444a0b69672"
+      },
+      "claim": {
+        "issuer_hex": "b35fe662038bcced74729876b2bf3cd3875594e93626e7890b2bc70821eef120",
+        "claim_type_hex": "461dc67f71d6957f2f6f9b872cf4c4f113f79ca3007af51f8ad7701ed22b087a",
+        "claim_type_string": "marketplace.delivery.v1",
+        "subject_hex": "da68380de022bac727782efee3c495d4ae08ba3233b4976543cb5247b100424a",
+        "payload_hex": "64656c697665726564",
+        "payload_hash_hex": "373e0712c83cffe15ff427b60e788b549f82496fe5fd5391f7921832b04c6b20",
+        "payload_encoding": 0,
+        "replay_mode": 1,
+        "nonce": "5",
+        "claim_id_hex": "5ad11aeaba09c54d5f3d74fd42805b832c40a6973e9693fbab6b5c1b3bbefc12",
+        "issued_at": "1790000000",
+        "expires_at": "1790003600"
+      },
+      "now": "1790000060",
+      "signature_hex": "84ea60988844f3764156c39e33cc8f6c10f16ffd1130e9201c6a9f77f229e2de5b1093979563a1fa2dbf58711a36088a8aa139272c4806f740e2b982eefa7d07"
+    },
+    {
+      "name": "other-network",
+      "reason": "Signed for mainnet, verified on testnet.",
+      "expected_error": "InvalidSignature",
+      "context": {
+        "network_passphrase": "Test SDF Network ; September 2015",
+        "network_id_hex": "cee0302d59844d32bdca915c8203dd44b33fbb7edc19051ea37abedf28ecd472",
+        "contract_id": "CBWDWZ64DEYTQ4GUFIJAX73W4YSXWYC776N6N3L7M3OMHZNALI2A4I25",
+        "contract_digest_hex": "8942a92d87fed72917e382d023f50e155473a669bb0fbed2a6a29444a0b69672"
+      },
+      "claim": {
+        "issuer_hex": "b35fe662038bcced74729876b2bf3cd3875594e93626e7890b2bc70821eef120",
+        "claim_type_hex": "461dc67f71d6957f2f6f9b872cf4c4f113f79ca3007af51f8ad7701ed22b087a",
+        "claim_type_string": "marketplace.delivery.v1",
+        "subject_hex": "da68380de022bac727782efee3c495d4ae08ba3233b4976543cb5247b100424a",
+        "payload_hex": "64656c697665726564",
+        "payload_hash_hex": "373e0712c83cffe15ff427b60e788b549f82496fe5fd5391f7921832b04c6b20",
+        "payload_encoding": 0,
+        "replay_mode": 0,
+        "nonce": "0",
+        "claim_id_hex": "0000000000000000000000000000000000000000000000000000000000000000",
+        "issued_at": "1790000000",
+        "expires_at": "1790003600"
+      },
+      "now": "1790000060",
+      "signature_hex": "2def4a49505aabfd2f81063ef9ee4b0c84751f1601e03acc4788a7753e1c1355ea38a9344557700d7a9bc0ee00753f88bcc97b721908ea89e3ef4ff4528aac02"
+    },
+    {
+      "name": "other-contract",
+      "reason": "Signed for contract 1, verified by contract 0.",
+      "expected_error": "InvalidSignature",
+      "context": {
+        "network_passphrase": "Test SDF Network ; September 2015",
+        "network_id_hex": "cee0302d59844d32bdca915c8203dd44b33fbb7edc19051ea37abedf28ecd472",
+        "contract_id": "CBWDWZ64DEYTQ4GUFIJAX73W4YSXWYC776N6N3L7M3OMHZNALI2A4I25",
+        "contract_digest_hex": "8942a92d87fed72917e382d023f50e155473a669bb0fbed2a6a29444a0b69672"
+      },
+      "claim": {
+        "issuer_hex": "b35fe662038bcced74729876b2bf3cd3875594e93626e7890b2bc70821eef120",
+        "claim_type_hex": "461dc67f71d6957f2f6f9b872cf4c4f113f79ca3007af51f8ad7701ed22b087a",
+        "claim_type_string": "marketplace.delivery.v1",
+        "subject_hex": "da68380de022bac727782efee3c495d4ae08ba3233b4976543cb5247b100424a",
+        "payload_hex": "64656c697665726564",
+        "payload_hash_hex": "373e0712c83cffe15ff427b60e788b549f82496fe5fd5391f7921832b04c6b20",
+        "payload_encoding": 0,
+        "replay_mode": 0,
+        "nonce": "0",
+        "claim_id_hex": "0000000000000000000000000000000000000000000000000000000000000000",
+        "issued_at": "1790000000",
+        "expires_at": "1790003600"
+      },
+      "now": "1790000060",
+      "signature_hex": "555fff325770548e8154cb09ed5f6f92feedd58f35a752d8131e0c5129152874305c7189e5fba15f2f268384b68184de617ec5f5c06eb06610bc1a2898338208"
+    },
+    {
+      "name": "tampered-subject",
+      "reason": "Subject changed after signing.",
+      "expected_error": "InvalidSignature",
+      "context": {
+        "network_passphrase": "Test SDF Network ; September 2015",
+        "network_id_hex": "cee0302d59844d32bdca915c8203dd44b33fbb7edc19051ea37abedf28ecd472",
+        "contract_id": "CBWDWZ64DEYTQ4GUFIJAX73W4YSXWYC776N6N3L7M3OMHZNALI2A4I25",
+        "contract_digest_hex": "8942a92d87fed72917e382d023f50e155473a669bb0fbed2a6a29444a0b69672"
+      },
+      "claim": {
+        "issuer_hex": "b35fe662038bcced74729876b2bf3cd3875594e93626e7890b2bc70821eef120",
+        "claim_type_hex": "461dc67f71d6957f2f6f9b872cf4c4f113f79ca3007af51f8ad7701ed22b087a",
+        "claim_type_string": "marketplace.delivery.v1",
+        "subject_hex": "d4dda5eb099587801d5c1e2058c172599aef02233dd9f346c11b2b5dadd00b9b",
+        "payload_hex": "64656c697665726564",
+        "payload_hash_hex": "373e0712c83cffe15ff427b60e788b549f82496fe5fd5391f7921832b04c6b20",
+        "payload_encoding": 0,
+        "replay_mode": 0,
+        "nonce": "0",
+        "claim_id_hex": "0000000000000000000000000000000000000000000000000000000000000000",
+        "issued_at": "1790000000",
+        "expires_at": "1790003600"
+      },
+      "now": "1790000060",
+      "signature_hex": "ee298f7b2ac0e9db4d844f0462948368f9b8553185980ec5587a4ae00cc77bfab7bbbb9ee9e622d17b6c36aa2eccc792c28d6c84dd42b5fb341171c3d4fe590b"
+    },
+    {
+      "name": "tampered-expiry",
+      "reason": "expires_at extended after signing.",
+      "expected_error": "InvalidSignature",
+      "context": {
+        "network_passphrase": "Test SDF Network ; September 2015",
+        "network_id_hex": "cee0302d59844d32bdca915c8203dd44b33fbb7edc19051ea37abedf28ecd472",
+        "contract_id": "CBWDWZ64DEYTQ4GUFIJAX73W4YSXWYC776N6N3L7M3OMHZNALI2A4I25",
+        "contract_digest_hex": "8942a92d87fed72917e382d023f50e155473a669bb0fbed2a6a29444a0b69672"
+      },
+      "claim": {
+        "issuer_hex": "b35fe662038bcced74729876b2bf3cd3875594e93626e7890b2bc70821eef120",
+        "claim_type_hex": "461dc67f71d6957f2f6f9b872cf4c4f113f79ca3007af51f8ad7701ed22b087a",
+        "claim_type_string": "marketplace.delivery.v1",
+        "subject_hex": "da68380de022bac727782efee3c495d4ae08ba3233b4976543cb5247b100424a",
+        "payload_hex": "64656c697665726564",
+        "payload_hash_hex": "373e0712c83cffe15ff427b60e788b549f82496fe5fd5391f7921832b04c6b20",
+        "payload_encoding": 0,
+        "replay_mode": 0,
+        "nonce": "0",
+        "claim_id_hex": "0000000000000000000000000000000000000000000000000000000000000000",
+        "issued_at": "1790000000",
+        "expires_at": "1790007200"
+      },
+      "now": "1790000060",
+      "signature_hex": "ee298f7b2ac0e9db4d844f0462948368f9b8553185980ec5587a4ae00cc77bfab7bbbb9ee9e622d17b6c36aa2eccc792c28d6c84dd42b5fb341171c3d4fe590b"
+    },
+    {
+      "name": "wrong-issuer-key",
+      "reason": "Claim names issuer 0 but issuer 1 signed it.",
+      "expected_error": "InvalidSignature",
+      "context": {
+        "network_passphrase": "Test SDF Network ; September 2015",
+        "network_id_hex": "cee0302d59844d32bdca915c8203dd44b33fbb7edc19051ea37abedf28ecd472",
+        "contract_id": "CBWDWZ64DEYTQ4GUFIJAX73W4YSXWYC776N6N3L7M3OMHZNALI2A4I25",
+        "contract_digest_hex": "8942a92d87fed72917e382d023f50e155473a669bb0fbed2a6a29444a0b69672"
+      },
+      "claim": {
+        "issuer_hex": "b35fe662038bcced74729876b2bf3cd3875594e93626e7890b2bc70821eef120",
+        "claim_type_hex": "461dc67f71d6957f2f6f9b872cf4c4f113f79ca3007af51f8ad7701ed22b087a",
+        "claim_type_string": "marketplace.delivery.v1",
+        "subject_hex": "da68380de022bac727782efee3c495d4ae08ba3233b4976543cb5247b100424a",
+        "payload_hex": "64656c697665726564",
+        "payload_hash_hex": "373e0712c83cffe15ff427b60e788b549f82496fe5fd5391f7921832b04c6b20",
+        "payload_encoding": 0,
+        "replay_mode": 0,
+        "nonce": "0",
+        "claim_id_hex": "0000000000000000000000000000000000000000000000000000000000000000",
+        "issued_at": "1790000000",
+        "expires_at": "1790003600"
+      },
+      "now": "1790000060",
+      "signature_hex": "85a2c72962d7cc11292b072a161178ea551d59f99bc794800cc84674dbc138d438a69de0da543ad5312f4e050f5be2e0797987135e4af6c7ecf80ee55af37b03"
+    },
+    {
+      "name": "zero-signature",
+      "reason": "All-zero 64-byte signature.",
+      "expected_error": "InvalidSignature",
+      "context": {
+        "network_passphrase": "Test SDF Network ; September 2015",
+        "network_id_hex": "cee0302d59844d32bdca915c8203dd44b33fbb7edc19051ea37abedf28ecd472",
+        "contract_id": "CBWDWZ64DEYTQ4GUFIJAX73W4YSXWYC776N6N3L7M3OMHZNALI2A4I25",
+        "contract_digest_hex": "8942a92d87fed72917e382d023f50e155473a669bb0fbed2a6a29444a0b69672"
+      },
+      "claim": {
+        "issuer_hex": "b35fe662038bcced74729876b2bf3cd3875594e93626e7890b2bc70821eef120",
+        "claim_type_hex": "461dc67f71d6957f2f6f9b872cf4c4f113f79ca3007af51f8ad7701ed22b087a",
+        "claim_type_string": "marketplace.delivery.v1",
+        "subject_hex": "da68380de022bac727782efee3c495d4ae08ba3233b4976543cb5247b100424a",
+        "payload_hex": "64656c697665726564",
+        "payload_hash_hex": "373e0712c83cffe15ff427b60e788b549f82496fe5fd5391f7921832b04c6b20",
+        "payload_encoding": 0,
+        "replay_mode": 0,
+        "nonce": "0",
+        "claim_id_hex": "0000000000000000000000000000000000000000000000000000000000000000",
+        "issued_at": "1790000000",
+        "expires_at": "1790003600"
+      },
+      "now": "1790000060",
+      "signature_hex": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ]
+}

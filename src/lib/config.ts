@@ -7,6 +7,21 @@
 
 import { isConnected, requestAccess, signTransaction, signMessage } from '@stellar/freighter-api';
 
+export type StellarNetwork = 'testnet' | 'public';
+
+/**
+ * Resolve the configured network, refusing to guess.
+ *
+ * An empty or unrecognised value defaults to `testnet`: if the operator has
+ * not said which chain they mean, the safe reading is the one where nothing of
+ * value can move. Choosing mainnet requires saying so explicitly.
+ */
+function normalizeNetwork(raw: string | undefined): StellarNetwork {
+  const v = raw?.trim().toLowerCase();
+  if (v === 'public' || v === 'mainnet') return 'public';
+  return 'testnet';
+}
+
 export const STELLAR_CONFIG = {
   // Network configuration
   network: {
@@ -25,12 +40,22 @@ export const STELLAR_CONFIG = {
   },
 
   // Smart contract configuration
+  //
+  // FAIL-CLOSED, DELIBERATELY. This used to default to a hard-coded MAINNET
+  // contract address when NEXT_PUBLIC_STELLAR_CONTRACT_ID was unset, while the
+  // network separately defaulted to 'testnet'. Two consequences, both bad:
+  //
+  //   1. Production shipped with both variables set to "" (falsy), so the live
+  //      app aimed a mainnet contract ID at testnet RPC. Every call failed.
+  //   2. Any developer running locally without an env file was pointed at the
+  //      real mainnet contract.
+  //
+  // An unset contract ID is now a loud error at the point of use rather than a
+  // silent guess. For a system that moves money, refusing to act beats acting
+  // on an assumption about which chain you meant.
   contract: {
-    // Replace with deployed contract ID
-    id: process.env.NEXT_PUBLIC_STELLAR_CONTRACT_ID || 'CCTF5WBOQR7JP2KPLQT372X7JCGCINHDFRSAPF4YTYRKZXZ3J2XPRFFW',
-
-    // Network selection
-    network: (process.env.NEXT_PUBLIC_STELLAR_NETWORK as 'testnet' | 'public') || 'testnet',
+    id: process.env.NEXT_PUBLIC_STELLAR_CONTRACT_ID?.trim() || '',
+    network: normalizeNetwork(process.env.NEXT_PUBLIC_STELLAR_NETWORK),
   },
 
   // Settlement token (Stellar Asset Contract address, e.g. USDC SAC).
@@ -58,6 +83,32 @@ export const STELLAR_CONFIG = {
   },
 
   // RPC endpoint helpers
+  /** True when a contract address is configured for the selected network. */
+  isConfigured: () => STELLAR_CONFIG.contract.id.length > 0,
+
+  /**
+   * The contract address, or a clear failure. Never a fallback: a wrong
+   * address on the wrong network is worse than an unusable page.
+   */
+  requireContractId: () => {
+    const id = STELLAR_CONFIG.contract.id;
+    if (!id) {
+      throw new Error(
+        'NEXT_PUBLIC_STELLAR_CONTRACT_ID is not set. CoreFlow will not guess a ' +
+          'contract address — set it to the CoreFlow contract deployed on ' +
+          `${STELLAR_CONFIG.contract.network === 'public' ? 'Mainnet' : 'Testnet'}.`
+      );
+    }
+    return id;
+  },
+
+  /** Human label for the active network, shown in the UI. */
+  networkLabel: () =>
+    STELLAR_CONFIG.contract.network === 'public' ? 'Stellar Mainnet' : 'Stellar Testnet',
+
+  /** True when the app is pointed at a network where funds are real. */
+  isMainnet: () => STELLAR_CONFIG.contract.network === 'public',
+
   getRpcUrl: () => {
     const network = STELLAR_CONFIG.contract.network;
     return STELLAR_CONFIG.network[network].rpcUrl;
