@@ -68,8 +68,11 @@ shared test vectors, so you can stop re-deriving it.
 
 ## Try it in the browser (no Rust, no deployment)
 
-The Workbench needs only Node.js 20+. It is newer than the `v0.1.0-alpha` tag,
-so run it from a clone of the repository rather than the tag:
+**Live:** [r-json.github.io/CoreFlow](https://r-json.github.io/CoreFlow/), built
+from `main`. Nothing to install.
+
+To run it yourself you need only Node.js 20+. The Workbench is newer than the
+`v0.1.0-alpha` tag, so run it from a clone of the repository rather than the tag:
 
 ```bash
 git clone https://github.com/r-json/CoreFlow.git
