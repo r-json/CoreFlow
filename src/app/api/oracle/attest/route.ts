@@ -5,7 +5,8 @@
  * specific nonce. The client first reads the on-chain nonce (get_nonce), then
  * requests an attestation, then submits the signature to the contract.
  *
- * Auth: requires an authenticated session.
+ * Auth: requires an authenticated session, and the caller must be an ADMIN or
+ * the on-chain worker of the payment being attested.
  * Idempotency: a given (escrow, payment, nonce) is signed at most once — a
  * repeat request returns the previously issued signature, so a retried submit
  * never produces a second signature for a consumed nonce.
@@ -13,8 +14,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db/prisma';
-import { getUserFromRequest } from '@/lib/auth';
+import { getUserFromRequest, isAdmin } from '@/lib/auth';
 import { signHoursProof, getOraclePublicKeyHex } from '@/lib/oracle';
+import { CoreFlowClient } from '@/lib/contracts';
 import { parseBody, attestSchema } from '@/lib/validation/schemas';
 import { rateLimit } from '@/lib/ratelimit';
 
@@ -46,6 +48,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
     const { onChainId, paymentId, hoursLogged, nonce } = parsed.data;
+
+    // Checked before the idempotent re-issue below, so a stored signature is
+    // only ever returned to someone allowed to request it.
+    if (!isAdmin(user)) {
+      let worker: string | undefined;
+      try {
+        const escrow = await new CoreFlowClient().getEscrow(onChainId);
+        worker = escrow.payments.find((p) => p.id === paymentId)?.worker;
+      } catch {
+        return NextResponse.json(
+          { error: `Could not read escrow ${onChainId} to check its worker.` },
+          { status: 502 }
+        );
+      }
+      if (!worker || worker !== user.walletAddress) {
+        return NextResponse.json(
+          { error: 'Forbidden: only an ADMIN or the payment\'s worker can request this attestation' },
+          { status: 403 }
+        );
+      }
+    }
 
     // Idempotency: never sign the same (escrow, payment, nonce) twice.
     const existing = await prisma.oracleAttestation.findUnique({

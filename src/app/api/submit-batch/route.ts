@@ -12,9 +12,10 @@
  * signers approve, then anyone calls `pay_batch`.
  */
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getOraclePublicKeyHex, signHoursProof } from '@/lib/oracle';
 import { CoreFlowClient } from '@/lib/contracts';
+import { getUserFromRequest, isAdmin } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -27,7 +28,12 @@ interface PayeeInput {
 
 const G_ADDRESS = /^G[A-Z2-7]{55}$/;
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const user = await getUserFromRequest(request);
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   let body: { escrow_id?: number; payees?: PayeeInput[] };
 
   try {
@@ -65,12 +71,35 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Oracle is not configured' }, { status: 503 });
   }
 
+  const client = new CoreFlowClient();
+
+  // Only an ADMIN, or the escrow's on-chain manager, may obtain attestations
+  // for it. Anything that prevents the check (RPC failure, unknown escrow)
+  // refuses rather than signing.
+  if (!isAdmin(user)) {
+    let manager: string;
+    try {
+      manager = (await client.getEscrow(escrowId)).manager;
+    } catch {
+      return NextResponse.json(
+        { error: `Could not read escrow ${escrowId} to check its manager.` },
+        { status: 502 }
+      );
+    }
+    if (manager !== user.walletAddress) {
+      return NextResponse.json(
+        { error: 'Forbidden: only an ADMIN or the escrow manager can request attestations' },
+        { status: 403 }
+      );
+    }
+  }
+
   // The contract accepts only the next expected nonce, so signatures must start
   // from the live on-chain watermark rather than zero — a batch signed from 0
   // against an escrow that already has proofs would be rejected with #9.
   let startNonce = 0;
   try {
-    startNonce = await new CoreFlowClient().getNonce(escrowId);
+    startNonce = await client.getNonce(escrowId);
   } catch {
     return NextResponse.json(
       { error: `Could not read nonce for escrow ${escrowId}. Does it exist on this network?` },
